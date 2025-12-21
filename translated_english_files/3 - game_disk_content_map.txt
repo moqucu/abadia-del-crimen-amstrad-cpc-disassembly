@@ -1,0 +1,13 @@
+This file is a disk map for the game "La abadía del crimen" on the Amstrad CPC. It outlines the structure of the game's data on the floppy disk, including track and sector allocation, data storage order, and the location of different game files. This kind of file is essential for understanding how the game loads its data and for any reverse engineering or modification efforts.
+
+The disk of "La abadía del crimen" has 0x28 tracks (1 side per track). The data is stored in reverse (the last byte is the first, the second to last byte is the second, etc.).
+
+All tracks except track 0 have 15 sectors of 0x0100 bytes, so each track contains 0x0f00 bytes.
+
+The distribution of data on the tracks is as follows:
+*   **0x00:** Boot track called when writing |CPM -> length = 0x0300 bytes
+*   **0x01-0x11:** Tracks containing data from abadia0.bin, abadia3.bin, abadia8.bin, and abadia1.bin -> length = 0xff00 bytes
+*   **0x12-0x16:** Tracks containing data from abadia7.bin and overwriting the last 0xb00 bytes of abadia1.bin -> length = 0x4b00 bytes
+*   **0x17-0x1b:** Tracks containing data from abadia6.bin and overwriting the last 0xb00 bytes of abadia1.bin -> length = 0x4b00 bytes
+*   **0x1c-0x21:** Tracks containing data from abadia5.bin and overwriting the last 0xb00 bytes of abadia1.bin -> length = 0x4b00 bytes
+*   **0x21-0x25:** Tracks containing data from abadia2.bin and overwriting the last 0xb00 bytes of abadia1.bin -> length = 0x4b00 bytes

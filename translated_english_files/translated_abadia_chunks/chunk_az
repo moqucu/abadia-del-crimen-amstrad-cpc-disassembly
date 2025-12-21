@@ -1,0 +1,600 @@
+6385: 20 0C       jr   nz,$6393		; if he is in state 0x13
+6387: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if very close returns 0, otherwise != 0)
+638A: 20 04       jr   nz,$6390		; if he is close to guillermo
+638C: D7          rst  $10
+	8B 08 -> [0x3cc8] = 0x08		; goes to the door of severino's cell
+638F: C9          ret
+
+6390: C3 6C 64    jp   $646C		; scolds guillermo
+
+6393: CF          rst  $08
+	89 -> c1 = [0x2da1]
+	00 -> c2 = 0x00
+	3D -> c = [0x2da1] == 0x00
+6397: 20 03       jr   nz,$639C		; if no voice is being played
+6399: D7          rst  $10
+	8C 13 -> [0x3cc7] = 0x13		; goes to state 0x13
+639C: C9          ret
+
+639D: 18 08       jr   $63A7		; never reaches here???
+
+639F: CD 1B 50    call $501B		; writes the phrase in the marker
+		1B							VENID, FRAY GUILLERMO, DEBEMOS ENCONTRAR A SEVERINO
+63A3: D7          rst  $10
+	8B 08 -> [0x3cc8] = 0x08		; goes to the door of severino's cell
+63A6: C9          ret
+
+63A7: D7          rst  $10
+	A2 1D -> [0x3f0e] = 0x1d		; phrase = BERNARDO ABANDONARA HOY LA ABADIA
+63AA: C3 CF 63    jp   $63CF
+
+63AD: CF          rst  $08
+		8D -> c1 = [0x2d80]
+		06 -> c2 = 0x06
+		3D -> c = [0x2d80] == 0x06
+63B1: 20 06       jr   nz,$63B9		; if it's the sixth day
+63B3: D7          rst  $10
+	A2 1E -> [0x3f0e] = 0x1e		; phrase = MA�ANA ABANDONAREIS LA ABADIA
+63B6: C3 CF 63    jp   $63CF
+
+63B9: CF          rst  $08
+		8D -> c1 = [0x2d80]
+		07 -> c2 = 0x07
+		3D -> c = [0x2d80] == 0x07
+63BD: 20 0F       jr   nz,$63CE		; if it's the seventh day
+63BF: D7          rst  $10
+	A2 25 -> [0x3f0e] = 0x25		; phrase = DEBEIS ABANDONAR YA LA ABADIA
+63C2: CF          rst  $08
+	88 -> c1 = [0x2d81]
+	02 -> c2 = 0x02
+	3D -> c = [0x2d81] == 0x02		; if it's terce
+63C6: 20 03       jr   nz,$63CB
+63C8: D7          rst  $10
+	9C 01 -> [0x3c97] = 0x01		; indicates that guillermo has died
+63CB: C3 CF 63    jp   $63CF
+
+63CE: C9          ret
+
+
+63CF: CF          rst  $08
+		8C -> c1 = [0x3cc7]
+		10 -> c2 = 0x10
+		3D -> c = [0x3cc7] == 0x10
+63D3: 20 03       jr   nz,$63D8		; if he is in state 0x10
+63D5: C3 E2 63    jp   $63E2
+
+63D8: CF          rst  $08
+	88 -> c1 = [0x2d81]
+	02 -> c2 = 0x02
+	3D -> c = [0x2d81] == 0x02
+63DC: 20 03       jr   nz,$63E1		; if it's terce
+63DE: C3 20 64    jp   $6420
+
+63E1: C9          ret
+
+63E2: CF          rst  $08
+		90 -> c1a = [0x3ce9]
+		40 FE -> c2a = 0xfe
+		3D -> ca = [0x3ce9] == 0xfe
+		86 -> c1b = [0x3caa]
+		40 FE -> c2b = 0xfe
+		3D -> cb = [0x3caa] == 0xfe
+		2A -> ([0x3ce9] == 0xfe) || ([0x3caa] == 0xfe)
+63EC: 20 18       jr   nz,$6406		; if malaquias or berengario/bernardo are going to fetch the abbot
+63EE: CF          rst  $08
+		8B -> c1 = [0x3cc8]
+		8A -> c2 = [0x3cc6]
+		3D -> c = [0x3cc8] == [0x3cc6]
+63F2: 20 03       jr   nz,$63F7		; if the abbot has arrived where he wanted to go
+63F4: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to find any route
+
+63F7: D7          rst  $10
+		8B 02 -> [0x3cc8] = 0x02	; goes to his cell
+63FA: CF          rst  $08
+	A8 -> c1a = [0x2e0b]
+	10 -> c2a = 0x10
+	2A -> ca = [0x2e0b] & 0x10
+	10 -> cb = 0x10
+	3D -> c = ([0x2e0b] & 0x10) == 0x10
+6400: 20 03       jr   nz,$6405		; if bernardo has the parchment
+6402: D7          rst  $10
+	8B 03 -> [0x3cc8] = 0x03		; goes to the abbey entrance
+6405: C9          ret
+
+6406: CF          rst  $08
+		A6 -> c1a = [0x2e04]
+		10 -> c2a = 0x10
+		2A -> ca = [0x2e04] & 0x10
+		10 -> cb = 0x10
+		3D -> c = ([0x2e04] & 0x10) == 0x10
+640C: 20 03       jr   nz,$6411		; if the abbot has the parchment
+640E: D7          rst  $10
+	8B 02 -> [0x3cc8] = 0x02		; goes to his cell
+6411: CF          rst  $08
+	8A -> c1 = [0x3cc6]
+	8B -> c2 = [0x3cc8]
+	3D -> c = [0x3cc6] == [0x3cc8]
+6415: 20 08       jr   nz,$641F		; if the abbot has arrived where he wanted to go
+6417: D7          rst  $10
+		8B B2 03 2A 02 2B -> [0x3cc8] = ([0x3c9d] & 0x03) + 2	; moves randomly
+641E: C9          ret
+641F: C9          ret
+
+6420: CF          rst  $08
+		8C -> c1a = [0x3cc7]
+		0E -> c2a = 0x0e
+		3D -> c = [0x3cc7] == 0x0e
+6424: 20 07       jr   nz,$642D		; if he is in state 0x0e
+6426: CD 26 50    call $5026		; puts the phrase in the marker
+		14							VENID AQUI, FRAY GUILLERMO
+642A: D7          rst  $10
+		8C 11 -> [0x3cc7] = 0x11	; goes to state 0x11
+
+642D: CF          rst  $08
+		8C -> c1a = [0x3cc7]
+		11 -> c2a = 0x11
+		3D -> c = [0x3cc7] == 0x11	; if he is in state 0x11
+6431: 20 0C       jr   nz,$643F
+6433: CF          rst  $08
+		89 -> c1a = [0x2da1]
+		00 -> c2a = 0x00
+		3D -> c = [0x2da1] == 0x00
+6437: 20 06       jr   nz,$643F		; if not playing a phrase
+6439: D7          rst  $10
+		8C 12 -> [0x3cc7] = 0x12	; goes to state 0x12
+643C: D7          rst  $10
+		99 00 -> [0x3c98] = 0x00	; initializes the counter
+643F: CF          rst  $08
+		8C -> c1a = [0x3cc7]
+		12 -> c2a = 0x12
+		3D -> c = [0x3cc7] == 0x12
+6443: 20 0A       jr   nz,$644F		; if he is in state 0x12
+6445: D7          rst  $10
+		8C 0F -> [0x3cc7] = 0x0f	; goes to state 0x0f
+6448: D7          rst  $10
+		8B 00 -> [0x3cc8] = 0x00	; goes to the church altar
+644B: CD 0B 3F    call $3F0B		; puts the corresponding phrase in the marker
+644E: C9          ret
+
+644F: CF          rst  $08
+		8C -> c1a = [0x3cc7]
+		0F -> c2a = 0x0f
+		3D -> c = [0x3cc7] == 0x0f
+6453: 20 16       jr   nz,$646B		; if he is in state 0x0f
+6455: CF          rst  $08
+		89 -> c1 = [0x2da1]
+		00 -> c2 = 0x00
+		3D -> c = [0x2da1] == 0x00
+6459: 20 04       jr   nz,$645F		; if not playing a voice
+645B: D7          rst  $10
+		8C 10 -> [0x3cc7] = 0x10	; goes to state 0x10
+645E: C9          ret
+
+645F: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if very close returns 0, otherwise != 0)
+6462: 20 01       jr   nz,$6465		; if guillermo is close, exits
+6464: C9          ret
+
+6465: D7          rst  $10
+		8C 12 -> [0x3cc7] = 0x12	; goes to state 0x12
+6468: C3 6C 64    jp   $646C		; scolds guillermo
+646B: C9          ret
+
+; scolds guillermo
+646C: CF          rst  $08
+		8C -> c1a = [0x3cc7]
+		40 80 -> c2a = 0x80
+		3E -> c = [0x3cc7] >= 0x80
+6471: 20 01       jr   nz,$6474		; if it has bit 7 set
+6473: C9          ret
+
+6474: CD CE 55    call $55CE		; decreases guillermo's health by 2 units
+6477: CD BE 08    call $08BE		; discards planned moves and indicates that a new move must be thought
+647A: D7          rst  $10
+		8C 8C 40 80 2B -> [0x3cc7] = [0x3cc7] + 0x80
+6480: CD 1B 50    call $501B		; writes the phrase in the marker
+		08							OS ORDENO QUE VENGAIS
+6484: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to find any route
+
+
+; called if he is in mass (vespers) and day is passed in c
+6487: CD 10 3F    call $3F10		; jumps to a routine depending on what's in c
+		6498 -> day 1
+		6498 -> day 2
+		64A2 -> day 3
+		6498 -> day 4
+		64AA -> day 5
+		64BC -> day 6
+		0000
+
+; called on day 1, 2 and 4
+6498: D7          rst  $10
+		A3 -> [0x3c96] = the following:
+		91 -> c1a = [0x3ce7]	; where berengario/bernardo has arrived
+		97 -> c2a = [0x3d11]	; where adso has arrived
+		26 -> ca = c1a | c2a
+		94 -> cb = [0x3cff]		; where severino has arrived
+		26 -> cc = ca | cb
+		87 -> cd = [0x3ca8]		; where malaquias has arrived
+		26 -> c = cc | cd
+64A1: C9          ret
+
+; called on day 3
+64A2: D7          rst  $10
+		A3 -> [0x3c96] = the following:
+		97 -> c1a = [0x3d11]	; where adso has arrived
+		94 -> c2a = [0x3cff]	; where severino has arrived
+		26 -> ca = c1a & c2a
+		87 -> cb = [0x3ca8]		; where malaquias has arrived
+		26 -> c = ca & cb
+64A9: C9          ret
+
+; called on day 5
+64AA: CF          rst  $08
+		AC -> ca = [0x3ca2]
+		01 -> cb = 0x01
+		3E -> c = [0x3ca2] >= 0x01
+64AE: 20 08       jp   nz,$64B8		; if malaquias is dying
+
+64B0: D7          rst  $10
+		A2 40 20 -> [0x3f0e] = 0x20	; phrase = MALAQUIAS HA MUERTO
+64B4: D7          rst  $10
+		A3 00 -> [0x3c96] = 0x00	; indicates that everyone is in place
+64B7: C9          ret
+
+64B8: D7          rst  $10
+		A3 01 -> [0x3c96] = 0x01	; indicates that not everyone is in place yet
+64BB: C9          ret
+
+
+; called on day 6
+64BC: D7          rst  $10
+		A3 97 -> [0x3c96] = [0x3d11] ; if adso is in his place
+64BF: C9          ret
+
+
+; called if he is in mass (prime) and day is passed in c
+64C0: CD 10 3F    call $3F10		; jumps to a routine depending on the day (in c)
+		64D1 -> jumps if the day is 2
+		64D7 -> jumps if the day is 3
+		64DE -> jumps if the day is 4
+		6498 -> jumps if the day is 5
+		64BC -> jumps if the day is 6
+		64E4 -> jumps if the day is 7
+		0000
+
+; called on day 2
+64D1: D7          rst  $10
+		A2 15 -> [0x3f0e] = 0x15	; phrase = HERMANOS, VENACIO HA SIDO ASESINADO
+64D4: C3 98 64    jp   $6498		; waits for berengario/bernardo, adso, severino and malaquias
+
+; called on day 3
+64D7: D7          rst  $10
+		A2 18 -> [0x3f0e] = 0x18	; phrase = HERMANOS, BERENGARIO HA DESAPARECIDO. TEMO QUE SE HAYA COMETIDO OTRO CRIMEN
+64DB: C3 A2 64    jp   $64A2		; waits for adso, severino and malaquias
+
+; called on day 4
+64DE: D7          rst  $10
+		A2 1A -> [0x3f0e] = 0x1a	; phrase = HERMANOS, HAN ENCONTRADO A BERENGARIO ASESINADO
+64E1: C3 A2 64    jp   $64A2		; waits for adso, severino and malaquias
+
+; called on day 7
+64E4: D7          rst  $10
+		A2 17 -> [0x3f0e] = 0x17	; phrase = OREMOS
+64E7: C3 BC 64    jp   $64BC		; waits for adso
+
+; called if he is in the refectory and day is passed in c
+64EA: CD 10 3F    call $3F10		; jumps to a routine depending on c
+		64FA -> day 2
+		650C -> day 3
+		650C -> day 4
+		651A -> day 5
+		651A -> day 6
+		0000
+64F9: C9          ret
+
+64FA: CF          rst  $08
+		91 -> c1a = [0x3ce7]
+		01 -> c2a = 0x01
+		3D -> ca = [0x3ce7] == 0x01	; if berengario has arrived at the dining hall
+		97 -> c1b = [0x3d11]
+		01 -> c2b = 0x01			; if adso has arrived at the dining hall
+		3D -> cb = [0x3d11] == 0x01
+		26 -> cc = ca & cb
+		94 -> c1d = [0x3cff]
+		01 -> c2d = 0x01
+		3D -> cd = [0x3cff] == 0x01 ; if severino has arrived at the dining hall
+		26 -> c = cc & cd
+6506: 20 03       jr   nz,$650B		; if berengario, severino and adso have arrived at the dining hall
+6508: D7          rst  $10
+		A3 00 -> [0x3c96] = 0x00	; indicates that all monks are ready
+650B: C9          ret
+
+650C: CF          rst  $08
+		97 -> c1a = [0x3d11]
+		01 -> c2a = 0x01
+		3D -> ca = [0x3d11] == 0x01	; if adso has arrived at the dining hall
+		94 -> c1b = [0x3cff]
+		01 -> c2b = 0x01
+		3D -> cb = [0x3cff] == 0x01 ; if severino has arrived at the dining hall
+		26 -> c = ca & cb
+6514: 20 03       jr   nz,$6519		; if adso and severino are ready to eat
+6516: D7          rst  $10
+		A3 00 -> [0x3c96] = 0x00	; indicates it
+6519: C9          ret
+
+651A: D7          rst  $10
+		A3 97 01 3D -> [0x3c96] = [0x3d11] == 0x01	; if adso is ready
+651F: C9          ret
+
+; waits for the abbot, the rest of the monks and guillermo to be in place and if so advances the time of day
+6520: CF          rst  $08
+		8A -> c1 = [0x3cc6]
+		8B -> c2 = [0x3cc8]
+		3D -> c = [0x3cc6] == [0x3cc8]
+6524: 20 73       jr   nz,$6599		; if the abbot has arrived where he was going
+6526: CF          rst  $08
+		A3 -> c1 = [0x3c96]
+		00 -> c2 = 0x00
+		3D -> c = [0x3c96] == 0x00
+652A: 20 6B       jr   nz,$6597		; if the monks are ready to start mass
+652C: CF          rst  $08
+		AF -> c1 = [0x3c9b]
+		01 -> c2 = 0x01
+		3E -> c = [0x3c9b] >= 0x01
+6530: 20 52       jp   nz,$6584		; if guillermo has at least arrived at the room
+6532: CF          rst  $08
+		99 -> c1a = [0x3c98]
+		32 -> c2a = 0x32
+		3E -> c = [0x3c98] >= 0x32
+6536: 20 0C       jp   nz,$6544		; if the punctuality counter has been exceeded
+6538: D7          rst  $10
+		99 00 -> [0x3c98] = 0x00	; resets the counter
+653B: CD 26 50    call $5026		; puts the phrase in the marker
+		06 							LLEGAIS TARDE, FRAY GUILLERMO
+653F: CD CE 55    call $55CE		; decreases guillermo's health by 2 units
+6542: 18 3F       jr   $6583
+
+6544: CF          rst  $08
+	89 -> c1 = [0x2da1]
+	00 -> c2 = 0
+	3D -> c = [0x2da1] == 0
+6548: 20 22       jr   nz,$656C		; if no voice is being played
+654A: CF          rst  $08
+		AF -> c1 = [0x3c9b]
+		02 -> c2 = 0x02
+		3D -> c = [0x3c9b] == 0x02
+654E: 20 16       jr   nz,$6566		; if guillermo is not in his place
+6550: D7          rst  $10			; interprets the commands following this instruction
+	99 99 01 -> [0x3c98] = [0x3c98] + 0x01
+6555: CF          rst  $08
+		99 -> c1 = [0x3c98]
+		1E -> c2 = 0x1e
+		3E -> c = c1 >= c2
+6559: 20 0A       jr   nz,$6565		; if the counter exceeds the limit
+655B: D7          rst  $10
+	99 00 -> [0x3c98] = 0x00		; sets the counter to 0
+655E: CD 26 50    call $5026		; puts the phrase in the marker
+		2D          				OCUPAD VUESTRO SITIO, FRAY GUILLERMO
+6562: CD CE 55    call $55CE		; decreases guillermo's health by 2 units
+6565: C9          ret
+
+6566: CD 0B 3F    call $3F0B		; puts the phrase that was saved in the marker
+6569: D7          rst  $10
+		9B 01 -> [0x3c9a] = 0x01	; indicates that the time of day must be advanced
+656C: CF          rst  $08
+		9B -> c1a = [0x3c9a]
+		01 -> c2a = 0x01
+		3D -> ca = [0x3c9a] == 0x01
+		AF -> c1b = [0x3c9b]
+		02 -> c2b = 0x02
+		3D -> cb = [0x3c9b] == 0x02
+		26 -> c = ([0x3c9a] == 0x01) && ([0x3c9b] == 0x02)
+6574: 20 0D       jr   nz,$6583		; if the time of day must be advanced and guillermo is not in his place
+6576: D7          rst  $10
+		99 00 -> [0x3c98] = 0x00	; resets the counter
+6579: D7          rst  $10
+		9B 00 -> [0x3c9a] = 0		; indicates that the time of day should not be advanced
+657C: CD 1B 50    call $501B		; writes the phrase in the marker
+		2D          				OCUPAD VUESTRO SITIO, FRAY GUILLERMO
+6580: CD CE 55    call $55CE		; decreases guillermo's health by 2 units
+6583: C9          ret
+
+; here it arrives when guillermo hasn't yet arrived at the church
+6584: CF          rst  $08
+		99 -> c1a = [0x3c98]
+		40 C8 -> c2a = 0xc8
+		3E -> c = [0x3c98] >= 0xc8
+6589: 20 07       jr   nz,$6592		; if the counter exceeds the tolerable limit
+658B: D7          rst  $10
+		8C 0B -> [0x3cc7] = 0x0b	; changes to the scolding state
+658E: D7          rst  $10
+		9B 01 -> [0x3c9a] = 0x01	; advances the time of day
+6591: C9          ret
+
+6592: D7          rst  $10
+		99 99 01 2B -> [0x3c98] = [0x3c98] + 0x01	; increments the counter
+6597: 18 03       jr   $659c
+
+6599: D7          rst  $10
+		99 00 -> [0x3c98] = 0x00
+659C: C9          ret
+; ------------------ end of the abbot's logic ----------------
+
+; -------------------------------- code and data related to the parchment --------------------------
+
+; draws the parchment
+659D: DD E5       push ix
+659F: CD 3A 3F    call $3F3A	; sets the black palette
+65A2: CD AF 65    call $65AF	; draws the parchment
+65A5: CD 3F 3F    call $3F3F	; sets the parchment palette
+65A8: DD E1       pop  ix
+65AA: FB          ei
+
+65AB: CD 25 67    call $6725	; draws the texts on the manuscript while space is not pressed
+65AE: C9          ret
+
+; draws the parchment
+65AF: 21 00 C0    ld   hl,$C000	; points to video memory
+65B2: E5          push hl
+65B3: 54          ld   d,h		; de = hl + 1
+65B4: 5D          ld   e,l
+65B5: 13          inc  de
+65B6: 36 00       ld   (hl),$00
+65B8: 01 FF 3F    ld   bc,$3FFF	; clears video memory
+65BB: ED B0       ldir
+65BD: E1          pop  hl
+
+; leaves a rectangle of 192 pixels wide in the middle of the screen, the rest clean
+65BE: 0E C8       ld   c,$C8	; c = 200, number of lines to fill
+65C0: 06 10       ld   b,$10	; b = 16, width of the fills
+65C2: 3E F0       ld   a,$F0	; a = 240, value to fill with
+65C4: E5          push hl
+65C5: 11 40 00    ld   de,$0040	; de = 64, jump between fills
+65C8: EB          ex   de,hl	; de = points to the fill on the left
+
+65C9: 19          add  hl,de	; hl = points to the fill on the right
+65CA: C5          push bc
+65CB: 77          ld   (hl),a	; fills on the right
+65CC: ED A0       ldi			; fills on the left
+65CE: C1          pop  bc
+65CF: 10 F9       djnz $65CA	; completes 16 bytes (64 pixels)
+65D1: E1          pop  hl
+65D2: CD F2 68    call $68F2	; moves to the next screen line
+65D5: 0D          dec  c		; repeats for 200 lines
+65D6: 20 E8       jr   nz,$65C0
+
+; clears the 8 lines at the bottom of the screen
+65D8: 21 80 C7    ld   hl,$C780	; points to a line (the eighth from the bottom)
+65DB: 06 08       ld   b,$08	; repeat for 8 lines
+65DD: C5          push bc
+65DE: E5          push hl
+65DF: 5D          ld   e,l		; de = hl
+65E0: 54          ld   d,h
+65E1: 13          inc  de
+65E2: 01 4F 00    ld   bc,$004F
+65E5: ED B0       ldir			; copies what's in the first position of the line to the rest of the line's pixels
+65E7: E1          pop  hl
+65E8: CD F2 68    call $68F2	; advances hl 0x0800 bytes and if it reaches the end, moves to the next line (+0x50)
+65EB: C1          pop  bc
+65EC: 10 EF       djnz $65DD	; repeats for the other lines
+
+65EE: 21 20 00    ld   hl,$0020	; hl = (00,32)
+65F1: CD C7 68    call $68C7	; calculates the screen offset
+65F4: 11 8A 78    ld   de,$788A ; points to the parchment data
+65F7: CD 1B 66    call $661B	; draws the top part of the parchment
+65FA: 21 DA 00    ld   hl,$00DA	; hl = (00,218)
+65FD: CD C7 68    call $68C7	; calculates the screen offset
+6600: 11 0A 7A    ld   de,$7A0A	; fills the right part of the parchment
+6603: CD 2E 66    call $662E
+6606: 21 20 00    ld   hl,$0020	; hl = (00,32)
+6609: CD C7 68    call $68C7	; calculates the screen offset
+660C: 11 8A 7B    ld   de,$7B8A
+660F: CD 2E 66    call $662E	; fills the left part of the parchment
+6612: 21 20 B8    ld   hl,$B820	; hl = (184,32)
+6615: CD C7 68    call $68C7	; calculates the screen offset
+6618: 11 0A 7D    ld   de,$7D0A
+
+; fills the top (or bottom of the parchment)
+661B: 0E 30       ld   c,$30		; 48 bytes (= 192 pixels to fill)
+661D: 06 08       ld   b,$08		; 8 lines high
+661F: E5          push hl
+6620: 1A          ld   a,(de)		; reads a byte and writes it to the screen
+6621: 77          ld   (hl),a
+6622: CD F2 68    call $68F2		; advances to the next line
+6625: 13          inc  de			; reads the next graphic byte
+6626: 10 F8       djnz $6620		; fills the 8 lines
+6628: E1          pop  hl
+6629: 23          inc  hl			; moves to the next pixel
+662A: 0D          dec  c			; repeats until the parchment width is filled
+662B: 20 F0       jr   nz,$661D
+662D: C9          ret
+
+; fills 2 bytes (8 pixels) per line
+662E: 06 C0       ld   b,$C0		; b = 192 lines
+6630: 1A          ld   a,(de)		; reads 2 bytes and writes them to the screen
+6631: 77          ld   (hl),a
+6632: 23          inc  hl
+6633: 13          inc  de
+6634: 1A          ld   a,(de)
+6635: 77          ld   (hl),a
+6636: 2B          dec  hl			; goes back to the start of the line
+6637: 13          inc  de
+6638: CD F2 68    call $68F2		; advances to the next line
+663B: 10 F3       djnz $6630		; repeats for the rest of the lines
+663D: C9          ret
+
+663E: E5          push hl
+663F: C5          push bc
+6640: 16 00       ld   d,$00
+6642: 7D          ld   a,l
+6643: C6 04       add  a,$04
+6645: 6F          ld   l,a			; advances the position 4 pixels in x
+6646: 3E 30       ld   a,$30
+6648: 91          sub  c			; calculates the part of the parchment that remains to be processed
+6649: 87          add  a,a
+664A: 87          add  a,a			; converts to pixels
+664B: 5F          ld   e,a			; de = pixel number after the triangle in the top part of the parchment
+664C: EB          ex   de,hl
+664D: 29          add  hl,hl		; hl = offset in the parchment data corresponding to the erased part
+664E: 01 8A 78    ld   bc,$788A		; bc points to the graphic data of the top part of the parchment
+6651: 09          add  hl,bc
+6652: EB          ex   de,hl		; saves in de the pointer to the erased data of the top part of the parchment
+6653: CD C7 68    call $68C7		; converts the current position to VRAM address
+6656: E5          push hl			; saves the current position on the stack
+6657: 06 08       ld   b,$08		; 8 lines high
+6659: 1A          ld   a,(de)		; reads a byte from the parchment and writes it to the screen
+665A: 77          ld   (hl),a
+665B: CD F2 68    call $68F2		; advances to the next screen line
+665E: 13          inc  de
+665F: 10 F8       djnz $6659		; completes the 8 lines
+
+6661: E1          pop  hl			; recovers the current position and advances 4 pixels in x
+6662: 23          inc  hl
+6663: 06 08       ld   b,$08		; copies the next 4 pixels from another 8 lines
+6665: 1A          ld   a,(de)
+6666: 77          ld   (hl),a
+6667: CD F2 68    call $68F2		; advances to the next screen line
+666A: 13          inc  de
+666B: 10 F8       djnz $6665
+
+666D: C1          pop  bc
+666E: C5          push bc
+666F: 79          ld   a,c
+6670: 3D          dec  a
+6671: 3D          dec  a
+6672: 3D          dec  a
+6673: 87          add  a,a
+6674: 87          add  a,a
+6675: 67          ld   h,a
+6676: 2E DA       ld   l,$DA		; x = pixel 248
+6678: 5F          ld   e,a
+6679: 16 00       ld   d,$00
+667B: EB          ex   de,hl
+667C: 29          add  hl,hl		; hl = offset to the erased part of the right edge of the parchment
+667D: 01 0A 7A    ld   bc,$7A0A		; points to graphic data of the right part of the parchment
+6680: 09          add  hl,bc
+6681: EB          ex   de,hl
+6682: CD C7 68    call $68C7		; converts the current position to VRAM address
+6685: 06 08       ld   b,$08		; b = 8 lines high
+6687: 1A          ld   a,(de)		; copies 8 pixels
+6688: 77          ld   (hl),a
+6689: 23          inc  hl
+668A: 13          inc  de
+668B: 1A          ld   a,(de)
+668C: 77          ld   (hl),a
+668D: 2B          dec  hl
+668E: 13          inc  de
+668F: CD F2 68    call $68F2		; moves to the next screen line
+6692: 10 F3       djnz $6687
+6694: C1          pop  bc
+6695: E1          pop  hl
+6696: C9          ret
+
+; turns the page
+6697: 06 2D       ld   b,$2D		; repeats for 45 lines
+6699: 0E 03       ld   c,$03		; c = initial width of the triangle (multiples of 4)
+669B: 21 D3 00    ld   hl,$00D3		; (00, 240) -> starting position
+669E: C5          push bc
+669F: E5          push hl
+66A0: 41          ld   b,c
+66A1: CD 06 69    call $6906		; draws a right triangle with side b

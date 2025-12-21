@@ -1,0 +1,600 @@
+4F6B: 3E FC       ld   a,$FC		; move to the next screen line
+4F6D: 83          add  a,e
+4F6E: 5F          ld   e,a
+4F6F: 3E 07       ld   a,$07
+4F71: 8A          adc  a,d
+4F72: 57          ld   d,a
+4F73: D9          exx
+4F74: 0D          dec  c
+4F75: 20 E1       jr   nz,$4F58		; repeat until the height is finished
+4F77: D1          pop  de
+4F78: C9          ret
+
+4F79: 00          nop
+  ld   a,$6D		; the abbey graphics are from 0x6d00 onwards
+4F4A: 84          add  a,h
+4F4B: 67          ld   h,a			; hl points to the corresponding graphic
+4F4C: CB 79       bit  7,c
+4F4E: D9          exx				; exchanges all registers
+4F4F: 26 9D       ld   h,$9D		; depending on bit 7 choose an AND and OR table
+4F51: 28 02       jr   z,$4F55		; if bit 7 is not set jump
+4F53: 26 9F       ld   h,$9F
+4F55: D9          exx				; exchanges all registers
+4F56: 0E 08       ld   c,$08		; 8 pixels high
+4F58: 06 04       ld   b,$04		; 4 bytes wide (16 pixels)
+
+4F5A: 7E          ld   a,(hl)		; read a byte from the graphic
+4F5B: D9          exx				; exchanges all registers
+4F5C: 6F          ld   l,a			; index into the tables
+4F5D: 4E          ld   c,(hl)		; c = OR table value
+4F5E: 24          inc  h
+4F5F: 46          ld   b,(hl)		; b = AND table value
+4F60: 1A          ld   a,(de)		; a = read what's on screen
+4F61: A0          and  b			; combine the graphic with what's on screen
+4F62: B1          or   c
+4F63: 12          ld   (de),a		; update the screen
+4F64: 25          dec  h
+4F65: 13          inc  de			; advance to the next x position (screen)
+4F66: D9          exx
+4F67: 23          inc  hl			; advance to the next graphic byte
+4F68: 10 F0       djnz $4F5A		; finish the line
+4F6A: D9          exx
+4F6B: 3E FC       ld   a,$FC		; move to the next screen line
+4F6D: 83          add  a,e
+4F6E: 5F          ld   e,a
+4F6F: 3E 07       ld   a,$07
+4F71: 8A          adc  a,d
+4F72: 57          ld   d,a
+4F73: D9          exx
+4F74: 0D          dec  c
+4F75: 20 E1       jr   nz,$4F58		; repeat until the height is finished
+4F77: D1          pop  de
+4F78: C9          ret
+
+4F79: 00          nop
+
+; ------------------- end of tile buffer drawing -----------------------------------
+
+; table of duration of the day stages for each day and period of the day
+4F7A: 	00 00 00 00 00 00 00
+	00 00 05 00 05 00 00
+	00 00 05 00 05 00 00
+	0F 00 00 00 05 00 00
+	0F 00 05 00 00 00 00
+	0F 00 05 00 05 00 00
+	0F 00 00				; day 7 only has until terce because the game ends at that time of day
+
+; table used to fill in the day number in the scoreboard
+4FA7: 	00 02 00	; -I-
+	00 02 02	; -II
+	02 02 02	; III
+	00 02 01  	; -IV
+	00 01 00	; -V-
+	00 01 02	; -VI
+	01 02 02 	; VII
+
+; table of the names of the times of day
+4FBC: 	-NOCHE-
+	-PRIMA-
+	TERCIA-
+	-SEXTA-
+	-NONA--
+	VISPERAS
+	COMPLETAS
+
+4FED: C9          ret
+
+; prints the phrase that follows the call at the current screen position
+4FEE: DD E1       pop  ix				; get the return address in ix
+4FF0: DD 7E 00    ld   a,(ix+$00)		; read a byte from the return address
+4FF3: DD 23       inc  ix				; advance the return address and put it on stack
+4FF5: DD E5       push ix
+4FF7: FE FF       cp   $FF
+4FF9: C8          ret  z				; if it reads 0xff, exit
+4FFA: E6 7F       and  $7F				; adjust the character between 0 and 127
+4FFC: CD 13 3B    call $3B13			; print the character in a on the screen
+4FFF: 18 ED       jr   $4FEE			; repeat until the phrase is finished
+
+; clears the part of the scoreboard where phrases are shown
+5001: 06 08       ld   b,$08			; 8 lines high
+5003: 21 58 E6    ld   hl,$E658			; points to screen (96, 164)
+5006: 0E 1F       ld   c,$1F
+5008: C5          push bc
+5009: E5          push hl
+500A: 5D          ld   e,l				; de = hl
+500B: 54          ld   d,h
+500C: 13          inc  de
+500D: 36 FF       ld   (hl),$FF
+500F: 06 00       ld   b,$00
+5011: ED B0       ldir					; repeat until filling 128 pixels of this line
+5013: E1          pop  hl
+5014: CD 4D 3A    call $3A4D			; move to the next screen line
+5017: C1          pop  bc
+5018: 10 EE       djnz $5008
+501A: C9          ret
+
+; puts a phrase on screen and starts its sound (if another phrase is displayed, it's interrupted)
+; parameter = byte read after the address from which the routine was called
+501B: F3          di
+501C: AF          xor  a
+501D: 32 A1 2D    ld   ($2DA1),a
+5020: 32 A2 2D    ld   ($2DA2),a	; indicates that no voice is being played
+5023: CD 01 50    call $5001		; clears the part of the scoreboard where phrases are shown
+
+; puts a phrase on screen and starts its sound (as long as it's not putting one already)
+; parameter = byte read after the address from which the routine was called
+5026: E1          pop  hl			; return address = return address + 1
+5027: 23          inc  hl
+5028: E5          push hl
+5029: 3A A1 2D    ld   a,($2DA1)	; read if there's a voice being played
+502C: A7          and  a
+502D: C0          ret  nz			; if a phrase is being played, exit
+
+502E: F3          di
+502F: 2B          dec  hl			; point to the parameter
+5030: 11 59 56    ld   de,$5659		; point to the table of octaves and notes for the game phrases
+5033: 7E          ld   a,(hl)		; read the parameter
+5034: EB          ex   de,hl
+5035: CD 2D 16    call $162D		; index into the table according to the parameter
+5038: 7E          ld   a,(hl)		; read the note and octave of the voice and record it
+5039: 32 B7 14    ld   ($14B7),a	; modify the note and octave of the voice of channel3
+503C: EB          ex   de,hl
+503D: 46          ld   b,(hl)		; read the parameter again
+503E: 23          inc  hl
+503F: 3E 01       ld   a,$01		; start playing the voice
+5041: 32 A1 2D    ld   ($2DA1),a
+5044: 32 A2 2D    ld   ($2DA2),a
+5047: 32 A0 2D    ld   ($2DA0),a
+504A: 21 00 BB    ld   hl,$BB00		; point to the phrases table
+504D: 78          ld   a,b
+504E: A7          and  a
+504F: C4 5C 50    call nz,$505C		; advance to the phrase that will be said
+5052: 22 9E 2D    ld   ($2D9E),hl	; save the pointer to the phrase
+5055: AF          xor  a
+5056: 32 9B 2D    ld   ($2D9B),a	; set to 0 the blank characters remaining to be output so that the phrase has fully appeared on screen
+5059: 37          scf
+505A: FB          ei
+505B: C9          ret
+
+; advance in the table advancing b entries (ending in 0xff)
+505C: 7E          ld   a,(hl)
+505D: 23          inc  hl
+505E: FE FF       cp   $FF
+5060: 20 FA       jr   nz,$505C
+5062: 10 F8       djnz $505C
+5064: C9          ret
+
+; prints S:N or erases S:N depending on 0x3c99
+5065: DD E5       push ix
+5067: 21 1D A4    ld   hl,$A41D		; set position (116, 164)
+506A: 22 97 2D    ld   ($2D97),hl
+506D: 3A 99 3C    ld   a,($3C99)
+5070: E6 01       and  $01
+5072: 28 0A       jr   z,$507E
+5074: CD EE 4F    call $4FEE		; prints the phrase that follows the call at the current screen position
+	20 20 20 FF
+	[3 spaces]
+507B: DD E1       pop  ix
+507D: C9          ret
+
+507E: CD EE 4F    call $4FEE		; prints the phrase that follows the call at the current screen position
+	53 3A 4E FF
+	S : N
+5085: DD E1       pop  ix
+5087: C9          ret
+
+; ---------------------------- code related to picking up/dropping objects ------------------------------------------
+
+; plays a sound depending on a and c
+5088: F5          push af
+5089: C5          push bc
+508A: A1          and  c
+508B: F5          push af
+508C: CC 2F 10    call z,$102F
+508F: F1          pop  af
+5090: C4 25 10    call nz,$1025
+5093: C1          pop  bc
+5094: F1          pop  af
+5095: C9          ret
+
+; checks if characters pick up or drop any object, and if it's a key, updates their permissions and if they can read the parchment, they read it
+5096: DD 21 EC 2D ld   ix,$2DEC			; point to the table related to characters' objects
+509A: DD 7E 03    ld   a,(ix+$03)		; read the objects we have
+509D: 32 99 2D    ld   ($2D99),a		; save a copy of the objects we have
+50A0: DD 7E 07    ld   a,(ix+$07)		; read something from adso and save it on stack
+50A3: F5          push af
+50A4: 3A F6 2D    ld   a,($2DF6)		; read adso's objects
+50A7: F5          push af				; save adso's objects
+50A8: CD F0 50    call $50F0			; check if characters pick up any object
+50AB: CD 6D 52    call $526D			; check if any object is dropped
+50AE: CD 41 52    call $5241			; update the doors that guillermo and adso can enter
+50B1: 3A F6 2D    ld   a,($2DF6)		; get adso's objects
+50B4: 4F          ld   c,a
+50B5: F1          pop  af				; recover adso's original objects
+50B6: A9          xor  c				; if adso's objects changed, play a sound
+50B7: C4 88 50    call nz,$5088
+
+50BA: 3A F3 2D    ld   a,($2DF3)		; read adso's other objects
+50BD: 4F          ld   c,a
+50BE: F1          pop  af				; read the other objects on entry from adso
+50BF: A9          xor  c
+50C0: C4 88 50    call nz,$5088			; if adso's objects changed, play a sound
+
+50C3: 3A EF 2D    ld   a,($2DEF)		; get the objects that guillermo has
+50C6: 4F          ld   c,a
+50C7: 3A 99 2D    ld   a,($2D99)		; get the objects that guillermo had on entry
+50CA: A9          xor  c
+50CB: F5          push af
+50CC: C5          push bc
+50CD: C4 88 50    call nz,$5088			; if guillermo's objects changed, play a sound
+
+50D0: E6 30       and  $30				; check if we picked up the glasses or the parchment
+50D2: 28 08       jr   z,$50DC			;  if not, jump
+50D4: 79          ld   a,c
+50D5: E6 30       and  $30				; check if we have the glasses and the parchment
+50D7: FE 30       cp   $30
+50D9: CC 2E 56    call z,$562E			; if the roman number of the mirror room riddle hadn't been generated, generate it
+
+50DC: C1          pop  bc
+50DD: F1          pop  af				; if guillermo's objects changed
+50DE: C4 DA 51    call nz,$51DA			; draw the objects indicated by a on the scoreboard
+
+50E1: 21 08 30    ld   hl,$3008			; point to the object position data
+50E4: 01 05 00    ld   bc,$0005
+50E7: 3E FF       ld   a,$FF
+50E9: BE          cp   (hl)
+50EA: C8          ret  z				; if it passed the last entry, exit
+50EB: CB 86       res  0,(hl)			; clear bit 0
+50ED: 09          add  hl,bc
+50EE: 18 F9       jr   $50E9
+
+; check if characters pick up any object
+; ix points to the table related to characters' objects
+50F0: DD 7E 00    ld   a,(ix+$00)	; if passed the last character, exit
+50F3: FE FF       cp   $FF
+50F5: C8          ret  z
+
+50F6: DD 35 06    dec  (ix+$06)
+50F9: DD 7E 06    ld   a,(ix+$06)
+50FC: FE FF       cp   $FF
+50FE: C2 CC 51    jp   nz,$51CC		; if (ix+$06) was not 0 on entry, jump to next character (just picked up/dropped an object)
+5101: DD 34 06    inc  (ix+$06)
+5104: CD 4F 53    call $534F		; modify a routine with the character's position data and their orientation
+5107: DD 7E 04    ld   a,(ix+$04)	; read the objects that can be picked up
+510A: DD AE 00    xor  (ix+$00)		; remove from the list those we already have
+510D: DD A6 04    and  (ix+$04)		; save the result
+5110: 6F          ld   l,a			; h = bits indicating the objects we can pick up (2)
+5111: DD 7E 05    ld   a,(ix+$05)	; read the mask of objects we can pick up
+5114: DD AE 03    xor  (ix+$03)		; remove from the list those we already have
+5117: DD A6 05    and  (ix+$05)
+511A: 67          ld   h,a			; h = bits indicating the objects we can pick up
+511B: DD 7E 00    ld   a,(ix+$00)
+511E: E6 01       and  $01
+5120: 32 54 51    ld   ($5154),a	; modify an instruction with bit 0 of (ix+00)
+
+; arrive here with hl = mask of objects we can pick up
+5123: DD E5       push ix
+5125: D9          exx
+5126: 21 00 80    ld   hl,$8000		; start checking with the object represented by bit 7 of hl
+5129: D9          exx
+512A: DD 21 1B 2F ld   ix,$2F1B		; ix points to object sprites
+512E: FD 21 08 30 ld   iy,$3008		; ix points to object positions
+5132: 29          add  hl,hl		; move the most significant bit to the carry flag
+5133: E5          push hl
+5134: D2 B1 51    jp   nc,$51B1		; if the bit was not 1, we can't pick up the object, so jump to next object
+
+5137: FD 7E 00    ld   a,(iy+$00)	; check if the object is being picked up/dropped
+513A: CB 47       bit  0,a
+513C: C2 B1 51    jp   nz,$51B1		; if bit 0 is 1, jump to next object (the object is being picked up/dropped?)
+513F: CB 77       bit  6,a
+5141: C2 B1 51    jp   nz,$51B1		; if bit 6 is 1, jump to next object (is this bit used???)
+5144: FD 66 03    ld   h,(iy+$03)	; hl = object position
+5147: FD 6E 02    ld   l,(iy+$02)
+514A: FD 7E 04    ld   a,(iy+$04)	; a = object height
+514D: FD CB 00 7E bit  7,(iy+$00)	; if the object is not picked up, jump
+5151: 28 13       jr   z,$5166
+
+; if the object is picked up, in (iy+$02) and (iy+$03) the address of the character who has it is saved
+5153: 3E 00       ld   a,$00		; instruction modified from outside with bit 1 of byte 0 of the character's objects entry
+5155: A7          and  a			;  (which is 1 if objects can be taken from the character?)
+5156: C2 B1 51    jp   nz,$51B1		; if objects can't be taken from the character, jump to next object
+5159: E5          push hl
+515A: 23          inc  hl
+515B: 5E          ld   e,(hl)
+515C: 23          inc  hl
+515D: 56          ld   d,(hl)		; de = [hl]
+515E: EB          ex   de,hl		; hl = address of data of the character who picked up the object
+515F: 5E          ld   e,(hl)
+5160: 23          inc  hl
+5161: 56          ld   d,(hl)		; de = position of the character who picked up the object
+5162: 23          inc  hl
+5163: 7E          ld   a,(hl)		; a = height of the character who picked up the object
+5164: EB          ex   de,hl		; hl = position of the character who picked up the object
+5165: D1          pop  de
+
+; arrive here with hl = object position or position of the character who has the object
+5166: D6 00       sub  $00			; instruction modified with the character's height
+5168: FE 05       cp   $05
+516A: 30 45       jr   nc,$51B1		; if the height difference is > 5, jump to process next object
+516C: 7D          ld   a,l			; a = object x position
+516D: FE 00       cp   $00			; instruction modified with the character's x position + 2*x displacement according to orientation
+516F: 20 40       jr   nz,$51B1		; if the character is not next to the object and looking at it in x, jump to process next object
+5171: 7C          ld   a,h			; a = object y position
+5172: FE 00       cp   $00			; instruction modified with the character's y position + 2*y displacement according to orientation
+5174: 20 3B       jr   nz,$51B1		; if the character is not next to the object and looking at it in y, jump to process next object
+5176: FD CB 00 7E bit  7,(iy+$00)	; if the object is not picked up by a character, jump
+517A: 28 0D       jr   z,$5189
+
+517C: 1A          ld   a,(de)
+517D: D9          exx
+517E: AD          xor  l			; remove the object being processed from the character
+517F: D9          exx
+5180: 12          ld   (de),a
+5181: 13          inc  de
+5182: 13          inc  de
+5183: 13          inc  de
+5184: 1A          ld   a,(de)
+5185: D9          exx
+5186: AC          xor  h			; remove the object being processed from the character
+5187: D9          exx
+5188: 12          ld   (de),a
+
+5189: CD CE 2A    call $2ACE		; if the sprite is visible, indicate that it needs to be redrawn and indicate to go inactive after restoring the area it occupied
+518C: E1          pop  hl			; recover hl (bits indicating which objects we need to try to pick up)
+518D: D1          pop  de			; de = pointer to the character's object characteristics
+518E: D5          push de
+518F: DD E1       pop  ix
+5191: FD 73 02    ld   (iy+$02),e	; save the address of the character's data who has the object where the object position was previously saved
+5194: FD 72 03    ld   (iy+$03),d
+5197: FD 36 00 81 ld   (iy+$00),$81	; indicate that the object has been picked up
+519B: DD 36 06 10 ld   (ix+$06),$10	; initialize the counter
+519F: D9          exx
+51A0: DD 7E 00    ld   a,(ix+$00)
+51A3: B5          or   l			; indicate that the character has the object
+51A4: DD 77 00    ld   (ix+$00),a
+51A7: DD 7E 03    ld   a,(ix+$03)
+51AA: B4          or   h			; indicate that the character has the object
+51AB: DD 77 03    ld   (ix+$03),a
+51AE: D9          exx
+51AF: 18 1B       jr   $51CC		; jump to next character
+
+; arrive here to move to the next object
+51B1: 01 05 00    ld   bc,$0005		; move to the next object entry
+51B4: FD 09       add  iy,bc
+51B6: 01 14 00    ld   bc,$0014		; move to the next object sprite
+51B9: DD 09       add  ix,bc
+51BB: D9          exx
+51BC: CB 3C       srl  h			; test the next bit of hl
+51BE: CB 1D       rr   l
+51C0: D9          exx
+51C1: E1          pop  hl
+51C2: FD 7E 00    ld   a,(iy+$00)	; if not reached the last object, continue processing
+51C5: FE FF       cp   $FF
+51C7: C2 32 51    jp   nz,$5132
+
+51CA: DD E1       pop  ix
+51CC: 01 07 00    ld   bc,$0007		; point to the next character
+51CF: DD 09       add  ix,bc
+51D1: C3 F0 50    jp   $50F0		; continue processing objects for the next character
+
+; draw the objects that guillermo has on the scoreboard
+51D4: 3A EF 2D    ld   a,($2DEF)	; read the objects we have
+51D7: 4F          ld   c,a
+51D8: 3E FF       ld   a,$FF
+
+; check if you have the objects passed in c (those indicated by mask a are checked), and if you have them they are drawn
+51DA: 5F          ld   e,a			; e = 0xff (8 objects)
+51DB: 51          ld   d,c			; d = objects we have
+51DC: FD 21 08 30 ld   iy,$3008		; point to positions about the game objects
+51E0: DD 21 1B 2F ld   ix,$2F1B		; point to object sprites (referenced by 0x3836) 0x2e17-0x2fe2
+51E4: 21 F9 C6    ld   hl,$C6F9		; point to the video memory of the first slot (100, 176)
+51E7: 06 06       ld   b,$06		; there are 6 slots to place objects
+51E9: CB 22       sla  d			; put the most significant bit in the carry and save it
+51EB: 08          ex   af,af'
+51EC: 7B          ld   a,e			; if all objects have been processed, exit
+51ED: A7          and  a
+51EE: C8          ret  z
+
+51EF: C5          push bc			; save the object slot counter
+51F0: CB 23       sla  e			; advance the counter
+51F2: E5          push hl			; save the original address
+51F3: 30 14       jr   nc,$5209		; if the object is not checked, move to next object
+51F5: 08          ex   af,af'
+51F6: 38 27       jr   c,$521F		; if we have the object jump, otherwise clear the slot
+
+51F8: 0E 0C       ld   c,$0C		; 12 pixels high
+51FA: 06 04       ld   b,$04		; 16 pixels wide
+51FC: E5          push hl			; save the current screen address
+51FD: 36 00       ld   (hl),$00		; clear the current pixel
+51FF: 23          inc  hl
+5200: 10 FB       djnz $51FD
+5202: E1          pop  hl			; recover the previous address
+5203: CD 4D 3A    call $3A4D		; move to the next line
+5206: 0D          dec  c			; continue clearing the slot
+5207: 20 F1       jr   nz,$51FA
+
+5209: E1          pop  hl			; recover the previous address
+520A: 01 05 00    ld   bc,$0005
+520D: 09          add  hl,bc		; move to the next slot
+520E: FD 09       add  iy,bc		; advance the positions about the game objects
+5210: 01 14 00    ld   bc,$0014
+5213: DD 09       add  ix,bc		; advance to the next object characteristics entry
+5215: C1          pop  bc			; recover the object counter
+5216: 78          ld   a,b
+5217: FE 04       cp   $04
+5219: 20 01       jr   nz,$521C		; when moving from slot 3 to 4 there are 4 extra pixels
+521B: 23          inc  hl
+521C: 10 CB       djnz $51E9		; repeat for the rest of objects
+521E: C9          ret
+
+; draw a specific object
+521F: DD 46 06    ld   b,(ix+$06)	; read the object height
+5222: DD 4E 05    ld   c,(ix+$05)	; read the object width
+5225: CB B9       res  7,c			; set bit 7 to 0
+5227: D5          push de
+5228: DD 5E 07    ld   e,(ix+$07)	; de = address of the object graphics
+522B: DD 56 08    ld   d,(ix+$08)
+522E: C5          push bc
+522F: E5          push hl
+5230: 41          ld   b,c			; b = object width
+5231: 1A          ld   a,(de)		; read a byte of graphic data and write it to screen
+5232: 77          ld   (hl),a
+5233: 13          inc  de
+5234: 23          inc  hl
+5235: 10 FA       djnz $5231		; repeat until the width is complete
+5237: E1          pop  hl
+5238: CD 4D 3A    call $3A4D		; advance hl to the next line
+523B: C1          pop  bc			; repeat until the object is finished
+523C: 10 F0       djnz $522E
+523E: D1          pop  de
+523F: 18 C8       jr   $5209		; advance to the next slot
+
+; update the doors that guillermo and adso can enter
+5241: 3A F6 2D    ld   a,($2DF6)	; read adso's objects
+5244: E6 02       and  $02			; keep key 3
+5246: 87          add  a,a			; shift 3 positions to the left
+5247: 87          add  a,a
+5248: 87          add  a,a
+5249: 4F          ld   c,a
+524A: 3E EF       ld   a,$EF
+524C: 21 DC 2D    ld   hl,$2DDC		; point to the doors that adso can open
+524F: A6          and  (hl)			; keep bit 4 (permission for the passage door behind the kitchen)
+5250: B1          or   c			; combine with key3
+5251: 77          ld   (hl),a		; update the value
+5252: 3A EF 2D    ld   a,($2DEF)	; read the objects that guillermo has
+5255: E6 0C       and  $0C			; keep key 1 and key 2
+5257: 4F          ld   c,a
+5258: CB 91       res  2,c			; keep only key 1 in c
+525A: CB 39       srl  c
+525C: CB 39       srl  c
+525E: CB 39       srl  c			; move key 1 to bit 0
+5260: E6 04       and  $04			; keep key 2 in a (bit 2)
+5262: B1          or   c			; combine a and c
+5263: 4F          ld   c,a
+5264: 21 D9 2D    ld   hl,$2DD9		; point to the doors that guillermo can open
+5267: 3E FA       ld   a,$FA
+5269: A6          and  (hl)			; update the doors that guillermo can open according to the keys he has
+526A: B1          or   c
+526B: 77          ld   (hl),a
+526C: C9          ret
+
+
+; check if we drop any object and if so, mark the object sprite to draw
+526D: 3E 2F       ld   a,$2F
+526F: CD 82 34    call $3482		; if space wasn't being pressed, exit
+5272: C8          ret  z
+5273: DD 21 EC 2D ld   ix,$2DEC		; point to guillermo's object data
+
+; also arrive here from other places
+5277: DD 7E 03    ld   a,(ix+$03)	; read the objects we have
+527A: 01 00 08    ld   bc,$0800		; b = 8 objects
+527D: 0C          inc  c			; c = object number being checked for possession
+527E: 87          add  a,a
+527F: 38 03       jr   c,$5284		; if they have the object being checked, jump
+5281: 10 FA       djnz $527D		; check for all objects
+5283: C9          ret
+
+; arrive here when space was pressed and had some object (c = object number)
+5284: 79          ld   a,c
+5285: 32 F4 52    ld   ($52F4),a	; modify an instruction with the object number being checked if dropped
+5288: DD 35 06    dec  (ix+$06)		; decrement the counter
+528B: DD 7E 06    ld   a,(ix+$06)
+528E: FE FF       cp   $FF
+5290: C0          ret  nz			; if it was not 0, exit
+5291: DD 34 06    inc  (ix+$06)
+5294: CD 4F 53    call $534F		; get the position where the object will be dropped and the height at which the character is
+5297: C5          push bc
+5298: CD 73 24    call $2473		; depending on the height, return the base height of the floor in b
+529B: 90          sub  b
+529C: 32 C1 52    ld   ($52C1),a	; modify a comparison with the relative height of the object
+529F: 3A BA 2D    ld   a,($2DBA)	; get the base height of the floor where the character is from the grid
+52A2: B8          cp   b
+52A3: E1          pop  hl			; recover the position where the object will be dropped in hl
+52A4: DD E5       push ix
+52A6: E5          push hl
+52A7: 20 3C       jr   nz,$52E5		; if the object is not dropped on the same floor, jump
+52A9: CD 9B 27    call $279B		; adjust the position passed in hl to the central 20x20 positions shown. If the position is outside, CF=1
+52AC: 38 37       jr   c,$52E5		; if there's carry, the position is not inside the visible rectangle, so jump
+52AE: CD D4 0C    call $0CD4    	; index into the height table and return the corresponding address in ix
+52B1: DD 7E 00    ld   a,(ix+$00)	; get the corresponding entry from the height buffer
+52B4: 4F          ld   c,a
+52B5: E6 F0       and  $F0			; keep the upper part
+52B7: 20 29       jr   nz,$52E2		; if there's any character in that position, exit
+52B9: 79          ld   a,c
+52BA: E6 0F       and  $0F			; otherwise get the height of that position
+52BC: FE 0D       cp   $0D			; if dropped at a position with a height >= 0x0d, exit
+52BE: 30 22       jr   nc,$52E2
+52C0: D6 00       sub  $00			; instruction modified from outside with the height of the character dropping the object
+52C2: FE 05       cp   $05			; if the height of the position where it's dropped - height of the character dropping the object >= 0x05, exit
+52C4: 30 1C       jr   nc,$52E2
+52C6: 79          ld   a,c
+52C7: E6 0F       and  $0F			; otherwise get the height of that position
+52C9: DD BE FF    cp   (ix-$01)		; compare it with its neighbors and if not equal, exit
+52CC: 20 14       jr   nz,$52E2
+52CE: DD BE E8    cp   (ix-$18)
+52D1: 20 0F       jr   nz,$52E2
+52D3: DD BE E7    cp   (ix-$19)
+52D6: 20 0A       jr   nz,$52E2
+52D8: 4F          ld   c,a			; c = relative height of the position where the object is dropped
+52D9: 3A BA 2D    ld   a,($2DBA)	; a = base height of the floor where you are
+52DC: 81          add  a,c			; a = total height of the position where the object is dropped
+52DD: D1          pop  de
+52DE: DD E1       pop  ix
+52E0: 18 11       jr   $52F3		; jump to record the object data and remove the object from the character dropping it
+
+; jump here if the height of the position where the object is dropped and its neighbors don't match
+52E2: E1          pop  hl
+52E3: E1          pop  hl
+52E4: C9          ret
+
+; arrive here if the object is not dropped on the same floor as the screen you're on or not dropped in the same room
+52E5: E1          pop  hl
+52E6: DD E1       pop  ix
+52E8: DD 6E 01    ld   l,(ix+$01)	; get the address of the character's position
+52EB: DD 66 02    ld   h,(ix+$02)
+52EE: 5E          ld   e,(hl)		; de = character's global position
+52EF: 23          inc  hl
+52F0: 56          ld   d,(hl)
+52F1: 23          inc  hl
+52F2: 7E          ld   a,(hl)		; a = character's global height
+
+; also arrive here if the object is in the same room shown on screen
+52F3: 0E 00       ld   c,$00		; instruction modified with the object number being dropped
+52F5: DD 6E 01    ld   l,(ix+$01)	; hl = address of the character's position
+52F8: DD 66 02    ld   h,(ix+$02)
+52FB: 2B          dec  hl
+52FC: 67          ld   h,a			; save the orientation in h
+52FD: 7E          ld   a,(hl)		; game bug! wants to get the character's orientation but has overwritten h
+52FE: EE 02       xor  $02
+5300: 6F          ld   l,a			; l = supposed object orientation
+5301: E5          push hl
+5302: DD 36 06 10 ld   (ix+$06),$10	; initialize the counter for picking up/dropping objects
+5306: 79          ld   a,c
+5307: 21 00 80    ld   hl,$8000		; start checking if it has the object indicated by bit 7
+530A: 3D          dec  a
+530B: 28 06       jr   z,$5313		; if we modified the mask to reach the object, exit
+530D: CB 3C       srl  h
+530F: CB 1D       rr   l
+5311: 18 F7       jr   $530A		; otherwise continue modifying the mask
+5313: 7D          ld   a,l
+5314: 2F          cpl
+5315: DD A6 00    and  (ix+$00)		; combine the objects we had to remove the one being dropped
+5318: DD 77 00    ld   (ix+$00),a	; combine the objects we had to remove the one being dropped
+531B: 7C          ld   a,h
+531C: 2F          cpl				; the bit of the object being dropped is 0 and the rest of the bits are 1
+531D: DD A6 03    and  (ix+$03)		; combine the objects we had to remove the one being dropped
+5320: DD 77 03    ld   (ix+$03),a	; update the objects we have
+
+5323: DD 21 1B 2F ld   ix,$2F1B		; point to object sprites
+5327: FD 21 08 30 ld   iy,$3008		; point to object position data
+532B: 79          ld   a,c
+532C: 3D          dec  a
+532D: 28 0C       jr   z,$533B		; if reached the object, exit
+532F: 01 14 00    ld   bc,$0014		; advance to the next sprite
+5332: DD 09       add  ix,bc
+5334: 01 05 00    ld   bc,$0005		; advance to the next position data
+5337: FD 09       add  iy,bc
+5339: 18 F1       jr   $532C
+
+533B: FD CB 00 BE res  7,(iy+$00)	; indicate that the object is not held
+533F: E1          pop  hl

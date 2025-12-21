@@ -1,0 +1,600 @@
+; X 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f  Y
+; ================================================== ==
+	XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX  00
+	00 00 00 00 00 00 00 00 27 00 3E 00 00 00 00 00	 01
+	00 0A 09 00 07 08 2A 28 26 29 37 38 39 00 00 00	 02
+	00 00 02 01 00 0D 0E 24 23 25 2B 2C 2D 00 00 00	 03
+	00 00 03 00 1F 00 00 00 22 00 2E 2F 30 00 00 00	 04
+	00 00 04 1D 1E 3E 3D 00 21 00 31 32 33 00 00 00	 05
+	00 0C 0B 1C 05 06 3C 00 20 00 34 35 36 00 00 00	 06
+	00 00 00 0F 10 11 12 00 1B 00 1A 3A 3B 00 00 00	 07
+	00 00 00 00 00 00 13 14 15 18 19 00 00 00 00 00	 08
+	00 00 00 00 00 00 00 00 16 00 00 00 00 00 00 00	 09
+	00 00 00 00 00 00 00 00 17 00 00 00 00 00 00 00	 0a
+
+2305:
+; table with first floor data (actually starts earlier because at Y = 0 and Y = 1 there is nothing)
+; X 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f  Y
+; ================================================== ==
+	XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX  00
+	XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX  01
+	00 45 44 00 48 49 00 00 XX XX XX XX XX XX XX XX  02
+	00 00 43 47 4A 00 00 00 XX XX XX XX XX XX XX XX	 03
+	00 00 42 00 4B 00 00 00 XX XX XX XX XX XX XX XX	 04
+	00 00 41 40 4C 00 00 00 XX XX XX XX XX XX XX XX	 05
+	00 3F 46 00 4D 4E 00 00 XX XX XX XX XX XX XX XX	 06
+
+230D:
+; table with second floor data (actually starts earlier because at Y = 0 and Y = 1 there is nothing)
+; X 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f  Y
+; ================================================== ==
+	XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX  00
+	XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX  01
+	00 67 66 00 65 64 00 00 XX XX XX XX XX XX XX XX  02
+	00 00 6A 69 68 00 00 00 XX XX XX XX XX XX XX XX	 03
+	00 00 6C 00 6B 00 00 00 XX XX XX XX XX XX XX XX	 04
+	00 00 6F 6D 6E 00 00 00 XX XX XX XX XX XX XX XX	 05
+	00 73 72 00 71 70 00 00 XX XX XX XX XX XX XX XX	 06
+
+; checks if the displayed character has changed screens and if so, gets the height data of the new screen,
+; modifies the engine position values adjusted for the new screen, initializes door and object sprites
+; of the game with the current screen orientation and modifies character sprites according to screen orientation
+2355: 0E 00       ld   c,$00		; initially no changes have occurred
+2357: 21 75 2D    ld   hl,$2D75		; hl points to current screen position data
+235A: FD 2A 88 2D ld   iy,($2D88)	; iy = pointer to data of character being followed by the camera
+235E: FD 7E 02    ld   a,(iy+$02)	; reads current character's X position
+2361: E6 F0       and  $F0
+2363: BE          cp   (hl)
+2364: 28 07       jr   z,$236D		; if screen's X position hasn't changed, jump
+
+2366: 0C          inc  c			; indicates the change
+2367: 77          ld   (hl),a		; updates current screen position
+2368: D6 0C       sub  $0C
+236A: 32 E1 2A    ld   ($2AE1),a	; modifies a routine value
+
+236D: 23          inc  hl
+236E: FD 7E 03    ld   a,(iy+$03)	; reads current character's Y position
+2371: E6 F0       and  $F0
+2373: BE          cp   (hl)
+2374: 28 07       jr   z,$237D		; if screen's Y position hasn't changed, jump
+
+2376: 77          ld   (hl),a		; updates current screen position
+2377: 0C          inc  c			; indicates the change
+2378: D6 0C       sub  $0C
+237A: 32 EB 2A    ld   ($2AEB),a	; modifies a routine value
+
+237D: 23          inc  hl
+237E: FD 7E 04    ld   a,(iy+$04)	; reads current character's Z position
+2381: CD 73 24    call $2473		; depending on height, returns floor's base height in b
+2384: 78          ld   a,b
+2385: BE          cp   (hl)
+2386: 28 18       jr   z,$23A0		; if height hasn't changed, jump
+2388: 32 F9 2A    ld   ($2AF9),a	; modifies a routine value
+238B: 77          ld   (hl),a
+238C: 0C          inc  c			; indicates the change
+
+238D: 21 55 22    ld   hl,$2255		; hl points to ground floor data
+2390: A7          and  a
+2391: 28 0A       jr   z,$239D		; if height is 0, done
+2393: 21 E5 22    ld   hl,$22E5		; hl points to first floor data
+2396: FE 0B       cp   $0B
+2398: 28 03       jr   z,$239D		; if on first floor, done
+239A: 21 ED 22    ld   hl,$22ED		; hl points to second floor data
+239D: 22 EF 23    ld   ($23EF),hl	; modifies instruction value according to current floor
+
+23A0: 79          ld   a,c			; if no screen change occurred, exit
+23A1: A7          and  a
+23A2: C8          ret  z
+
+23A3: 32 B8 2D    ld   ($2DB8),a	; indicates a screen change occurred
+23A6: 3A 77 2D    ld   a,($2D77)	; gets floor's base height of character shown on screen
+23A9: FE 16       cp   $16
+23AB: 3E 00       ld   a,$00
+23AD: 20 17       jr   nz,$23C6		; if not on second floor, jump (with a = 0)
+23AF: 3A 75 2D    ld   a,($2D75)	; reads most significant x coordinate of screen
+23B2: FE 20       cp   $20
+23B4: 3E 00       ld   a,$00
+23B6: 38 0E       jr   c,$23C6		; if on screen < 0x20 (screen 0x67 or 0x73), jump
+23B8: 3E 01       ld   a,$01
+23BA: 20 0A       jr   nz,$23C6		; if not on 0x20-0x2f, jump (with a = 1)
+23BC: 3A 76 2D    ld   a,($2D76)	; reads most significant y coordinate of screen
+23BF: FE 60       cp   $60			; if not on 0x60-0x6f (screen 0x72), jump (with a = 1)
+23C1: 3E 01       ld   a,$01
+23C3: 20 01       jr   nz,$23C6
+23C5: 3D          dec  a			; a = 0
+
+; arrives here with a = 0 or a = 1 (on/off)
+23C6: 32 6C 15    ld   ($156C),a	; records if screen is lit or not
+23C9: 3E FE       ld   a,$FE
+23CB: 32 CF 2F    ld   ($2FCF),a	; marks light sprite as not visible
+23CE: 21 75 2D    ld   hl,$2D75		; in upper 4 bits of hl stores most significant part of x position of displayed character
+23D1: 4E          ld   c,(hl)
+23D2: ED 6F       rld  (hl)			; puts most significant 4 bits of [hl] in least significant 4 bits of a
+23D4: 71          ld   (hl),c		; restores original value
+23D5: E6 0F       and  $0F
+23D7: 5F          ld   e,a			; e = high part of current character's X position (in lower 4 bits)
+23D8: E6 01       and  $01
+23DA: 47          ld   b,a			; b = pos X & 0x01
+23DB: 23          inc  hl
+23DC: 4E          ld   c,(hl)		; c = high part of current character's Y position
+23DD: 79          ld   a,c
+23DE: B3          or   e
+23DF: 5F          ld   e,a			; e = (Y, X) (offset within floor map)
+23E0: ED 6F       rld  (hl)			; puts most significant 4 bits of [hl] in least significant 4 bits of a
+23E2: 71          ld   (hl),c		; restores original value
+23E3: E6 01       and  $01			; a = (pos Y & 0x01)
+
+23E5: A8          xor  b			; b = (pos Y & 0x01)^(pos X & 0x01)
+23E6: CB 20       sla  b			; b = b*2 (b = 0 or 2)
+23E8: B0          or   b			; a = (((pos Y & 0x01)^(pos X & 0x01)) | ((pos X & 0x01) << 1))
+23E9: 32 81 24    ld   ($2481),a	; calculates current screen orientation
+
+23EC: 16 00       ld   d,$00
+23EE: 21 55 22    ld   hl,$2255		; instruction modified from outside to put floor map address in hl
+23F1: 19          add  hl,de		; advance to corresponding screen data
+23F2: 7E          ld   a,(hl)		; reads current screen
+23F3: CD 00 2D    call $2D00		; stores address of current screen data at 0x156a-0x156b
+23F6: CD 22 2D    call $2D22		; fills height buffer with data read from abadia7.bin and clipped for current screen
+23F9: 3A 81 24    ld   a,($2481)	; reads orientation of screen to be drawn
+23FC: 0F          rrca				; places orientation in upper 2 bits to index in table (each entry is 64 bytes)
+23FD: 0F          rrca
+23FE: 21 9F 30    ld   hl,$309F		; points to table for calculating offset according to game entity animation
+2401: 85          add  a,l
+2402: 6F          ld   l,a
+2403: 8C          adc  a,h
+2404: 95          sub  l
+2405: 67          ld   h,a			; indexes in table according to orientation
+2406: 22 84 2D    ld   ($2D84),hl	; saves pointer for later
+2409: 3A 81 24    ld   a,($2481)	; retrieves current screen orientation
+240C: 87          add  a,a
+240D: 21 5D 22    ld   hl,$225D		; points to table of coordinate system change routines
+2410: CD 2D 16    call $162D		; hl = hl + a
+2413: 5E          ld   e,(hl)
+2414: 23          inc  hl
+2415: 56          ld   d,(hl)		; de = [hl]
+2416: ED 53 01 2B ld   ($2B01),de	; modifies a call depending on screen orientation
+241A: CD 30 0D    call $0D30		; initializes door sprites for current room
+241D: CD 23 0D    call $0D23		; initializes object sprites for current room
+2420: 21 AE 2B    ld   hl,$2BAE		; points to table with data for character sprites
+2423: 5E          ld   e,(hl)
+2424: 23          inc  hl
+2425: 7E          ld   a,(hl)
+2426: FE FF       cp   $FF			; while 0xff not read, continue
+2428: C8          ret  z
+2429: 57          ld   d,a			; de = address of sprite associated with character
+242A: 23          inc  hl
+242B: ED 53 4C 24 ld   ($244C),de	; modifies an instruction with first read value (16 bits)
+242F: 5E          ld   e,(hl)		; de = next value
+2430: 23          inc  hl
+2431: 56          ld   d,(hl)
+2432: ED 53 50 24 ld   ($2450),de	; modifies an instruction with second read value (16 bits)
+2436: 23          inc  hl			; skips 16 bits and reads next value
+2437: 23          inc  hl
+2438: 23          inc  hl
+2439: 5E          ld   e,(hl)
+243A: 23          inc  hl
+243B: 56          ld   d,(hl)
+243C: 23          inc  hl
+243D: ED 53 59 2A ld   ($2A59),de	; modifies an instruction with third read value (16 bits)
+2441: 5E          ld   e,(hl)		; reads next value
+2442: 23          inc  hl
+2443: 56          ld   d,(hl)
+2444: 23          inc  hl
+2445: ED 53 84 2A ld   ($2A84),de	; modifies an instruction
+2449: E5          push hl			; saves table position
+244A: DD 21 00 00 ld   ix,$0000		; instruction modified from outside (puts address of sprite associated with character)
+244E: FD 21 00 00 ld   iy,$0000		; instruction modified from outside (puts address of position data associated with character)
+2452: CD 68 24    call $2468		; processes character data to change animation and sprite position and indicate if visible or not
+2455: FD 4E 0E    ld   c,(iy+$0e)	; reads value indicating what type of character is at a position
+2458: CD EF 28    call $28EF		; if sprite position is central and height is correct, puts c in occupied positions of height buffer
+245B: E1          pop  hl			; retrieves table position
+245C: 18 C5       jr   $2423		; continue getting entries until finding 0xffff
+
+245E: CD DD 2A    call $2ADD		; checks if visible and if so, updates position if necessary. If visible doesn't return, but exits to calling routine
+2461: DD 36 00 FE ld   (ix+$00),$FE	; marks sprite as unused
+2465: E1          pop  hl			; removes return address and animation table address from stack and exits
+2466: E1          pop  hl
+2467: C9          ret
+
+; processes character data to change animation and sprite position
+;  ix = corresponding sprite address
+;  iy = corresponding character position data
+2468: CD 61 2A    call $2A61	; changes monk robes animation according to position and animation counter
+								;  and gets address of animation data to put in hl
+246B: E5          push hl		; saves animation table address
+246C: CD 5E 24    call $245E	; checks if sprite is visible and updates sprite position. If sprite not visible, doesn't return
+246F: E1          pop  hl		; retrieves animation table address
+2470: C3 34 2A    jp   $2A34	; updates graphics address, sprite width and height, and flips graphics if necessary
+
+; depending on height, returns floor's base height in b
+2473: FE 0D       cp   $0D		; 13
+2475: 06 00       ld   b,$00
+2477: D8          ret  c		; if height is < 13 exits with b = 0 (00-12 -> ground floor)
+2478: FE 18       cp   $18		; 24
+247A: 06 16       ld   b,$16
+247C: D0          ret  nc		; if height is >= 24 exits with b = 22 (24- -> second floor)
+247D: 06 0B       ld   b,$0B	; if height is >= 13 and < 24 exits with b = 11 (13-23 -> first floor)
+247F: C9          ret
+
+; modifies orientation passed in a with current screen orientation
+2480: D6 00       sub  $00		; modified by orientation with which character enters screen
+2482: E6 03       and  $03
+2484: C9          ret
+
+; performs coordinate change if camera orientation is type 1
+2485: 3E 28       ld   a,$28
+2487: 94          sub  h
+2488: 65          ld   h,l		; y = x
+2489: 6F          ld   l,a		; x = 0x28 - y
+
+; performs coordinate change if camera orientation is type 0
+248A: C9          ret			; doesn't make any change
+
+; performs coordinate change if camera orientation is type 2
+248B: 3E 28       ld   a,$28
+248D: 94          sub  h
+248E: 67          ld   h,a		; y = 0x28 - y
+248F: 3E 28       ld   a,$28
+2491: 95          sub  l
+2492: 6F          ld   l,a		; x = 0x28 - x
+2493: C9          ret
+
+; performs coordinate change if camera orientation is type 3
+2494: 3E 28       ld   a,$28
+2496: 95          sub  l
+2497: 6C          ld   l,h		; x = y
+2498: 67          ld   h,a		; y = 0x28 - x
+2499: C9          ret
+;----------------------- end of data and code related to graphics engine -------------------------------------
+
+;--------------- arrives here from 0x0400 once data has been loaded into memory ---------------------------------------
+249A: F3          di
+249B: 3A FE 00    ld   a,($00FE)	; checks if it's first time arriving here
+249E: FE 0D       cp   $0D
+24A0: 28 67       jr   z,$2509		; if already entered here, skip gate array configuration and manuscript presentation
+
+; initialization
+24A2: 3E 0D       ld   a,$0D
+24A4: 32 FE 00    ld   ($00FE),a	; indicates initialization has been done
+24A7: 01 8D 7F    ld   bc,$7F8D		; 10001101 (GA select screen mode, rom cfig and int control)
+24AA: ED 49       out  (c),c		; sets mode 1 (320x200 4 colors), disables upper and lower ROM areas (only RAM accessed in those zones)
+24AC: CD 3A 3F    call $3F3A		; sets black color palette
+
+24AF: 21 9D 65    ld   hl,$659D		; copies 0x659d-0x759c (manuscript routines to screen)
+24B2: 11 00 C0    ld   de,$C000
+24B5: D5          push de
+24B6: 01 00 10    ld   bc,$1000
+24B9: C5          push bc
+24BA: ED B0       ldir
+
+24BC: 01 C5 7F    ld   bc,$7FC5
+24BF: ED 49       out  (c),c		; selects configuration (0, 5, 2, 3) (loads abadia6.bin at 0x4000)
+24C1: C1          pop  bc
+24C2: E1          pop  hl
+24C3: 11 00 70    ld   de,$7000		; points to part of abadia6.bin
+24C6: ED B0       ldir				; copies data it saved in video memory to abadia6.bin (although already at destination)
+24C8: 01 C0 7F    ld   bc,$7FC0		; restores typical configuration (0, 1, 2, 3) (loads abadia2.bin at 0x4000)
+24CB: ED 49       out  (c),c
+
+24CD: 3E C3       ld   a,$C3		; sets code to execute when interrupt occurs = jp 0x2d48
+24CF: 32 38 00    ld   ($0038),a
+24D2: 21 48 2D    ld   hl,$2D48
+24D5: 22 39 00    ld   ($0039),hl
+
+24D8: 21 00 80    ld   hl,$8000		; address of manuscript music data
+24DB: 3E 0B       ld   a,$0B
+24DD: 32 86 10    ld   ($1086),a	; changes a value related to music tempo
+24E0: CD 3F 10    call $103F		; initializes sound table and enables interrupts
+24E3: F3          di
+24E4: DD 21 00 73 ld   ix,$7300		; points to presentation manuscript text
+24E8: CD 9D 65    call $659D		; draws manuscript and tells introduction. Returns from here when space is pressed
+24EB: F3          di
+
+24EC: CD 76 13    call $1376		; turns off sound
+24EF: CD 3A 3F    call $3F3A		; sets palette colors to black
+
+24F2: 21 00 83    ld   hl,$8300		; points to abadia3.bin graphics
+24F5: 11 00 6D    ld   de,$6D00		; points to data no longer used (unless game ending is reached, so they were copied to abadia6.bin)
+24F8: 01 00 20    ld   bc,$2000
+24FB: ED B0       ldir				; copies graphics that make up abbey and game objects at 0x6d00-0x8cff
+
+24FD: CD 12 27    call $2712		; clears bottom 40 lines of screen
+2500: CD B6 37    call $37B6		; copies things from many places to 0x0103-0x01a9 (why??)
+2503: CD 61 3A    call $3A61		; creates flipx table (0xa100-0xa1ff) for pixels, gets address from abadia7.bin where
+									;  mirror height is, gets address of block forming mirror from abadia8.bin, and if
+									;  it was open, closes it
+2506: CD D1 3A    call $3AD1		; generates 4 tables (of 0x100 bytes) for pixel handling using AND and OR at 0x9d00-0xa0ff
+
+; initialization for game is now complete
+; now performs initialization to start playing a game
+2509: F3          di
+250A: CD 76 13    call $1376		; turns off sound
+250D: CD BC 32    call $32BC		; reads key state and saves in keyboard buffers
+2510: 3E 2F       ld   a,$2F
+2512: CD 82 34    call $3482		; while space not released, wait
+2515: 20 F2       jr   nz,$2509
+
+2517: CD 1E 38    call $381E		; copies things from 0x0103-0x01a9 to many places (note: on initialization reverse operation was done). Also initializes
+									;  sprite table and character characteristics, and clears logic data and auxiliary variables
+251A: CD 5C 27    call $275C		; draws 256-wide rectangle in upper 160 screen lines
+251D: CD 2C 27    call $272C		; draws scoreboard
+2520: 3E 06       ld   a,$06
+2522: 32 86 10    ld   ($1086),a	; sets new music tempo
+2525: 3E C3       ld   a,$C3		; 0xc3 = jp xxxx instruction
+2527: 32 38 00    ld   ($0038),a	; sets IRQ code (jp 2d48)
+
+252A: 32 A6 4F    ld   ($4FA6),a	; ???
+252D: 32 08 00    ld   ($0008),a	; modifies rst 0x08 and rst 0x10 code to call logic interpreter
+2530: 32 10 00    ld   ($0010),a
+2533: 21 48 2D    ld   hl,$2D48
+2536: 22 39 00    ld   ($0039),hl
+2539: 21 D1 3D    ld   hl,$3DD1		; rst 0x08 = jp 0x3dd1
+253C: 22 09 00    ld   ($0009),hl
+253F: 21 AF 3D    ld   hl,$3DAF		; rst 0x10 = jp 0x3daf
+2542: 22 11 00    ld   ($0011),hl
+
+2545: 3A 49 BF    ld   a,($BF49)	; reads abadia3.bin + 0x3f49
+2548: 32 18 26    ld   ($2618),a	; replaces an instruction value (related to game speed)
+254B: 2A 50 BF    ld   hl,($BF50)
+254E: 22 38 30    ld   ($3038),hl	; sets Guillermo's initial position
+2551: 24          inc  h
+2552: 24          inc  h
+2553: 2D          dec  l
+2554: 2D          dec  l
+2555: 22 47 30    ld   ($3047),hl	; sets Adso's initial position
+2558: 3A 52 BF    ld   a,($BF52)
+255B: 32 3A 30    ld   ($303A),a	; sets Guillermo and Adso's initial height
+255E: 32 49 30    ld   ($3049),a
+
+2561: 21 59 AB    ld   hl,$AB59		; points to monk movement graphics
+2564: 11 2E AE    ld   de,$AE2E
+2567: D5          push de
+2568: 01 D5 02    ld   bc,$02D5		; copies 0xab59-0xae2d to 0xae2e-0xb102
+256B: ED B0       ldir
+256D: E1          pop  hl			; hl points to start of copied graphics
+
+256E: 01 05 91    ld   bc,$9105		; graphics 5 bytes wide, 0x91 blocks of 5 bytes (= 0x2d5)
+2571: CD 52 35    call $3552		; gets x-flipped monk graphics at 0xae2e-0xb102
+2574: CD B0 34    call $34B0		; initializes mirror room and mirror-related variables
+2577: CD D2 54    call $54D2		; initializes day and time of day with values read from 0xbf4f and 0xbf4e
+
+257A: 3E 10       ld   a,$10		; data to enable commands when processing behavior
+257C: 32 C0 A2    ld   ($A2C0),a	; initializes Adso's command
+257F: 32 00 A2    ld   ($A200),a	; initializes Malaquias's command
+2582: 32 30 A2    ld   ($A230),a	; initializes Abbot's command
+2585: 32 60 A2    ld   ($A260),a	; initializes Berengario's command
+2588: 32 90 A2    ld   ($A290),a	; initializes Severino's command
+
+258B: AF          xor  a
+258C: 32 4B 2D    ld   ($2D4B),a	; resets interrupt counter
+
+; when loading a game also arrives here
+258F: F3          di
+2590: AF          xor  a
+2591: 32 75 2D    ld   ($2D75),a		; initializes screen character is on
+2594: 32 8F 28    ld   ($288F),a		; initializes Guillermo's state
+2597: 3E 02       ld   a,$02
+2599: 32 B1 28    ld   ($28B1),a		; modifies argument value of Guillermo's death behavior instruction
+259C: ED 73 C2 2D ld   ($2DC2),sp		; saves stack value with which game was initialized
+
+25A0: CD 5C 27    call $275C			; draws 256-wide rectangle in upper 160 screen lines
+25A3: CD 76 13    call $1376			; turns off sound
+25A6: CD B9 34    call $34B9			; initializes mirror room
+25A9: CD D4 51    call $51D4			; draws objects we have in scoreboard
+25AC: CD DF 54    call $54DF			; sets palette according to time of day, shows day number and advances time of day
+25AF: CD D3 55    call $55D3			; decrements obsequium
+25B2: 00          nop					; parameter of previous call (decrement 0 units)
+
+25B3: CD 01 50    call $5001			; clears part of scoreboard where phrases are shown
+25B6: FB          ei
+
+; main game loop starts here
+25B7: 00          nop
+25B8: 3A 36 30    ld   a,($3036)		; gets Guillermo's animation counter and modifies a search routine
+25BB: 32 90 09    ld   ($0990),a
+25BE: CD 11 33    call $3311			; checks if QR was pressed in mirror room and acts accordingly
+25C1: CD 9D 35    call $359D			; checks if delete pause, or ctrl+f? or shift+f? was pressed and acts accordingly
+25C4: CD 89 04    call $0489            ; checks if ctrl+tab was pressed and if so, tries to save game data from memory to disk
+25C7: 3E 07       ld   a,$07
+25C9: CD 82 34    call $3482			; checks if numeric keypad period was pressed
+25CC: C4 4C 3A    call nz,$3A4C			; if pressed, jump (it's a ret, probably jump address has changed)
+25CF: CD B6 55    call $55B6			; checks if time-related variables need modifying (time of day, lamp fuel, etc)
+25D2: CD ED 4F    call $4FED			; ret (probably jump address has changed)
+25D5: CD E7 42    call $42E7			; if Guillermo has died, calculates mission completion percentage, shows on screen and waits for space press
+25D8: CD AC 42    call $42AC            ; updates bonuses and if reading book without gloves, kills Guillermo
+25DB: CD 99 54    call $5499			; if time of day change scroll hasn't completed, advances it one step
+25DE: CD EA 3E    call $3EEA			; gets voice state, and executes actions depending on time of day
+25E1: CD D6 41    call $41D6			; checks if camera-following character needs changing and calculates bonuses we've achieved (interpreted)
+25E4: CD 55 23    call $2355			; checks if displayed character has changed screens and if so does many things
+25E7: 3A B8 2D    ld   a,($2DB8)		; if screen doesn't need redrawing, jump
+25EA: A7          and  a
+25EB: 28 05       jr   z,$25F2
+25ED: CD D8 19    call $19D8			; draws current screen
+
+25F0: 3E 80       ld   a,$80
+25F2: 32 FD 0D    ld   ($0DFD),a		; modifies door routine instruction indicating it paints screen
+25F5: CD 96 50    call $5096			; checks if Guillermo and Adso pick up or drop any object
+25F8: CD 67 0D    call $0D67			; checks if any door needs opening or closing and updates door sprites accordingly
+25FB: 21 AE 2B    ld   hl,$2BAE			; hl points to Guillermo's table
+25FE: CD 1D 29    call $291D			; checks if Guillermo can move where he wants and updates his sprite and height buffer
+2601: CD 64 26    call $2664			; moves Adso and monks
+2604: AF          xor  a
+2605: 32 B8 2D    ld   ($2DB8),a		; indicates screen doesn't need redrawing
+2608: 32 A9 2D    ld   ($2DA9),a		; indicates no path found
+260B: CD A3 26    call $26A3			; modifies light sprite characteristics if it can be used by Adso
+260E: CD 66 0E    call $0E66			; checks if door graphics need flipping and if so, does it
+2611: CD 74 53    call $5374			; checks if graphics need reflecting in mirror
+
+2614: 3A 4B 2D    ld   a,($2D4B)		; reads counter incremented in interrupt
+2617: FE 2A       cp   $2A				; modified from outside (to 36)
+2619: 38 F9       jr   c,$2614			; waits until value is >= what's there
+
+261B: 3A 36 30    ld   a,($3036)		; if Guillermo is moving, plays a sound
+261E: E6 01       and  $01
+2620: C4 02 10    call nz,$1002
+2623: AF          xor  a
+2624: 32 4B 2D    ld   ($2D4B),a		; resets interrupt counter
+2627: CD 74 26    call $2674			; draws sprites
+; end of main loop
+
+262A: 3E 42       ld   a,$42
+262C: CD 82 34    call $3482		; checks if escape is pressed
+262F: CD C6 41    call $41C6		; sets a to 0, so escape never registers as pressed
+2632: CA B7 25    jp   z,$25B7		; if escape not pressed, jump to main loop
+
+; if escape is pressed, jump to debugger, unless ctrl+shift+escape is pressed, which resets the computer
+2635: 3E 15       ld   a,$15
+2637: CD 82 34    call $3482		; checks if right shift is pressed
+263A: CA 40 22    jp   z,$2240		; if not pressed, restores mirror room, changes interrupt to ret,
+									;  turns off sound, gets stack address at game start and jumps there
+
+263D: 3E 17       ld   a,$17
+263F: CD 82 34    call $3482		; checks if control is pressed
+2642: CA 40 22    jp   z,$2240		; if not pressed, restores mirror room, changes interrupt to ret,
+									;  turns off sound, gets stack address at game start and jumps there
+
+; arrives here if ctrl+right shift+escape is being pressed
+2645: 01 08 00    ld   bc,$0008		; number of data bytes to copy
+2648: 11 00 00    ld   de,$0000		; data destination
+264B: 21 5C 26    ld   hl,$265C		; data source
+264E: ED B0       ldir				; copies data
+2650: ED 7B C2 2D ld   sp,($2DC2)	; gets stack address at game start
+2654: E1          pop  hl
+2655: 21 00 00    ld   hl,$0000		; puts a 0, to jump to routine just written
+2658: E5          push hl
+2659: C3 40 22    jp   $2240		; restores mirror room, changes interrupt to ret,
+									;  turns off sound, gets stack address at game start and jumps there
+
+; new code copied to 0x0000
+265C: 01 89 7F    ld   bc,$7F89		; 10001101 (GA select screen mode, rom cfig and int control)
+265F: ED 49       out  (c),c		; sets mode 1 (320x200 4 colors), disables upper ROM area and enables lower one
+2661: C3 91 05    jp   $0591		; restarts machine
+
+
+2664: CD 7B 08    call $087B		; executes Adso's behavior
+2667: CD FD 06    call $06FD		; executes Malaquias's behavior
+266A: CD 1E 07    call $071E		; executes Abbot's behavior
+266D: CD 30 08    call $0830		; executes Berengario's behavior
+2670: CD 51 08    call $0851		; executes Severino's behavior
+2673: C9          ret
+
+; ----------------------- code related to sprites and light ------------------------------------
+
+; draws sprites
+2674: 3A 6C 15    ld   a,($156C)	; reads if room is lit or not
+2677: A7          and  a
+2678: CA 14 49    jp   z,$4914		; if lit, jump to draw sprites
+
+; sprite drawing when room is not lit
+267B: 21 17 2E    ld   hl,$2E17		; hl points to first character sprite
+267E: 11 14 00    ld   de,$0014		; length of each sprite
+2681: 7E          ld   a,(hl)
+2682: FE FF       cp   $FF
+2684: 28 09       jr   z,$268F		; if reached end, jump
+2686: FE FE       cp   $FE
+2688: 28 02       jr   z,$268C		; if not visible, skip next instruction
+268A: CB BE       res  7,(hl)		; marks sprite as not to be drawn (because it's dark)
+268C: 19          add  hl,de
+268D: 18 F2       jr   $2681		; advance to next sprite
+
+268F: 3A 2B 2E    ld   a,($2E2B)	; if Adso's sprite is visible, continue
+2692: FE FE       cp   $FE
+2694: C8          ret  z
+2695: 3A F3 2D    ld   a,($2DF3)	;  and Adso has lamp, continue
+2698: E6 80       and  $80
+269A: C8          ret  z
+
+269B: 3E BC       ld   a,$BC
+269D: 32 CF 2F    ld   ($2FCF),a	; activates light sprite
+26A0: C3 14 49    jp   $4914		; jump to draw sprites
+
+; modifies light sprite characteristics if it can be used by Adso
+26A3: 3E FE       ld   a,$FE
+26A5: 32 CF 2F    ld   ($2FCF),a	; deactivates light sprite
+26A8: 3A 6C 15    ld   a,($156C)
+26AB: A7          and  a
+26AC: C8          ret  z			; if room is lit, exit
+
+; arrives here if it's a dark room
+26AD: 3A 2B 2E    ld   a,($2E2B)	; if Adso's sprite not visible, prevents sprite redrawing and exits
+26B0: FE FE       cp   $FE
+26B2: 28 C7       jr   z,$267B
+
+26B4: 3A 2C 2E    ld   a,($2E2C)	; gets Adso sprite's x position
+26B7: 4F          ld   c,a
+26B8: E6 03       and  $03
+26BA: 32 89 4B    ld   ($4B89),a	; modifies instruction with offset within tile in x
+26BD: ED 44       neg
+26BF: C6 04       add  a,$04
+26C1: 32 B5 4B    ld   ($4BB5),a	; modifies an instruction
+26C4: 79          ld   a,c
+26C5: DD 21 CF 2F ld   ix,$2FCF		; points to light sprite
+26C9: DD 36 12 FE ld   (ix+$12),$FE	; gives sprite maximum depth
+26CD: DD 36 13 FE ld   (ix+$13),$FE
+26D1: E6 FC       and  $FC			; adjusts Adso sprite's x position to nearest tile and translates it
+26D3: D6 08       sub  $08
+26D5: 30 01       jr   nc,$26D8
+26D7: AF          xor  a
+26D8: DD 77 01    ld   (ix+$01),a	; sets sprite's x position
+26DB: DD 77 03    ld   (ix+$03),a
+26DE: 3A 2D 2E    ld   a,($2E2D)	; gets Adso sprite's y position
+26E1: 4F          ld   c,a
+26E2: E6 07       and  $07			; gets offset within tile in y
+26E4: FE 04       cp   $04
+26E6: 21 EF 00    ld   hl,$00EF		; bytes to fill (tile and a half)
+26E9: 11 9F 00    ld   de,$009F		; bytes to fill (tile)
+26EC: 30 01       jr   nc,$26EF		; if >= 4, jump
+26EE: EB          ex   de,hl		; exchange fills
+
+26EF: 22 6B 4B    ld   ($4B6B),hl	; modifies 2 instructions
+26F2: ED 53 D1 4B ld   ($4BD1),de
+26F6: 79          ld   a,c			; gets Adso sprite's y position
+26F7: E6 F8       and  $F8
+26F9: D6 18       sub  $18			; adjusts Adso sprite's y position to nearest tile and translates it
+26FB: 30 01       jr   nc,$26FE
+26FD: AF          xor  a
+26FE: DD 77 02    ld   (ix+$02),a	; modifies sprite's y position
+2701: DD 77 04    ld   (ix+$04),a
+2704: 21 4B 30    ld   hl,$304B		; points to Adso's flip
+2707: AF          xor  a
+2708: CB 46       bit  0,(hl)
+270A: 28 02       jr   z,$270E		; if graphics not flipped, jump
+270C: 3E 29       ld   a,$29
+270E: 32 A0 4B    ld   ($4BA0),a	; modifies an instruction
+2711: C9          ret
+
+; ----------------------- end of code related to sprites and light ----------------------------------------
+
+; clears bottom 40 lines of screen
+2712: 21 40 C6    ld   hl,$C640		; points to video memory
+2715: 06 08       ld   b,$08		; repeats process for 8 banks
+2717: C5          push bc
+2718: E5          push hl
+2719: 5D          ld   e,l			; de = hl
+271A: 54          ld   d,h
+271B: 13          inc  de
+271C: 36 FF       ld   (hl),$FF
+271E: 01 8F 01    ld   bc,$018F		; 5 lines
+2721: ED B0       ldir				; fills with 0xff from 0xc640 to 0xc7cf
+2723: E1          pop  hl
+2724: 01 00 08    ld   bc,$0800		; points to next bank
+2727: 09          add  hl,bc
+2728: C1          pop  bc
+2729: 10 EC       djnz $2717		; repeat until done
+272B: C9          ret
+
+; draws scoreboard
+272C: 01 C7 7F    ld   bc,$7FC7		; sets configuration 7 (0, 7, 2, 3)
+272F: ED 49       out  (c),c
+2731: 11 28 63    ld   de,$6328		; points to scoreboard data (from 0x6328 to 0x6b27)
+2734: 21 48 C6    ld   hl,$C648		; points to memory address where scoreboard is placed (32, 160)
+2737: 06 04       ld   b,$04
+2739: C5          push bc
+273A: E5          push hl
+273B: 06 08       ld   b,$08		; 8 lines
+273D: C5          push bc
+273E: E5          push hl
+273F: 01 40 00    ld   bc,$0040		; copies 64 bytes to screen (256 pixels)
+2742: EB          ex   de,hl
+2743: ED B0       ldir
+2745: EB          ex   de,hl

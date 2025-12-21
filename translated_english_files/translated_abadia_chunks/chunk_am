@@ -1,0 +1,601 @@
+
+; ----------------------------- code related to pause/load/save games ------------------------------------
+
+; checks if delete key was pressed (pause), or ctrl+f? (save game or save demo) or shift+f? (load game or load demo) and acts accordingly
+359D: 3E 4F       ld   a,$4F		; delete key
+359F: CD 72 34    call $3472		; check if delete state has changed?
+35A2: 28 26       jr   z,$35CA		; if not, jump
+
+; arrives here if delete was pressed (delete is pause)
+35A4: F3          di
+35A5: 3E 3F       ld   a,$3F
+35A7: 32 97 0F    ld   ($0F97),a	; modifies the copy of the mask with the channel status, so they need to be reactivated
+35AA: 4F          ld   c,a
+35AB: 3E 07       ld   a,$07
+35AD: CD 4E 13    call $134E		; deactivates the 3 sound channels
+35B0: 21 BC 32    ld   hl,$32BC
+35B3: 22 12 33    ld   ($3312),hl	; ensures that the IR routine reads from keyboard
+35B6: AF          xor  a
+35B7: 32 09 33    ld   ($3309),a	; ensures that keyboard data is obtained
+35BA: 3D          dec  a
+35BB: 32 69 34    ld   ($3469),a	; ensures that the keyboard read routine works properly for the keyboard
+35BE: CD BC 32    call $32BC		; reads the key state and saves it in the keyboard buffers
+35C1: 3E 4F       ld   a,$4F
+35C3: CD 72 34    call $3472
+35C6: 28 F6       jr   z,$35BE		; waits until delete is pressed again
+35C8: FB          ei
+35C9: C9          ret
+
+; arrives here if delete was not pressed
+35CA: 3E 17       ld   a,$17
+35CC: CD 82 34    call $3482		; checks if control was pressed
+35CF: C4 F2 36    call nz,$36F2		; if it was pressed, checks if a function key was pressed
+35D2: 28 4A       jr   z,$361E		; if control+function key was not pressed, jump
+
+; arrives here if control+function key was pressed
+35D4: F3          di
+35D5: C5          push bc
+35D6: 78          ld   a,b
+35D7: FE 01       cp   $01
+35D9: 20 1A       jr   nz,$35F5		; if ctrl+f9 was not pressed, jump
+
+; specific code if ctrl+f9 was pressed
+35DB: 21 FF 31    ld   hl,$31FF
+35DE: 22 12 33    ld   ($3312),hl	; makes the IR routine record keyboard presses in the press buffer
+35E1: CD 7E 33    call $337E		; checks if the press buffer has ended and loads abadia6.bin at 0x4000
+35E4: 21 00 40    ld   hl,$4000
+35E7: AF          xor  a			; initializes the first key state to 0
+35E8: 77          ld   (hl),a
+35E9: 23          inc  hl
+35EA: 77          ld   (hl),a
+35EB: 23          inc  hl
+35EC: 77          ld   (hl),a
+35ED: 23          inc  hl
+35EE: 77          ld   (hl),a
+35EF: 23          inc  hl
+35F0: 22 D1 33    ld   ($33D1),hl	; saves the pointer to the press buffer
+35F3: 06 01       ld   b,$01
+
+35F5: CD 04 37    call $3704	; calculates the position to save data 1
+35F8: EB          ex   de,hl
+35F9: ED B0       ldir			; copies the data to destination
+35FB: E1          pop  hl
+35FC: E5          push hl
+35FD: D5          push de
+35FE: CD 91 35    call $3591	; calculates the position to save data 2
+3601: EB          ex   de,hl
+3602: ED B0       ldir			; copies the data to destination
+3604: D1          pop  de
+3605: 21 85 3C    ld   hl,$3C85
+3608: 01 C8 00    ld   bc,$00C8
+360B: CD 16 36    call $3616	; copies data 3 to destination and restores configuration 0
+360E: C1          pop  bc
+360F: 78          ld   a,b
+3610: FE 01       cp   $01
+3612: 28 39       jr   z,$364D	; if control+f9 was pressed, jump
+3614: FB          ei
+3615: C9          ret
+
+; copies the data and restores configuration
+3616: ED B0       ldir
+3618: 01 C0 7F    ld   bc,$7FC0
+361B: ED 49       out  (c),c
+361D: C9          ret
+
+; arrives here if control and a function key were not pressed
+361E: 00          nop				; these 2 instructions are modified from outside (but only nop is set???)
+361F: 00          nop
+3620: 3E 15       ld   a,$15
+3622: CD 82 34    call $3482		; checks if shift was pressed
+3625: C4 F2 36    call nz,$36F2		; if it was pressed, checks if a function key was pressed
+3628: C8          ret  z			; if not, exit
+
+; also arrives here if the keys stored in the press buffer ran out
+3629: 78          ld   a,b
+362A: F3          di
+362B: FE 01       cp   $01
+362D: 20 1E       jr   nz,$364D		; if shift+f9 was not pressed, jump
+
+; arrives here if shift+f9 was pressed
+362F: 21 00 00    ld   hl,$0000
+3632: 22 1E 36    ld   ($361E),hl	; puts 2 nops when arriving at the state load section
+3635: 21 7C 32    ld   hl,$327C
+3638: 22 12 33    ld   ($3312),hl	; ensures that in the IR routine, presses are read from the press buffer
+363B: 21 00 40    ld   hl,$4000		; initializes the position of the demo key buffer
+363E: 22 D1 33    ld   ($33D1),hl
+3641: 3E 01       ld   a,$01
+3643: 32 72 2D    ld   ($2D72),a	; indicates that the first block of presses is used only once
+3646: 3E 48       ld   a,$48
+3648: 32 69 34    ld   ($3469),a	; ensures that the keyboard read routine works properly for the demo
+364B: 06 01       ld   b,$01
+
+; also arrives here if control+f9 was pressed
+364D: 3A 3C 30    ld   a,($303C)	; reads if adso and william's graphics are rotated
+3650: 6F          ld   l,a
+3651: 3A 4B 30    ld   a,($304B)
+3654: 67          ld   h,a
+3655: E5          push hl
+3656: C5          push bc
+3657: CD C4 36    call $36C4		; rotates the monk graphics if necessary
+365A: C1          pop  bc
+365B: C5          push bc
+365C: CD 04 37    call $3704		; calculates in hl the position to save data
+365F: 01 20 03    ld   bc,$0320		; doesn't save all data (only up to 0x309e)
+3662: E5          push hl
+3663: ED B0       ldir				; saves the data
+3665: E1          pop  hl
+3666: E3          ex   (sp),hl
+3667: CD 91 35    call $3591		; calculates in hl the position to save data and saves it
+366A: ED B0       ldir
+366C: 2A D9 34    ld   hl,($34D9)	; modifies the height data of the mirror room
+366F: 36 F5       ld   (hl),$F5
+3671: E1          pop  hl
+3672: 01 38 03    ld   bc,$0338
+3675: 09          add  hl,bc		; points to the following data
+3676: 11 85 3C    ld   de,$3C85
+3679: 01 98 00    ld   bc,$0098
+367C: CD 16 36    call $3616		; copies the data and restores configuration
+367F: E1          pop  hl
+3680: DD 21 3C 30 ld   ix,$303C		; points to graphics rotation
+3684: DD 75 00    ld   (ix+$00),l	; restores william and adso's rotation
+3687: DD 74 0F    ld   (ix+$0f),h
+368A: AF          xor  a
+368B: DD 77 1E    ld   (ix+$1e),a	; sets the monks' rotation
+368E: DD 77 2D    ld   (ix+$2d),a
+3691: DD 77 3C    ld   (ix+$3c),a
+3694: DD 77 4B    ld   (ix+$4b),a
+3697: CD 1A 37    call $371A
+369A: AF          xor  a
+369B: 32 6E 41    ld   ($416E),a
+369E: 3A BC 2D    ld   a,($2DBC)	; gets the roman numeral of the mirror room
+36A1: A7          and  a
+36A2: C4 43 56    call nz,$5643		; if it was generated, copies the roman numerals of the mirror room to the scroll string
+36A5: E1          pop  hl
+36A6: FB          ei
+36A7: 76          halt
+36A8: F3          di
+36A9: C3 8F 25    jp   $258F		; jumps to main loop
+
+; table of keys to check when control is pressed: (F0, F1, F2, F3, F4, F5, F6, F7, F8, F9)
+36AC: 0F 0D 0E 05 14 0C 04 0A 0B 03
+
+; code of cursor up, left, down, right, space, shift, q, r, n, s keys
+36B6: 00 01 02 08 2F 15 43 32 2E 3C
+
+; code of 'y', '.' keys
+36C0: 2B 07 07 07
+
+; if any monk's graphic needs to be rotated, do it
+36C4: FD E5       push iy
+36C6: FD 21 54 30 ld   iy,$3054		; points to malaquias' characteristics
+36CA: 21 97 30    ld   hl,$3097		; points to the table with monks' faces
+36CD: 06 04       ld   b,$04		; repeat 4 times (for malaquias, the abbot, berengario and severino)
+36CF: C5          push bc
+36D0: 5E          ld   e,(hl)		; reads an address and saves it in de
+36D1: 23          inc  hl
+36D2: 56          ld   d,(hl)
+36D3: 23          inc  hl
+36D4: E5          push hl
+36D5: FD 7E 06    ld   a,(iy+$06)	; reads if the monk needs to be rotated
+36D8: A7          and  a
+36D9: 28 0B       jr   z,$36E6
+36DB: FD 36 06 00 ld   (iy+$06),$00
+36DF: EB          ex   de,hl
+36E0: 01 05 14    ld   bc,$1405		; width = 5, number = 20
+36E3: CD 52 35    call $3552		; rotates in xy a series of graphic data passed in hl
+36E6: E1          pop  hl
+36E7: 01 0F 00    ld   bc,$000F		; advance to next entry
+36EA: FD 09       add  iy,bc
+36EC: C1          pop  bc
+36ED: 10 E0       djnz $36CF		; repeat with remaining monks
+36EF: FD E1       pop  iy
+36F1: C9          ret
+
+; called if delete state hasn't changed and control was pressed, to check if any function key was pressed
+36F2: 06 0A       ld   b,$0A		; 10 keys
+36F4: 21 AC 36    ld   hl,$36AC		; points to the function key table
+36F7: 7E          ld   a,(hl)		; reads a key
+36F8: 23          inc  hl
+36F9: E5          push hl
+36FA: C5          push bc
+36FB: CD 72 34    call $3472		; checks if there was a state change in that key
+36FE: C1          pop  bc
+36FF: E1          pop  hl
+3700: C0          ret  nz			; if so, exit
+3701: 10 F4       djnz $36F7		; test for remaining keys
+3703: C9          ret
+
+; calculates in hl the position to save/load data, de points to current data and bc indicates data length
+3704: 11 00 04    ld   de,$0400
+3707: 21 00 54    ld   hl,$5400		; hl = 0x5400 + b*0x400 (so banks are stored at 0x5800-0x7fff)
+370A: 19          add  hl,de
+370B: 10 FD       djnz $370A
+370D: F3          di
+370E: 01 C6 7F    ld   bc,$7FC6		; loads abadia7
+3711: ED 49       out  (c),c
+3713: 11 7F 2D    ld   de,$2D7F		; source of data to copy
+3716: 01 38 03    ld   bc,$0338		; amount of data to copy
+3719: C9          ret
+
+371A: 3A 30 30    ld   a,($3030)	; gets the lamp characteristics
+371D: E6 80       and  $80
+371F: 28 06       jr   z,$3727		; if the lamp is not picked up, jump
+3721: 21 F3 2D    ld   hl,$2DF3		; indicates that adso has the lamp
+3724: 22 32 30    ld   ($3032),hl
+
+3727: 0E 80       ld   c,$80		; start with bit 7
+3729: 06 08       ld   b,$08		; 8 objects
+372B: DD 21 08 30 ld   ix,$3008		; points to object position data
+372F: C5          push bc
+3730: DD 7E 00    ld   a,(ix+$00)
+3733: E6 80       and  $80
+3735: 28 18       jr   z,$374F		; if the object is not picked up, jump
+3737: 21 EF 2D    ld   hl,$2DEF		; points to the objects that characters have
+373A: 06 05       ld   b,$05
+373C: 7E          ld   a,(hl)
+373D: A1          and  c
+373E: 20 06       jr   nz,$3746		; if the character has the object, jump
+3740: 11 07 00    ld   de,$0007
+3743: 19          add  hl,de		; move to next entry
+3744: 10 F6       djnz $373C
+3746: 2B          dec  hl
+3747: 2B          dec  hl
+3748: 2B          dec  hl
+3749: DD 75 02    ld   (ix+$02),l	; indicates that the character has the object
+374C: DD 74 03    ld   (ix+$03),h
+374F: 11 05 00    ld   de,$0005		; move to next object
+3752: DD 19       add  ix,de
+3754: C1          pop  bc
+3755: CB 39       srl  c			; test next bit
+3757: 10 D6       djnz $372F		; repeat until finishing objects
+
+3759: 21 83 37    ld   hl,$3783		; points to the character position data table
+375C: DD 21 D9 2D ld   ix,$2DD9		; points to door permissions
+3760: FD 21 EC 2D ld   iy,$2DEC		; points to character objects
+3764: 06 06       ld   b,$06		; 6 characters
+3766: 7E          ld   a,(hl)
+3767: DD 77 01    ld   (ix+$01),a	; sets the character's address for doors and objects
+376A: FD 77 01    ld   (iy+$01),a
+376D: 23          inc  hl
+376E: 7E          ld   a,(hl)
+376F: DD 77 02    ld   (ix+$02),a
+3772: FD 77 02    ld   (iy+$02),a
+3775: 23          inc  hl
+3776: 11 03 00    ld   de,$0003
+3779: DD 19       add  ix,de
+377B: 11 07 00    ld   de,$0007
+377E: FD 19       add  iy,de
+3780: 10 E4       djnz $3766		; repeat until finishing characters
+3782: C9          ret
+
+3783: 	3038
+	3047
+	3056
+	3065
+	3074
+	3083
+
+; ------------------------- end of code related to pause/load/save games -----------------------------------
+
+; this is never used???
+378F: 00          nop
+3790: 10 F0       djnz $3782
+3792: 00          nop
+3793: F0          ret  p
+3794: F0          ret  p
+3795: F0          ret  p
+3796: 10 00       djnz $3798
+3798: 00          nop
+3799: 00          nop
+379A: F0          ret  p
+379B: 00          nop
+379C: 10 10       djnz $37AE
+379E: 00          nop
+379F: 10 F0       djnz $3791
+37A1: 10 00       djnz $37A3
+37A3: 00          nop
+37A4: C9          ret
+
+; given in ix an address from the tile buffer, returns in hl the address relative to 0x9500
+;  if carry is set, it's not a valid tile buffer address. Otherwise it is
+37A5: DD E5       push ix
+37A7: E1          pop  hl			; hl = ix (hl = a position within the tile buffer)
+37A8: 11 80 8D    ld   de,$8D80		; de = start of tile buffer
+37AB: A7          and  a
+37AC: ED 52       sbc  hl,de		; hl =  hl - de
+37AE: D8          ret  c			; if hl < de, exit with cf = 1
+37AF: 11 80 07    ld   de,$0780
+37B2: ED 52       sbc  hl,de		; hl = (hl - de) - 0x780
+37B4: 3F          ccf				; complement carry flag
+37B5: C9          ret
+
+; called when initializing values after showing the scroll, and only the first time the game is loaded
+37B6: 21 0E 38    ld   hl,$380E			; file copy routine
+
+; performs a task with a series of byte blocks
+37B9: 22 D2 37    ld   ($37D2),hl		; writes the routine to call
+37BC: DD 21 DC 37 ld   ix,$37DC			; points to the block table
+37C0: 21 03 01    ld   hl,$0103			; source/destination address of the block
+37C3: DD 5E 00    ld   e,(ix+$00)		; de = source/destination address
+37C6: DD 56 01    ld   d,(ix+$01)
+37C9: 7A          ld   a,d				; if 0 was read, finish
+37CA: B3          or   e
+37CB: C8          ret  z
+37CC: DD 4E 02    ld   c,(ix+$02)		; bc = block bytes
+37CF: 06 00       ld   b,$00
+37D1: CD 0E 38    call $380E			; calls the routine that processes the block
+37D4: DD 23       inc  ix				; points to next entry
+37D6: DD 23       inc  ix
+37D8: DD 23       inc  ix
+37DA: 18 E7       jr   $37C3			; repeat until finished
+
+; table with blocks and bytes to do something
+; character states
+37DC: 3CA6 05
+37DF: 3CC6 03
+37E2: 3CE7 03
+37E5: 3CFF 03
+37E8: 3D11 03
+
+37EB: 2D7F 0E	; obsequium, day and time of day, pointer to next time of day, table for sprite animation
+		;  character followed by camera, pointer to height buffer, if mirror has been opened
+37EE: 2DD9 10	; information about doors that characters can open
+37F1: 2DEC 23	; data of objects that characters have
+37F4: 2FE4 20	; game door data
+37F7: 3008 23	; object positions
+
+37FA: 3038 03	; william's position
+37FD: 3047 03	; adso's position
+3800: 3056 03	; malaquias' position
+3803: 3065 03	; abbot's position
+3806: 3074 03	; berengario's position
+3809: 3083 03	; severino's position
+380C: 0000
+
+; copies bc bytes from de to hl
+; bc = number of bytes to copy
+; hl = data destination
+; de = data source
+380E: EB          ex   de,hl
+380F: ED B0       ldir			; copies the selected bytes
+3811: EB          ex   de,hl
+3812: C9          ret
+
+; copies bc bytes from hl to de
+3813: ED B0       ldir
+3815: C9          ret
+
+; clears memory area from hl to hl + bc
+3816: 36 00       ld   (hl),$00
+3818: 5D          ld   e,l
+3819: 54          ld   d,h
+381A: 13          inc  de
+381B: ED B0       ldir
+381D: C9          ret
+
+; initializes memory
+381E: 21 85 3C    ld   hl,$3C85		; clears 0x3c85-0x3ca4 (logic data)
+3821: 01 20 00    ld   bc,$0020
+3824: CD 16 38    call $3816
+3827: 21 8D 2D    ld   hl,$2D8D		; clears 0x2d8d-0x2dd8 (auxiliary variables for some routines)
+382A: 01 4B 00    ld   bc,$004B
+382D: CD 16 38    call $3816
+3830: 21 13 38    ld   hl,$3813		; routine to call
+3833: CD B9 37    call $37B9		; copies things from 0x0103-0x01a9 to many places (note: when initializing the reverse operation was done)
+
+3836: 21 17 2E    ld   hl,$2E17		; points to the table with sprite data
+3839: 11 14 00    ld   de,$0014		; each sprite takes 20 bytes
+383C: 7E          ld   a,(hl)		; when it finds an entry with 0xff, exit
+383D: FE FF       cp   $FF
+383F: 28 05       jr   z,$3846
+3841: 36 FE       ld   (hl),$FE		; sets all sprites as not visible
+3843: 19          add  hl,de
+3844: 18 F6       jr   $383C
+
+3846: DD 21 36 30 ld   ix,$3036		; points to the character characteristics table
+384A: 11 0F 00    ld   de,$000F		; each entry takes 15 bytes
+384D: AF          xor  a
+384E: 06 06       ld   b,$06		; 6 entries
+3850: DD 77 00    ld   (ix+$00),a	; sets character animation counter to 0
+3853: DD 77 01    ld   (ix+$01),a	; sets character orientation facing +x
+3856: DD 77 05    ld   (ix+$05),a	; initially character occupies 4 positions
+3859: DD 77 09    ld   (ix+$09),a	; indicates there are no character movements to process
+385C: DD 36 0A FD ld   (ix+$0a),$FD	; action currently being executed
+3860: DD 77 0B    ld   (ix+$0b),a	; initializes the index in the movement command table
+3863: DD 19       add  ix,de		; move to next character
+3865: 10 E9       djnz $3850
+3867: C9          ret
+
+
+; this routine is called to show the ending once the game has been completed
+3868: 2A 12 33    ld   hl,($3312)
+386B: E5          push hl
+386C: 21 BC 32    ld   hl,$32BC
+386F: 22 12 33    ld   ($3312),hl	; ensures that the IR routine reads from keyboard
+3872: AF          xor  a
+3873: 32 09 33    ld   ($3309),a
+3876: 2A D1 33    ld   hl,($33D1)
+3879: 2B          dec  hl
+387A: 01 C5 7F    ld   bc,$7FC5		; sets configuration 5 (0, 5, 2, 3) (loads abadia6.bin at 0x4000)
+387D: ED 49       out  (c),c
+387F: 7E          ld   a,(hl)
+3880: C6 08       add  a,$08
+3882: 77          ld   (hl),a
+3883: 01 C0 7F    ld   bc,$7FC0		; restores typical configuration
+3886: ED 49       out  (c),c
+3888: E1          pop  hl
+3889: 11 FF 31    ld   de,$31FF
+388C: A7          and  a
+388D: ED 52       sbc  hl,de
+388F: CC 95 04    call z,$0495		; jumps as if ctrl+tab had been pressed
+
+3892: CD 3A 3F    call $3F3A		; sets black palette
+3895: 01 C5 7F    ld   bc,$7FC5		; sets configuration 5 (0, 5, 2, 3) (loads abadia6.bin at 0x4000)
+3898: ED 49       out  (c),c
+389A: 21 00 70    ld   hl,$7000		; points to the code and data of the scroll routine
+389D: 11 00 C0    ld   de,$C000		; points to destination
+38A0: D5          push de
+38A1: 01 00 10    ld   bc,$1000		; 0x1000 bytes
+38A4: C5          push bc
+38A5: ED B0       ldir				; copies the data to screen
+38A7: 01 C7 7F    ld   bc,$7FC7		; sets configuration (0, 7, 2, 3) (loads abadia8.bin at 0x4000)
+38AA: ED 49       out  (c),c
+38AC: 11 00 80    ld   de,$8000		; points to destination
+38AF: 21 28 6B    ld   hl,$6B28		; source of data
+38B2: 01 18 15    ld   bc,$1518		; data length
+38B5: ED B0       ldir				; copies the music and ending scroll text
+38B7: 01 C0 7F    ld   bc,$7FC0		; restores usual configuration
+38BA: ED 49       out  (c),c
+38BC: 21 D8 8E    ld   hl,$8ED8		; points to the scroll graphic data
+38BF: 11 8A 78    ld   de,$788A		; points to the address where scroll graphic data is expected to be
+38C2: 01 00 06    ld   bc,$0600
+38C5: ED B0       ldir				; copies the scroll graphic data
+38C7: 3E 08       ld   a,$08
+38C9: 32 86 10    ld   ($1086),a	; changes music tempo
+38CC: C1          pop  bc
+38CD: E1          pop  hl
+38CE: 11 9D 65    ld   de,$659D		; copies the scroll routines from screen memory to where they were at the start
+38D1: ED B0       ldir
+
+38D3: 21 00 80    ld   hl,$8000		; points to the ending scroll music data
+38D6: CD 3F 10    call $103F		; initializes the ending manuscript music
+38D9: DD 21 30 83 ld   ix,$8330		; ix points to the text to show
+38DD: CD 9D 65    call $659D		; calls the routine to show the manuscript
+38E0: 18 F1       jr   $38D3		; if space is pressed, show the ending manuscript again
+
+; punctuation symbol table
+38E2: 	C0 -> 0x00 (0xfa) -> ¡
+	BF -> 0x01 (0xfb) -> ?
+	BB -> 0x02 (0xfc) -> ;
+	BD -> 0x03 (0xfd) -> .
+	BC -> 0x04 (0xfe) -> ,
+
+; address of blank space character graphic data
+38E7: 00 00 00 00 00 00 00 00
+
+; table of instructions to modify a height calculation loop
+38EF: 	00 00 -> 0 nop, nop (impossible case)
+	3C 00 -> 1 inc a, nop
+	00 3D -> 2 nop, dec a
+	3D 00 -> 3 dec a, nop
+	00 3C -> 4 nop, inc a
+	00 00 -> 5 nop, nop (impossible case)
+
+38CD: 00 4A
+
+; routine to fill heights
+38FD: F5          push af
+38FE: 1A          ld   a,(de)		; modifies 2 instructions of the routine
+38FF: 32 11 39    ld   ($3911),a
+3902: 13          inc  de
+3903: 1A          ld   a,(de)
+3904: 32 16 39    ld   ($3916),a
+3907: F1          pop  af			; a = initial height value of the block
+3908: C5          push bc
+3909: E5          push hl
+390A: F5          push af
+390B: 41          ld   b,c			; b = number of units in X
+390C: 4F          ld   c,a
+390D: CD 1D 39    call $391D		; if the position given in hl is within the buffer, modify it with c's height
+3910: 79          ld   a,c
+3911: 3C          inc  a			; instruction modified from outside to change height in x loop
+3912: 2C          inc  l
+3913: 10 F7       djnz $390C
+3915: F1          pop  af
+3916: 3C          inc  a			; instruction modified from outside to change height in y loop
+3917: E1          pop  hl
+3918: 24          inc  h
+3919: C1          pop  bc
+391A: 10 EC       djnz $3908		; repeat until completing units in Y
+391C: C9          ret
+
+; if the position given in hl is within the buffer, modify it with c's height
+391D: 7C          ld   a,h
+391E: D6 00       sub  $00			; adjusts coordinate to the start of visible in Y
+3920: D8          ret  c
+3921: FE 18       cp   $18			; if not visible, exit
+3923: D0          ret  nc
+3924: E5          push hl
+3925: 6F          ld   l,a
+3926: 26 00       ld   h,$00
+3928: 29          add  hl,hl
+3929: 29          add  hl,hl
+392A: 29          add  hl,hl
+392B: 54          ld   d,h
+392C: 5D          ld   e,l
+392D: 29          add  hl,hl
+392E: 19          add  hl,de
+392F: ED 5B 8A 2D ld   de,($2D8A)
+3933: 19          add  hl,de
+3934: EB          ex   de,hl
+3935: E1          pop  hl
+3936: 7D          ld   a,l
+3937: D6 00       sub  $00			; adjusts coordinate to the start of visible in X
+3939: D8          ret  c
+393A: FE 18       cp   $18			; if not visible, exit
+393C: D0          ret  nc
+393D: 83          add  a,e
+393E: 5F          ld   e,a
+393F: 8A          adc  a,d
+3940: 93          sub  e
+3941: 57          ld   d,a
+3942: 79          ld   a,c
+3943: 12          ld   (de),a
+3944: C9          ret
+
+; fills the screen buffer at 0x2d8a with data read from abadia7 and cropped for the current screen
+3945: DD E5       push ix
+3947: DD 2A FB 38 ld   ix,($38FB)	; ix = address dependent on the floor the character is on
+394B: 3A A9 27    ld   a,($27A9)	; retrieves the minimum x coordinate visible on screen
+394E: 32 BA 39    ld   ($39BA),a	; modifies some instructions according to this
+3951: 32 38 39    ld   ($3938),a
+3954: 32 F0 39    ld   ($39F0),a
+3957: 3A 9D 27    ld   a,($279D)	; retrieves the minimum y coordinate visible on screen
+395A: 32 0B 3A    ld   ($3A0B),a	; modifies some instructions according to this
+395D: 32 CA 39    ld   ($39CA),a
+3960: 32 1F 39    ld   ($391F),a
+3963: 01 C6 7F    ld   bc,$7FC6		; loads abadia7
+3966: ED 49       out  (c),c
+3968: CD 73 39    call $3973		; fills the screen buffer at 0x2d8a with data read from abadia7.bin
+396B: 01 C0 7F    ld   bc,$7FC0		; restores usual configuration
+396E: ED 49       out  (c),c
+3970: DD E1       pop  ix
+3972: C9          ret
+
+entries:
+	byte 0
+		bits 7-4: initial height value
+		bit 3: if 0, 4-byte entry. if 1, 5-byte entry
+		bit 2-0: screen element type
+			if 0, 6 or 7, exit
+			if 1 to 4 crop (changing height)
+			if 5, crop (constant height)
+	byte 1: starting X coordinate
+	byte 2: starting Y coordinate
+	byte 3:	if length == 4 bytes
+		bits 7-4: number of units in X
+		bits 3-0: number of units in Y
+			if length == 5 bytes
+		bits 7-0: number of units in X
+	byte 4 number of units in Y
+
+; ix points to abadia7.bin data related to the floor
+3973: DD 7E 00    ld   a,(ix+$00)	; reads a byte
+3976: FE FF       cp   $FF			; if end of data reached, exit
+3978: C8          ret  z
+3979: 57          ld   d,a
+397A: E6 07       and  $07			; if the 3 least significant bits of the read byte are 0, exit
+397C: C8          ret  z
+397D: FE 06       cp   $06			; if (data & 0x07) >= 0x06, exit
+397F: D0          ret  nc
+3980: CB 5A       bit  3,d			; if entry is 4 bytes, read last byte in a and jump
+3982: DD 7E 03    ld   a,(ix+$03)
+3985: 28 05       jr   z,$398C
+3987: DD 46 04    ld   b,(ix+$04)	; otherwise, read last byte in b and jump
+398A: 18 0B       jr   $3997
+
+398C: 4F          ld   c,a		; c = byte 3
+398D: E6 0F       and  $0F
+398F: 47          ld   b,a		; b = 4 least significant bits of byte 3
+3990: 79          ld   a,c
+

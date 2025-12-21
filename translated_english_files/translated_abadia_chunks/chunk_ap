@@ -1,0 +1,600 @@
+40A1: C9          ret
+
+; rotates the monks' graphics if necessary and modifies the face pointed to by hl with the one passed in de. Also calls 0x4145 with what follows
+40A2: E5          push hl
+40A3: D5          push de
+40A4: CD C4 36    call $36C4		; rotates the monks' graphics if necessary
+40A7: D1          pop  de
+40A8: E1          pop  hl
+40A9: CD 9D 40    call $409D		; [hl] = de
+40AC: C3 45 41    jp   $4145		; copies to the indicated address after the stack 5 bytes that follow the address (but from the caller)
+
+; called from jorge's behavior
+40AF: DD E5       push ix
+40B1: FD E5       push iy
+40B3: DD 21 0F 2E ld   ix,$2E0F		; points to the object data table for severino
+40B7: 18 12       jr   $40CB
+
+
+40B9: 3A 04 2E    ld   a,($2E04)	; if the abbot doesn't have the parchment, exit
+40BC: E6 10       and  $10
+40BE: C8          ret  z
+
+40BF: AF          xor  a
+40C0: 32 06 2E    ld   ($2E06),a	; modifies the object mask to not pick up the parchment
+40C3: DD E5       push ix
+40C5: FD E5       push iy
+40C7: DD 21 01 2E ld   ix,$2E01		; points to the object data table for the abbot
+
+40CB: CD 77 52    call $5277		; drops the parchment
+40CE: FD E1       pop  iy
+40D0: DD E1       pop  ix
+40D2: AF          xor  a
+40D3: 32 93 3C    ld   ($3C93),a	; sets to 0 the counter that increments if we don't press the cursors
+40D6: C9          ret
+
+40D7: 3E 10       ld   a,$10
+40D9: C9          ret
+
+40DA: 32 06 2E    ld   ($2E06),a
+
+
+; puts the parchment in the room behind the mirror
+40DD: CD 45 41    call $4145			; copies to 0x3017 -> 00	00 18 64 18
+	3017
+	00	00 18 64 18
+
+40E7: CD 45 41    call $4145			; copies to 0x3017 -> 00 00 58 3C 02
+	3017
+	00 00 58 3C 02
+
+40F1: 3E 80       ld   a,$80
+40F3: 32 12 2E    ld   ($2E12),a		; gives jorge the book
+
+; leaves the book outside the abbey
+40F6: CD 45 41    call $4145			; copies to 0x3008 -> 80 00 0F 2E 00
+	3008
+	80 00 0F 2E 00
+
+4100: 3A 91 3C    ld   a,($3C91)		; if the lamp hasn't disappeared, exit
+4103: A7          and  a
+4104: C0          ret  nz
+4105: 3C          inc  a
+4106: 32 91 3C    ld   ($3C91),a		; indicate that the lamp is not disappeared
+
+; puts the lamp in the kitchen
+4109: CD 45 41    call $4145			; copies to 0x3030 -> 00 00 5A 2A 04
+	3030
+	00 00 5A 2A 04
+
+; puts the key to the abbot's room on the altar
+4113: CD 45 41    call $4145			; copies to 0x301C -> 00 00 89 3E 08
+	301C
+	00 00 89 3E 08
+
+; the key to the abbot's room disappears
+411D: CD 45 41    call $4145			; copies to 0x301C -> 00 00 00 00 00
+	301C
+	00 00 00 00 00 00
+
+; puts key 2 on malachi's table
+4127: CD 45 41    call $4145			; copies to 0x3021 -> 00 00 35 35 13
+	3021
+	00 00 35 35 13
+
+; puts william's glasses in the illuminated room of the labyrinth
+4131: CD 45 41    call $4145			; copies to 0x3012 -> 00 00 1B 23 18
+	3012
+	00 00 1B 23 18
+
+413B: CD 45 41    call $4145			; copies to 0x301C -> 00 00 00 00 00
+	301C
+	00 00 00 00 00
+
+; retrieves the stack address and copies the following 5 bytes from the stack to the destination address read from the stack
+4145: E1          pop  hl			; retrieves the stack address
+4146: 5E          ld   e,(hl)		; gets an address
+4147: 23          inc  hl
+4148: 56          ld   d,(hl)
+4149: 23          inc  hl
+414A: 01 05 00    ld   bc,$0005		; copies 5 bytes to that address
+414D: ED B0       ldir
+414F: C9          ret
+
+4150: 30 0C       jr   nc,$415E		; if we don't have the gloves or jorge's state is not 0x0d, 0x0e or 0x0f, jump
+
+; arrives here if we have the gloves and jorge's state is 0x0d, 0x0e or 0x0f
+4152: 3E 32       ld   a,$32
+4154: 32 93 3C    ld   ($3C93),a	; indicates that there's no need to wait to show jorge
+4157: 3E 05       ld   a,$05
+4159: 32 92 3C    ld   ($3C92),a	; indicates that the camera should follow jorge if william doesn't move
+415C: AF          xor  a
+415D: C9          ret
+
+; if we don't have the gloves or jorge's state is not 0x0d, 0x0e or 0x0f, check if william's movement cursors were pressed
+415E: AF          xor  a
+415F: CD 82 34    call $3482		; if up cursor is pressed exit
+4162: C0          ret  nz
+4163: 3E 08       ld   a,$08
+4165: CD 82 34    call $3482		; if left cursor is pressed exit
+4168: C0          ret  nz
+4169: 3E 01       ld   a,$01		; check if right cursor is pressed
+416B: C3 82 34    jp   $3482
+
+416E: 00          nop				; set to 0 when pressing ctrl+f9
+
+; if we have the gloves and jorge's state is 0x0d, 0x0e or 0x0f (is talking about the book), exit with cf = 1, otherwise with cf = 0
+416F: 3A EF 2D    ld   a,($2DEF)	; if we don't have the gloves, exit
+4172: E6 40       and  $40
+4174: C8          ret  z
+
+4175: 3A 00 3D    ld   a,($3D00)	; if jorge's state is 0x0d, 0x0e or 0x0f, exit with cf = 1, otherwise with cf = 0
+4178: FE 0D       cp   $0D
+417A: 37          scf
+417B: C8          ret  z
+
+417C: FE 0E       cp   $0E
+417E: 37          scf
+417F: C8          ret  z
+
+4180: FE 0F       cp   $0F
+4182: 37          scf
+4183: C8          ret  z
+
+4184: A7          and  a
+4185: C9          ret
+
+; checks if the character the camera follows needs to be changed and calculates the bonuses we have achieved (interpreted)
+4186: CD 91 56    call $5691		; checks if the character the camera follows needs to be changed and calculates the bonuses we have achieved (interpreted)
+4189: CD 6F 41    call $416F		; if we have the gloves and jorge's state is 0x0d, 0x0e or 0x0f, exit with cf = 1, otherwise with cf = 0
+418C: CD 50 41    call $4150		; check if cursors were pressed (cf = 1)
+418F: 3E 00       ld   a,$00
+4191: 20 24       jr   nz,$41B7		; if up, left or right cursor was pressed, follow william
+4193: 3A 93 3C    ld   a,($3C93)	; [0x3c93]++
+4196: 3C          inc  a
+4197: 32 93 3C    ld   ($3C93),a
+419A: FE 32       cp   $32			; if it's < 0x32, exit
+419C: D8          ret  c
+
+419D: 3D          dec  a
+419E: 32 93 3C    ld   ($3C93),a	; leaves the counter as it was
+41A1: 3A A1 2D    ld   a,($2DA1)	; reads the phrase state
+41A4: A7          and  a
+41A5: C4 BF 41    call nz,$41BF		; if a phrase is being shown, restore the wait counter value of the main loop
+41A8: CC C2 41    call z,$41C2		;  otherwise, set the main loop counter to 0 (so that it doesn't wait)
+41AB: CD 07 10    call $1007		; starts a sound on channel 1
+41AE: 3A 8F 3C    ld   a,($3C8F)	; gets the character the camera follows
+41B1: 4F          ld   c,a
+41B2: 3A 92 3C    ld   a,($3C92)	; reads the character to follow if william is standing still
+41B5: B9          cp   c
+41B6: C8          ret  z			; if they are equal, exit
+
+; also arrives here if up, left or right cursor was pressed, jump
+41B7: 32 8F 3C    ld   ($3C8F),a	; makes the camera follow the character indicated in a
+41BA: 32 93 3C    ld   ($3C93),a	; updates the counter with the entered value
+41BD: A7          and  a
+41BE: C0          ret  nz			; if the character to follow is not ours, exit
+
+; restores the wait counter value of the main loop
+41BF: 3A 49 BF    ld   a,($BF49)
+41C2: 32 18 26    ld   ($2618),a	; restores the wait counter value of the main loop
+41C5: C9          ret
+
+; sets a to 0, so that it never registers a key press
+41C6: AF          xor  a
+41C7: C9          ret
+
+; reads the first byte from stack and saves it in 0x3c93
+41C8: E1          pop  hl			; gets the return address
+41C9: 7E          ld   a,(hl)		; reads the first byte and saves it in 0x3c93
+41CA: 23          inc  hl
+41CB: 32 93 3C    ld   ($3C93),a
+41CE: E5          push hl
+41CF: C9          ret
+
+41D0: 78          ld   a,b
+41D1: 3D          dec  a
+41D2: 32 8F 3C    ld   ($3C8F),a
+41D5: C9          ret
+
+; checks if the character the camera follows needs to be changed and calculates the bonuses we have achieved (interpreted)
+41D6: CD 86 41    call $4186		; checks if the character the camera follows needs to be changed and calculates the bonuses we have achieved (interpreted)
+41D9: 21 F1 41    ld   hl,$41F1		; hl points to the pointer table of character data
+41DC: 3A 8F 3C    ld   a,($3C8F)	; reads the character the camera follows
+41DF: 87          add  a,a
+41E0: CD 2D 16    call $162D		; indexes into the table
+41E3: 5E          ld   e,(hl)
+41E4: 23          inc  hl
+41E5: 56          ld   d,(hl)		; de = address of the character data that the camera follows
+41E6: ED 53 88 2D ld   ($2D88),de
+41EA: C9          ret
+
+; this is never reached???
+41EB: 31 38 39    ld   sp,$3938
+41EE: 41          ld   b,c
+41EF: 40          ld   b,b
+41F0: 12          ld   (de),a
+
+; table with pointers to character data related to 0x3c8f
+41F1: 	3036 -> 0x00 william's characteristics
+	3045 -> 0x01 adso's characteristics
+	3054 -> 0x02 malachi's characteristics
+	3063 -> 0x03 abbot's characteristics
+	3072 -> 0x04 berengario's characteristics
+	3081 -> 0x05 severino's characteristics
+
+; checks if the lamp is running out
+41FD: 3A 8D 3C    ld   a,($3C8D)	; reads the lamp state
+4200: 4F          ld   c,a
+4201: 3A F3 2D    ld   a,($2DF3)
+4204: E6 80       and  $80			; if adso doesn't have the lamp, exit
+4206: C8          ret  z
+
+4207: 3A 8B 3C    ld   a,($3C8B)	; if hasn't entered the labyrinth/the lamp is not being used, exit
+420A: A7          and  a
+420B: C8          ret  z
+
+420C: 3A 6C 15    ld   a,($156C)	; if the screen is illuminated, exit
+420F: A7          and  a
+4210: C8          ret  z
+
+4211: 2A 87 3C    ld   hl,($3C87)	; increments the lamp usage time
+4214: 23          inc  hl
+4215: 22 87 3C    ld   ($3C87),hl
+4218: 7D          ld   a,l
+4219: A7          and  a
+421A: C0          ret  nz			; if l is not 0, exit
+
+421B: 79          ld   a,c			; a = lamp state
+421C: A7          and  a
+421D: C0          ret  nz			; if hasn't processed the lamp state change, exit
+
+421E: 7C          ld   a,h			; if the lamp usage time has reached 0x3xx, exit with c = 1 (lamp is running out)
+421F: 0E 01       ld   c,$01
+4221: FE 03       cp   $03
+4223: C8          ret  z
+4224: 0C          inc  c			; if the lamp usage time has reached 0x6xx, exit with c = 2 (lamp has run out)
+4225: FE 06       cp   $06
+4227: C8          ret  z
+4228: 0E 00       ld   c,$00		; otherwise, exit with c = 0
+422A: C9          ret
+
+; checks if the night is ending
+422B: 0E 00       ld   c,$00
+422D: 2A 86 2D    ld   hl,($2D86)	; gets the amount of time to wait for the time of day to advance
+4230: 7C          ld   a,h
+4231: B5          or   l
+4232: C8          ret  z			; if it's 0, exit
+4233: 7D          ld   a,l
+4234: A7          and  a
+4235: C0          ret  nz			; otherwise, wait if the lower part of the counter for the time of day to pass is not 0, exit
+
+4236: 3A 81 2D    ld   a,($2D81)	; if it's not night, exit
+4239: A7          and  a
+423A: C0          ret  nz
+
+423B: 7C          ld   a,h			; if the upper part of the counter is 2, exit with c = 1
+423C: 0C          inc  c
+423D: FE 02       cp   $02
+423F: C8          ret  z
+
+4240: 0D          dec  c
+4241: A7          and  a
+4242: C0          ret  nz			; otherwise, if it's not 0, exit with c = 0
+
+4243: 3C          inc  a
+4244: 32 9A 3C    ld   ($3C9A),a	; if it's 0, increment the time of day and exit with c = 0
+4247: C9          ret
+
+; turns off the screen light and takes the book from william
+4248: 3E 01       ld   a,$01
+424A: 32 6C 15    ld   ($156C),a	; indicates that the screen is not illuminated
+424D: CD 6C 1A    call $1A6C		; hides the game area
+4250: 3A EF 2D    ld   a,($2DEF)	; takes the book from william
+4253: E6 7F       and  $7F
+4255: 32 EF 2D    ld   ($2DEF),a
+4258: 4F          ld   c,a
+4259: 3E 80       ld   a,$80
+425B: CD DA 51    call $51DA		; updates the scoreboard so the book is not shown
+425E: CD 45 41    call $4145		; copies to 0x3008 -> 00 00 00 00 00 (makes the book disappear)
+	3008
+	00 00 00 00 00
+4268: C9          ret
+
+; ---------------- code to calculate mission completion percentage ----------------------------------
+
+; calculates mission completion percentage and saves it in 0x431e
+4269: 3A A7 3C    ld   a,($3CA7)	; if 0x3ca7 is 0, show the ending
+426C: A7          and  a
+426D: CA 68 38    jp   z,$3868
+4270: 3A 80 2D    ld   a,($2D80)	; gets the day number
+4273: 3D          dec  a			; adjusts between 0 and 6
+4274: 47          ld   b,a
+4275: 87          add  a,a
+4276: 4F          ld   c,a
+4277: 87          add  a,a
+4278: 80          add  a,b
+4279: 81          add  a,c
+427A: 4F          ld   c,a			; c = 7*(day - 1)
+427B: 3A 81 2D    ld   a,($2D81)	; gets the time of day
+427E: 81          add  a,c			; a = 7*(day - 1) + time of day
+427F: 2A BE 2D    ld   hl,($2DBE)	; reads the bonuses achieved
+4282: 06 10       ld   b,$10		; checks 16 bits
+4284: 29          add  hl,hl		; hl = hl*2
+4285: 30 02       jr   nc,$4289		; if the current bit wasn't set, jump
+4287: C6 04       add  a,$04		; for each bonus, add 4
+4289: 10 F9       djnz $4284		; repeat until testing all 16 bits of the number
+428B: FE 05       cp   $05
+428D: 30 01       jr   nc,$4290		; if we haven't obtained a score >= 5, set the score to 0
+428F: AF          xor  a
+
+; arrives here with a = score obtained
+4290: 01 00 00    ld   bc,$0000		; initially the score = 00
+4293: 47          ld   b,a
+4294: D6 0A       sub  $0A			; subtract 10 from the bonuses obtained
+4296: 38 03       jr   c,$429B		; if the remaining number was < 10, jump
+4298: 0C          inc  c			; increment the tens
+4299: 18 F8       jr   $4293		; repeat while tens remain
+
+429B: 21 30 30    ld   hl,$3030		; hl = ASCII characters of 00
+429E: 09          add  hl,bc		; add the score obtained
+429F: 22 A9 42    ld   ($42A9),hl	; modifies the call data to 0x4145
+42A2: CD 45 41    call $4145		; copies to 0x431E -> 20 20 3X 3Y 20 and exit, where XY is the game completion percentage
+	431E
+	20 20 30 30 20
+
+
+; updates bonuses if we have the gloves, keys and something else and if reading the book without gloves, kills william
+42AC: 3A EF 2D    ld   a,($2DEF)	; reads william's objects
+42AF: 4F          ld   c,a
+42B0: E6 4C       and  $4C			; keeps only the gloves and the first 2 keys
+42B2: 47          ld   b,a
+42B3: 3A F6 2D    ld   a,($2DF6)	; reads adso's objects
+42B6: E6 02       and  $02			; keeps key 3
+42B8: B0          or   b
+42B9: 47          ld   b,a
+42BA: 3A BE 2D    ld   a,($2DBE)	; reads the bonuses
+42BD: B0          or   b
+42BE: 32 BE 2D    ld   ($2DBE),a	; updates the bonuses
+42C1: 79          ld   a,c
+42C2: E6 80       and  $80
+42C4: C8          ret  z			; if we don't have the book, exit
+
+42C5: CB 71       bit  6,c			; if we have the gloves, exit
+42C7: C0          ret  nz
+
+42C8: 3A 85 3C    ld   a,($3C85)	; increments the counter of time reading the book without gloves
+42CB: 3C          inc  a
+42CC: 32 85 3C    ld   ($3C85),a
+42CF: C0          ret  nz
+
+42D0: 3A 19 2E    ld   a,($2E19)	; a = y position of william's sprite
+42D3: CB 3F       srl  a			; a = a/2
+42D5: 32 8F 28    ld   ($288F),a	; changes william's state
+42D8: 3E FE       ld   a,$FE
+42DA: 32 B1 28    ld   ($28B1),a	; modifies an instruction that adds -2 to william's sprite y position
+42DD: 3E 01       ld   a,$01
+42DF: 32 97 3C    ld   ($3C97),a	; kills william
+42E2: CD 1B 50    call $501B		; writes a phrase on the scoreboard
+42E5: 22 							YOU ARE DEAD, FRIAR WILLIAM, YOU HAVE FALLEN INTO THE TRAP
+42E6: C9          ret
+
+; if william is dead, calculates the % of mission completed and shows it on screen
+42E7: 3A 97 3C    ld   a,($3C97)	; reads if william is alive and if so, exit
+42EA: A7          and  a
+42EB: C8          ret  z
+
+42EC: 3E 80       ld   a,$80
+42EE: 32 8F 3C    ld   ($3C8F),a	; indicates that the camera should follow william and do it now
+42F1: 3A A1 2D    ld   a,($2DA1)	; if showing a phrase/playing a voice, exit
+42F4: A7          and  a
+42F5: C0          ret  nz
+42F6: CD 6C 1A    call $1A6C		; hides the game area
+42F9: CD 69 42    call $4269		; calculates mission completion percentage and saves it in 0x431e
+42FC: 21 10 20    ld   hl,$2010		; (h = y in pixels, l = x in bytes) (x = 64, y = 32)
+42FF: 22 97 2D    ld   ($2D97),hl	; modifies the variable used as the address to put characters on screen
+4302: CD EE 4F    call $4FEE		; prints the phrase that follows the call at the current screen position
+	48 41 53 20 52 45 53 55 45 4C 54 4F 20 45 4C FF
+	YOU HAVE SOLVED THE
+
+4315: 21 0E 30    ld   hl,$300E		; (h = y in pixels, l = x in bytes) (x = 56, y = 48)
+4318: 22 97 2D    ld   ($2D97),hl	; modifies the variable used as the address to put characters on screen
+431B: CD EE 4F    call $4FEE		; prints the phrase that follows the call at the current screen position
+	; here copies the data to put the scoreboard score
+	20 20 30 20 20
+	50 4F 52 20 43 49 45 4E 54 4F FF
+	PERCENT
+
+432E: 21 0C 40    ld   hl,$400C		; (h = y in pixels, l = x in bytes) (x = 48, y = 64)
+4331: 22 97 2D    ld   ($2D97),hl	; modifies the variable used as the address to put characters on screen
+4334: CD EE 4F    call $4FEE		; prints the phrase that follows the call at the current screen position
+	44 45 20 4C 41 20 49 4E 56 45 53 54 49 47 41 43 49 4F 4E FF
+	OF THE INVESTIGATION
+
+434B: 21 06 80    ld   hl,$8006		; (h = y in pixels, l = x in bytes) (x = 24, y = 128)
+434E: 22 97 2D    ld   ($2D97),hl	; modifies the variable used as the address to put characters on screen
+4351: CD EE 4F    call $4FEE		; prints the phrase that follows the call at the current screen position
+	50 55 4C 53 41 20 45 53 50 41 43 49 4F 20 50 41 52 41 20 45 4D 50 45 5A 41 52 FF
+	PRESS SPACE TO START
+
+436F: CD BC 32    call $32BC		; reads the keyboard buffers
+4372: 3E 2F       ld   a,$2F
+4374: CD 82 34    call $3482
+4377: 28 F6       jr   z,$436F		; wait until space is pressed
+4379: E1          pop  hl
+437A: C3 09 25    jp   $2509		; jumps to what's after the initialization
+
+; ---------------- end of mission completion percentage calculation ----------------------------------
+
+; disables the counter for the time of day to advance automatically
+437D: 21 00 00    ld   hl,$0000
+4380: 22 86 2D    ld   ($2D86),hl
+4383: C9          ret
+
+4384: 00          nop				; indicates that malachi is ascending while dying
+4385: 00          nop				; not used (maybe it was used before for something???)
+
+4386: 3A 85 43    ld   a,($4385)	; if ??? is not 0, exit
+4389: E6 0F       and  $0F
+438B: 32 85 43    ld   ($4385),a
+438E: C0          ret  nz
+438F: 3E 01       ld   a,$01
+4391: 32 84 43    ld   ($4384),a	; indicates that malachi is ascending while dying
+4394: 3A 58 30    ld   a,($3058)	; increments malachi's height
+4397: 3C          inc  a
+4398: 32 58 30    ld   ($3058),a
+439B: FE 14       cp   $14			; if it's < 20, exit
+439D: D8          ret  c
+
+; arrives here when malachi has disappeared from the screen
+439E: AF          xor  a
+439F: 32 56 30    ld   ($3056),a	; sets malachi's x position to 0
+43A2: 3E 02       ld   a,$02
+43A4: 32 A2 3C    ld   ($3CA2),a	; indicates that malachi has died
+43A7: AF          xor  a
+43A8: 32 A8 3C    ld   ($3CA8),a	; indicates that malachi has arrived at the church
+43AB: C9          ret
+
+; checks that william is in the correct position for mass
+43AC: 11 84 4B    ld   de,$4B84		; de = william's position at mass
+43AF: CD C4 43    call $43C4		; checks that william is in the position determined by de
+43B2: A7          and  a
+43B3: C0          ret  nz
+43B4: 11 80 30    ld   de,$3080		; de = impossible position???
+43B7: 18 0B       jr   $43C4		; checks that william is in the position determined by de
+
+43B9: 11 38 39    ld   de,$3938		; de = william's position in the refectory
+43BC: CD C4 43    call $43C4		; checks that william is in the position determined by de
+43BF: A7          and  a
+43C0: C0          ret  nz
+43C1: 11 20 30    ld   de,$3020		; de = impossible position???
+
+; checks that william is in a determined position (on the ground floor) indicated by de
+; returns in c: 0, if not in the room of the position, 2 if in the room of the position and 1 if in the indicated position and with the correct orientation
+43C4: 0E 00       ld   c,$00		; c = 0, not in his place
+43C6: 3A 3A 30    ld   a,($303A)	; gets william's height
+43C9: FE 0B       cp   $0B
+43CB: 30 1B       jr   nc,$43E8		; if not on the ground floor (height >= 0x0b), exit updating 0x3c9b
+43CD: 3A 38 30    ld   a,($3038)	; reads the x position
+43D0: AB          xor  e
+43D1: 5F          ld   e,a
+43D2: 3A 39 30    ld   a,($3039)	; reads the y position
+43D5: AA          xor  d
+43D6: B3          or   e
+43D7: FE 10       cp   $10
+43D9: 30 0D       jr   nc,$43E8		; if the position is not in the same room (a >= 0x10), exit updating 0x3c9b
+43DB: 0E 02       ld   c,$02		; c = 0x02, in the room but not in the correct position
+43DD: A7          and  a
+43DE: 20 08       jr   nz,$43E8		; if it's not 0, exit
+43E0: 3A 37 30    ld   a,($3037)	; reads the character's orientation
+43E3: FE 01       cp   $01
+43E5: 20 01       jr   nz,$43E8		; if it's not equal, exit updating 0x3c9b
+43E7: 0D          dec  c			; c = 1
+
+43E8: 79          ld   a,c
+43E9: 32 9B 3C    ld   ($3C9B),a	; saves the result
+43EC: C9          ret
+
+
+43ED: 3A A5 3C    ld   a,($3CA5)
+43F0: E6 01       and  $01
+43F2: C0          ret  nz			; if has warned the abbot, exit
+43F3: 3A EF 2D    ld   a,($2DEF)	; reads the objects william has
+43F6: E6 10       and  $10
+43F8: FE 10       cp   $10
+43FA: C8          ret  z			; if he has the parchment, exit
+43FB: 3A 17 30    ld   a,($3017)	; if the parchment is picked up, exit
+43FE: CB 7F       bit  7,a
+4400: C0          ret  nz
+4401: 3A 1B 30    ld   a,($301B)	; gets the parchment's height
+4404: CD 73 24    call $2473		; depending on the height, returns the base height of the floor in b
+4407: 78          ld   a,b
+4408: A7          and  a
+4409: C9          ret
+
+440A: 05CD		; address of the connection table for the floor where the character is
+
+; table of command lengths according to orientation
+440C: 	01 03 06 03
+
+; table of turn commands
+4410: 	8800 -> 1000 1000 0000 0000 -> command to advance one position forward
+	5100 -> 0101 0001 0000 0000 -> command to turn right
+	6E20 -> 0110 1110 0010 0000 -> commands to turn left twice
+	7100 -> 0111 0001 0000 0000 -> command to turn left
+
+4418: 00  ; resulting orientation of the search process
+4419: 00  ; number of iterations of the search process
+
+; table of commands if the character rises in height
+; each entry is 3 bytes (the first 2 the command and the third the command length)
+441A: 	8000 02 -> 1000 0000 0000 0000
+	2000 04 -> 0010 0000 0000 0000
+
+; table of commands if the character descends in height
+; each entry is 3 bytes (the first 2 the command and the third the command length)
+4420: 	C000 02 -> 1100 0000 0000 0000
+	3000 04 -> 0011 0000 0000 0000
+
+; table of commands if the character doesn't change height
+; each entry is 3 bytes (the first 2 the command and the third the command length)
+4426: 	8000 01 -> 1000 0000 0000 0000
+
+; routine called to search for the path from the position passed in 0x2db2-0x2db3 to the one in 0x2db4-0x2db5
+4429: 2A B4 2D    ld   hl,($2DB4)	; gets the destination position
+442C: CD D4 0C    call $0CD4		; indexes into the height table with hl and returns the corresponding address in ix
+442F: DD CB 00 F6 set  6,(ix+$00)	; marks the position as search target
+4433: 18 35       jr   $446A		; path search routine from source address to destination address
+
+; routine called to search for the path from the position passed in 0x2db2-0x2db3 to the one in 0x2db4-0x2db5 checking if it's reachable
+4435: 2A B4 2D    ld   hl,($2DB4)	; gets the destination position
+4438: CD D4 0C    call $0CD4		; indexes into the height table with hl and returns the corresponding address in ix
+443B: ED 73 B0 2D ld   ($2DB0),sp
+443F: DD 7E 00    ld   a,(ix+$00)	; reads the height of that position
+4442: E6 0F       and  $0F
+4444: 32 1C 45    ld   ($451C),a	; modifies an instruction in the neighbor checking routine with the base height
+4447: 4F          ld   c,a			; saves the height of that position for later
+4448: FE 0E       cp   $0E
+444A: 3E 00       ld   a,$00
+444C: D2 75 45    jp   nc,$4575		; if height >= 0x0e, exit returning 0
+444F: 3E C9       ld   a,$C9
+4451: 32 59 45    ld   ($4559),a	; modifies an instruction in the neighbors routine with ret
+4454: CD 17 45    call $4517		; checks 4 positions relative to ix ((x,y),(x,y-1),(x-1,y)(x-1,y-1) and if there's not much height difference, sets bit 7 of (x,y)
+4457: AF          xor  a
+4458: 32 59 45    ld   ($4559),a	; leaves the routine as it was putting nop
+445B: DD CB 00 7E bit  7,(ix+$00)	; if the destination cannot be reached, exit with a = 0
+445F: CA 75 45    jp   z,$4575
+4462: DD CB 00 BE res  7,(ix+$00)	; otherwise, remove explored position mark
+4466: DD CB 00 F6 set  6,(ix+$00)	; marks the position as search target
+
+; path search routine from the position in 0x2db2 (destination) to the height buffer position that has bit 6 (origin)
+446A: 2A 8A 2D    ld   hl,($2D8A)	; gets a pointer to the screen's height buffer
+446D: 01 28 02    ld   bc,$0228
+4470: 5D          ld   e,l			; de = hl
+4471: 54          ld   d,h
+4472: 09          add  hl,bc		; points hl to position (X = 0, Y = 23) of the height buffer
+4473: EB          ex   de,hl		; de = position (X = 0, Y = 23) of the height buffer, hl = position (X = 0, Y = 0) of the height buffer
+4474: DD 2A 8A 2D ld   ix,($2D8A)	; gets in ix a pointer to the height buffer
+4478: 06 18       ld   b,$18		; b = 24 times
+447A: CB FE       set  7,(hl)		; sets bit 7
+447C: DD CB 00 FE set  7,(ix+$00)	; sets bit 7
+4480: DD CB 17 FE set  7,(ix+$17)	; sets bit 7
+4484: 1A          ld   a,(de)
+4485: F6 80       or   $80
+4487: 12          ld   (de),a		; sets bit 7
+4488: 78          ld   a,b
+4489: 01 18 00    ld   bc,$0018
+448C: DD 09       add  ix,bc		; advances ix to the next line
+448E: 47          ld   b,a
+448F: 13          inc  de			; increments the pointer to the last line of the height buffer
+4490: 23          inc  hl			; increments the pointer to the last first of the height buffer
+4491: 10 E7       djnz $447A		; repeat until bit 7 of all positions on the edge of the height buffer have been set
+
+4493: ED 73 B0 2D ld   ($2DB0),sp
+4497: 31 FE 9C    ld   sp,$9CFE		; puts on the stack at the end of the sprite buffer
+449A: 3E 01       ld   a,$01
+449C: 32 19 44    ld   ($4419),a	; starts the recursion level
+449F: ED 5B B2 2D ld   de,($2DB2)	; gets the initial position adjusted to the height buffer and puts it on the stack
+44A3: D5          push de
+44A4: EB          ex   de,hl		; hl = initial position adjusted to the height buffer and puts it on the stack
+44A5: CD D4 0C    call $0CD4		; indexes into the height table with hl and returns the corresponding address in ix

@@ -1,0 +1,600 @@
+0D9D: 28 10       jr   z,$0DAF			; if the door is not redrawn, go to the next door
+0D9F: DD E5       push ix
+0DA1: FD CB 01 76 bit  6,(iy+$01)		; if the door is redrawn, plays a sound depending on its state
+0DA5: F5          push af
+0DA6: C4 1B 10    call nz,$101B			; if bit 6 was 1, plays the door opening sound
+0DA9: F1          pop  af
+0DAA: CC 16 10    call z,$1016			; if bit 6 was 0, plays the door closing sound
+0DAD: DD E1       pop  ix
+
+0DAF: 01 05 00    ld   bc,$0005			; advance to the next door
+0DB2: FD 09       add  iy,bc
+0DB4: 01 14 00    ld   bc,$0014
+0DB7: DD 09       add  ix,bc
+0DB9: 18 B8       jr   $0D73
+
+; routine called when game objects are visible in the current screen
+; if the object wasn't being drawn, adjusts the position and marks it to be drawn
+; ix points to the object sprite
+; iy points to the object data
+; hl contains the screen position of the object
+; c = the y coordinate of the sprite on screen (-16)
+0DBB: FD CB 00 7E bit  7,(iy+$00)	; if the object has already been picked up, exit
+0DBF: C0          ret  nz
+0DC0: CB F9       set  7,c			; indicates that the object needs to be drawn
+0DC2: DD 71 00    ld   (ix+$00),c	; updates the object's depth within the tile buffer
+0DC5: 7C          ld   a,h
+0DC6: D6 08       sub  $08
+0DC8: DD 77 02    ld   (ix+$02),a	; modifies the object's y position (-8 pixels)
+0DCB: 7D          ld   a,l
+0DCC: D6 02       sub  $02
+0DCE: DD 77 01    ld   (ix+$01),a	; modifies the object's x position (-8 pixels)
+0DD1: C9          ret
+
+; routine called when doors are visible in the current screen
+; handles modifying the sprite position according to orientation, modifying the height buffer to indicate whether you can pass
+;  through the door area or not, placing the door graphics and modifying 0x2daf
+; ix points to a door sprite
+; iy points to the door data
+; hl contains the screen position of the object
+; c has the door's depth on screen
+0DD2: EB          ex   de,hl			; de = object's screen position
+0DD3: CD B0 2A    call $2AB0			; sets the sprite's current position and dimensions as old position and dimensions
+0DD6: C5          push bc
+0DD7: CD 7C 0E    call $0E7C			; reads 2 values in bc related to orientation and modifies sprite position (in local coordinates) according to orientation
+0DDA: 21 AD 05    ld   hl,$05AD			; points to the offset table related to door orientations
+0DDD: FD 7E 00    ld   a,(iy+$00)		; reads the door orientation
+0DE0: E6 03       and  $03
+0DE2: CD 80 24    call $2480			; modifies the orientation passed in a with the current screen orientation
+0DE5: 87          add  a,a				; each entry occupies 8 bytes
+0DE6: 87          add  a,a
+0DE7: 87          add  a,a
+0DE8: CD 2D 16    call $162D			; indexes into the table
+0DEB: 7E          ld   a,(hl)
+0DEC: 83          add  a,e
+0DED: 81          add  a,c
+0DEE: DD 77 01    ld   (ix+$01),a		; modifies the sprite's x position
+0DF1: 23          inc  hl
+0DF2: 7E          ld   a,(hl)
+0DF3: 82          add  a,d
+0DF4: 80          add  a,b
+0DF5: DD 77 02    ld   (ix+$02),a		; modifies the sprite's y position
+0DF8: 23          inc  hl
+0DF9: 7E          ld   a,(hl)
+0DFA: C1          pop  bc				; recovers the depth
+0DFB: 81          add  a,c
+0DFC: F6 80       or   $80				; instruction modified from outside. If the screen is drawn, 0x80, otherwise 0
+0DFE: F6 00       or   $00				; instruction modified from outside (or 0x00 or or 0x80 if the door is drawn)
+0E00: DD 77 00    ld   (ix+$00),a
+0E03: 23          inc  hl
+0E04: 3A AF 2D    ld   a,($2DAF)		; reads if the door needs flipped graphics or not
+0E07: B6          or   (hl)
+0E08: 32 AF 2D    ld   ($2DAF),a
+0E0B: CD 8C 0E    call $0E8C			; modifies the sprite's x and y position on the grid according to the next 2 values from hl
+0E0E: 11 49 AA    ld   de,$AA49			; places the door graphic address in the sprite
+0E11: DD 73 07    ld   (ix+$07),e
+0E14: DD 72 08    ld   (ix+$08),d
+0E17: 3E 0F       ld   a,$0F
+
+0E19: CD 2C 0E    call $0E2C			; reads a value in bc related to the door's offset in the height buffer
+0E1C: D8          ret  c				; if the object is not visible, exit. Otherwise, returns in ix a pointer to the height table entry for the corresponding position
+0E1D: 08          ex   af,af'			; recovers a
+0E1E: DD 77 00    ld   (ix+$00),a		; marks the height of this position in the height buffer
+0E21: DD 09       add  ix,bc
+0E23: DD 77 00    ld   (ix+$00),a		; marks the height of the next position in the height buffer
+0E26: DD 09       add  ix,bc
+0E28: DD 77 00    ld   (ix+$00),a		; marks the height of the next position in the height buffer
+0E2B: C9          ret
+
+; reads the offset for the height buffer in bc, and if the door is visible returns in ix a pointer to the height table entry for the corresponding position
+0E2C: 08          ex   af,af'
+0E2D: FD 7E 00    ld   a,(iy+$00)	; gets the door orientation
+0E30: E6 03       and  $03
+0E32: 21 44 0E    ld   hl,$0E44		; points to the offset table in the height buffer related to door orientation
+0E35: 87          add  a,a			; each entry occupies 2 bytes
+0E36: CD 2D 16    call $162D		; indexes into the table
+0E39: 4E          ld   c,(hl)
+0E3A: 23          inc  hl
+0E3B: 46          ld   b,(hl)		; bc = [hl]
+0E3C: D5          push de
+0E3D: C5          push bc
+0E3E: CD BE 0C    call $0CBE		; if the position is not one of the center ones on the screen or the character's height doesn't match the floor's base height, exit with CF=1
+0E41: C1          pop  bc			;  otherwise, returns in ix a pointer to the height table entry for the corresponding position
+0E42: D1          pop  de
+0E43: C9          ret
+
+; offset table in the height buffer related to door orientation
+0E44: 	0001 -> +01
+	FFE8 -> -24
+	FFFF -> -01
+	0018 -> +24
+
+; returns the entity position in screen coordinates. If not visible, exits with CF = 1
+; if CF=0, in c returns sprite depth and in hl returns the sprite's screen position
+0E4C: 3E C9       ld   a,$C9
+0E4E: 32 2F 2B    ld   ($2B2F),a	; modifies an instruction by placing a ret, so that the routine at 0x2add returns the sprite's screen position
+0E51: CD 5A 0E    call $0E5A		; processes the objects
+
+; arrives here if the sprite is visible
+0E54: 4F          ld   c,a			; gets the sprite's y coordinate on screen -16 (the depth)
+0E55: AF          xor  a
+0E56: 32 2F 2B    ld   ($2B2F),a	; modifies an instruction by placing a nop
+0E59: C9          ret
+
+0E5A: CD DD 2A    call $2ADD		; processes the object and gets its screen address
+
+; if the sprite is not visible, arrives here
+0E5D: D1          pop  de			; gets the return address
+0E5E: DD 36 00 FE ld   (ix+$00),$FE ; marks the sprite as not visible
+0E62: AF          xor  a
+0E63: 37          scf				; sets the carry flag
+0E64: 18 F0       jr   $0E56
+
+; checks if door graphics need to be flipped
+0E66: 3A AF 2D    ld   a,($2DAF)	; reads the flipx state that the door expects
+0E69: 4F          ld   c,a
+0E6A: 3A 78 2D    ld   a,($2D78)	; reads if the doors are flipped or not
+0E6D: A9          xor  c
+0E6E: C8          ret  z			; if they are in the needed state, exit
+0E6F: 79          ld   a,c
+0E70: 32 78 2D    ld   ($2D78),a	; otherwise, flips the graphics
+0E73: 01 06 28    ld   bc,$2806		; width and height of the door sprite
+0E76: 21 49 AA    ld   hl,$AA49		; hl points to the door graphics
+0E79: C3 52 35    jp   $3552		; flips the door graphics
+
+; reads 2 values in bc related to orientation and modifies sprite position (in local coordinates) according to orientation
+; ix points to a door sprite
+0E7C: 21 9D 0E    ld   hl,$0E9D		; points to the table related to door offsets and orientation
+0E7F: 3E 03       ld   a,$03		; orientation towards +y
+0E81: CD 80 24    call $2480		; modifies the orientation passed in a with the current screen orientation
+0E84: 87          add  a,a			; a = a*4 (each entry occupies 4 bytes)
+0E85: 87          add  a,a
+0E86: CD 2D 16    call $162D		; indexes into the table
+0E89: 4E          ld   c,(hl)		; reads the values to add to the door sprite's screen coordinate position
+0E8A: 23          inc  hl
+0E8B: 46          ld   b,(hl)
+0E8C: 23          inc  hl
+0E8D: DD 7E 12    ld   a,(ix+$12)	; modifies the grid's x position according to camera orientation with the read value
+0E90: 86          add  a,(hl)
+0E91: DD 77 12    ld   (ix+$12),a
+0E94: 23          inc  hl
+0E95: DD 7E 13    ld   a,(ix+$13)	; modifies the grid's x position according to camera orientation with the read value
+0E98: 86          add  a,(hl)
+0E99: DD 77 13    ld   (ix+$13),a
+0E9C: C9          ret
+
+; table related to door offsets and orientation
+; each entry occupies 4 bytes
+; byte 0: value to add to the door sprite's x position in screen coordinates
+; byte 1: value to add to the door sprite's y position in screen coordinates
+; byte 2: value to add to the door sprite's x position in local coordinates
+; byte 3: value to add to the door sprite's y position in local coordinates
+0E9D: 	02 00 00 FF -> +2 00 00 -1
+	00 FC FF FF -> 00 -4 -1 -1
+	FE 00 FF 00 -> -2 00 -1 00
+	00 04 00 00 -> 00 +4 00 00
+
+; checks if a door needs to be opened or closed
+; iy points to the door data
+0EAD: FD 7E 01    ld   a,(iy+$01)
+0EB0: CB 7F       bit  7,a			; if the door stays fixed, exit
+0EB2: C0          ret  nz
+0EB3: FD 5E 02    ld   e,(iy+$02)	; gets the door's x and y coordinates
+0EB6: FD 56 03    ld   d,(iy+$03)
+0EB9: 1D          dec  e
+0EBA: 1D          dec  e
+0EBB: 15          dec  d
+0EBC: 15          dec  d
+0EBD: E6 1F       and  $1F			; gets which door it is
+0EBF: 4F          ld   c,a
+0EC0: 21 A6 3C    ld   hl,$3CA6		; points to the doors that can be opened
+0EC3: 7E          ld   a,(hl)
+0EC4: F6 10       or   $10			; adds the passageway door behind the kitchen to the mask
+0EC6: A1          and  c			; combines the mask with the current door
+0EC7: 4F          ld   c,a
+0EC8: 3A DC 2D    ld   a,($2DDC)	; reads the doors that Adso can enter
+0ECB: 21 D9 2D    ld   hl,$2DD9		; points to the doors that Guillermo can enter
+0ECE: CD 6C 0F    call $0F6C		; checks if Guillermo is near a door he doesn't have permission to open
+0ED1: 38 73       jr   c,$0F46		; if so, check if it needs to be closed
+0ED3: 3A D9 2D    ld   a,($2DD9)	; reads the doors that Guillermo can enter
+0ED6: 21 DC 2D    ld   hl,$2DDC		; points to the doors that Adso can enter
+0ED9: CD 6C 0F    call $0F6C		; checks if Adso is near a door he doesn't have permission to open
+0EDC: 38 68       jr   c,$0F46		; if so, check if it needs to be closed
+
+0EDE: 21 D9 2D    ld   hl,$2DD9		; points to the first character's permissions
+0EE1: 1C          inc  e
+0EE2: 14          inc  d
+
+0EE3: 7E          ld   a,(hl)
+0EE4: 23          inc  hl
+0EE5: FE FF       cp   $FF
+0EE7: 28 5D       jr   z,$0F46		; if all entries have been processed, jump to see if the door needs to be closed
+0EE9: A1          and  c
+0EEA: 20 04       jr   nz,$0EF0		; if this character has permission to open this door, jump
+0EEC: 23          inc  hl
+0EED: 23          inc  hl
+0EEE: 18 F3       jr   $0EE3		; advance to the next character's door permissions
+
+; arrives here if someone has permission to open a door
+0EF0: CD 7C 0F    call $0F7C		; returns the position of the character who can open the door
+0EF3: 93          sub  e
+0EF4: FE 04       cp   $04
+0EF6: 30 EB       jr   nc,$0EE3		; if not close in x, jump to process the next character
+0EF8: 78          ld   a,b
+0EF9: 92          sub  d
+0EFA: FE 04       cp   $04			; if not close in y, jump to process the next character
+0EFC: 30 E5       jr   nc,$0EE3
+0EFE: FD CB 01 76 bit  6,(iy+$01)	; if the door is open, exit
+0F02: C0          ret  nz
+0F03: FD 4E 00    ld   c,(iy+$00)	; saves the door's orientation and state in case it needs to be restored later
+0F06: FD 46 01    ld   b,(iy+$01)
+0F09: D9          exx
+0F0A: FD CB 01 F6 set  6,(iy+$01)	; marks the door as open
+0F0E: 3E 80       ld   a,$80
+0F10: 32 FF 0D    ld   ($0DFF),a	; modifies an instruction so that a sprite needs to be redrawn
+0F13: FD 7E 04    ld   a,(iy+$04)	; gets the height at which the door is located
+0F16: CD 19 0E    call $0E19		; modifies the height buffer since when the door opens it should be passable
+0F19: FD 35 00    dec  (iy+$00)		; changes the door's orientation
+0F1C: FD CB 01 6E bit  5,(iy+$01)
+0F20: 20 06       jr   nz,$0F28		; if bit 5 is set, jump
+0F22: FD 34 00    inc  (iy+$00)		; changes the door's orientation
+0F25: FD 34 00    inc  (iy+$00)
+0F28: CD 2C 0E    call $0E2C		; reads the door's offset in bc for the height buffer, and if the door is visible
+0F2B: DD 09       add  ix,bc		; returns in ix a pointer to the height table entry for the corresponding position
+0F2D: DD 09       add  ix,bc
+0F2F: D9          exx
+0F30: DD 7E 00    ld   a,(ix+$00)	; reads if there is a character in the position where the door opens
+0F33: E6 F0       and  $F0
+0F35: C8          ret  z			; if not, exit
+0F36: FD 71 00    ld   (iy+$00),c	; if there is a character, restore the door's configuration
+0F39: FD 70 01    ld   (iy+$01),b
+0F3C: AF          xor  a
+0F3D: 32 FF 0D    ld   ($0DFF),a	; modifies an instruction so that the sprite doesn't need to be redrawn
+0F40: FD 7E 04    ld   a,(iy+$04)	; gets the height at which the door is located
+0F43: C3 19 0E    jp   $0E19		; modifies the height buffer with the door's height
+
+; arrives here to check if the door needs to be closed
+0F46: FD CB 01 76 bit  6,(iy+$01)	; if the door is closed, exit
+0F4A: C8          ret  z
+
+0F4B: FD 4E 00    ld   c,(iy+$00)	; saves the door's orientation and state in case it needs to be restored later
+0F4E: FD 46 01    ld   b,(iy+$01)
+0F51: D9          exx
+0F52: 3E 80       ld   a,$80
+0F54: 32 FF 0D    ld   ($0DFF),a	; modifies an instruction so that the sprite is redrawn
+0F57: FD 7E 04    ld   a,(iy+$04)	; gets the height at which the door is located
+0F5A: CD 19 0E    call $0E19		; modifies the height buffer positions occupied by the door to allow passage
+0F5D: FD CB 01 B6 res  6,(iy+$01)	; indicates that the door is closed
+0F61: FD 35 00    dec  (iy+$00)		; changes the door's orientation
+0F64: FD CB 01 6E bit  5,(iy+$01)	; if bit 5 is set, modifies the orientation
+0F68: 28 BE       jr   z,$0F28
+0F6A: 18 B6       jr   $0F22		; jump to redraw the sprite
+
+; checks if the character approaches a door they can't open, and if so, closes it
+0F6C: B6          or   (hl)		; combines the doors they can enter
+0F6D: 23          inc  hl
+0F6E: A1          and  c
+0F6F: C0          ret  nz		; if they have permission to open the door, exit
+
+0F70: CD 7C 0F    call $0F7C	; returns the position of the character who can open the door
+0F73: 93          sub  e		; compares the character's x coordinate with the door's x coordinate
+0F74: FE 06       cp   $06
+0F76: D0          ret  nc		; if not close, exit
+0F77: 78          ld   a,b		; repeat with y
+0F78: 92          sub  d
+0F79: FE 06       cp   $06
+0F7B: C9          ret
+
+; returns in ab what is in [[hl]] and increments hl
+0F7C: 7E          ld   a,(hl)		; ab = [hl]
+0F7D: 23          inc  hl
+0F7E: 46          ld   b,(hl)
+0F7F: 23          inc  hl
+0F80: E5          push hl
+0F81: 6F          ld   l,a			; hl = ba
+0F82: 60          ld   h,b
+0F83: 7E          ld   a,(hl)		; ab = [hl]
+0F84: 23          inc  hl
+0F85: 46          ld   b,(hl)
+0F86: E1          pop  hl
+0F87: C9          ret
+
+; --------------------- end of door-related code --------------------------------------------
+
+; limits options to try to the first option
+0F88: 11 93 05    ld   de,$0593
+0F8B: ED 53 A3 05 ld   ($05A3),de	; initializes the pointer to the alternatives buffer
+0F8F: 13          inc  de
+0F90: 13          inc  de
+0F91: 13          inc  de
+0F92: 3E FF       ld   a,$FF		; marks the end of the buffer after the first entry
+0F94: 12          ld   (de),a
+0F95: C9          ret
+
+; ---------------------------- music-related code section ------------------------
+
+0F96: mask indicating on which channels the tones and noise generator are active
+0F97: copy of the mask indicating on which channels the tones and noise generator are active
+
+0F98: counter that decrements and when it reaches 0 updates the notes
+
+0F99: envelope period (low byte) related to what was read in 0x0a-0x0b + 0x0c
+0F9A: envelope period (high byte) related to what was read in 0x0a-0x0b + 0x0c
+0F9B: envelope type related to what was read in 0x0a-0x0b + 0x0c (only stores 4 lsb)
+
+0F9C: noise generator period (only the last 5 bits are used)
+
+; table with generation data for each sound channel (PSG registers + channel entry)
+0F9D:
+00 08 09
+0FA0: 36 80 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00
+02 09 12
+0FB8: 36 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+04 0A 24
+0FD0: 36 80 00 00 00 00 00 00 00 00 00 00 00 00 00 1E 04 20 C7 21 F5
+
+; table with chromatic scale tones
+; the frequency is calculated as Freq = (1 MHz)/(16*Tone for the PSG), so each tone corresponds to:
+0FE5: 	0EEE ; 0 -> frequency of C 	(octave 0) 16 Hz in the AY-8912, 16.4 theoretical
+	0E18 ; 1 -> frequency of C#	(octave 0) 17 Hz in the AY-8912, 17.3 theoretical
+	0D4D ; 2 -> frequency of D		(octave 0) 18 Hz in the AY-8912, 18.4 theoretical
+	0C8E ; 3 -> frequency of D#	(octave 0) 19 Hz in the AY-8912, 19.4 theoretical
+	0BDA ; 4 -> frequency of E		(octave 0) 20 Hz in the AY-8912, 20.6 theoretical
+	0B2F ; 5 -> frequency of F		(octave 0) 21 Hz in the AY-8912, 21.8 theoretical
+	0A8F ; 6 -> frequency of G		(octave 0) 23 Hz in the AY-8912, 23.1 theoretical
+	09F7 ; 7 -> frequency of G#	(octave 0) 24 Hz in the AY-8912, 24.5 theoretical
+	0968 ; 8 -> frequency of A		(octave 0) 25 Hz in the AY-8912, 26.0 theoretical
+	08E1 ; 9 -> frequency of A#	(octave 0) 27 Hz in the AY-8912, 27.5 theoretical
+	0861 ; A -> frequency of B		(octave 0) 29 Hz in the AY-8912, 29.1 theoretical
+	07E9 ; B -> frequency of B#	(octave 0) 30 Hz in the AY-8912, 30.9 theoretical
+
+0FFD: 21 80 14    ld   hl,$1480		; sound ??? on channel 1
+1000: 18 3D       jr   $103F
+
+1002: 21 96 14    ld   hl,$1496		; sound of Guillermo moving on channel 3
+1005: 18 44       jr   $104B
+
+1007: 21 FE 13    ld   hl,$13FE		; sound ???
+100A: 18 28       jr   $1034
+
+100C: 21 F3 14    ld   hl,$14F3		; sound ??? on channel 1
+100F: 18 2E       jr   $103F
+
+1011: 21 BA 14    ld   hl,$14BA		; bell sound after the square spiral on channel 1
+1014: 18 29       jr   $103F
+
+1016: 21 60 15    ld   hl,$1560		; sound ??? on channel 2
+1019: 18 2A       jr   $1045
+
+101B: 21 E7 14    ld   hl,$14E7		; sound ??? on channel 2
+101E: 18 25       jr   $1045
+
+1020: 21 B1 14    ld   hl,$14B1		; points to the data
+1023: 18 26       jr   $104B		; initializes channel 3
+
+1025: 21 9F 14    ld   hl,$149F		; sound of picking up/dropping object on channel 1
+1028: 18 1B       jr   $1045
+
+102A: 21 50 15    ld   hl,$1550		; sound ??? on channel 1
+102D: 18 16       jr   $1045
+
+102F: 21 A8 14    ld   hl,$14A8		; sound of picking up/dropping object on channel 1
+1032: 18 11       jr   $1045
+
+1034: DD 21 D0 0F ld   ix,$0FD0		; points to channel 3 control register
+1038: DD 7E 0E    ld   a,(ix+$0e)
+103B: A7          and  a
+103C: C0          ret  nz
+103D: 18 10       jr   $104F
+
+103F: DD 21 A0 0F ld   ix,$0FA0			; points to entry 1
+1043: 18 0A       jr   $104F			; initializes the channel
+1045: DD 21 B8 0F ld   ix,$0FB8			; points to entry 2
+1049: 18 04       jr   $104F			; initializes the channel
+104B: DD 21 D0 0F ld   ix,$0FD0			; points to entry 3
+
+; initializes the channel
+104F: F3          di					; fills part of the selected entry
+1050: DD 36 0E 05 ld   (ix+$0e),$05		; activates the sound
+1054: DD 75 00    ld   (ix+$00),l		; saves the music data address
+1057: DD 74 01    ld   (ix+$01),h
+105A: DD 36 02 01 ld   (ix+$02),$01		; sets the note duration
+105E: FB          ei					; enables interrupts
+105F: C9          ret
+
+; generates the music (called from the interrupt)
+1060: F3          di
+1061: F5          push af
+1062: 3A AE 0F    ld   a,($0FAE)		; gets the value of the first entry + 0x0e
+1065: C5          push bc
+1066: 4F          ld   c,a
+1067: 3A C6 0F    ld   a,($0FC6)		; gets the value of the second entry + 0x0e
+106A: B1          or   c
+106B: 4F          ld   c,a
+106C: 3A DE 0F    ld   a,($0FDE)		; gets the value of the third entry + 0x0e
+106F: B1          or   c
+1070: E6 01       and  $01				; if any of the 3 entries had bit 0 active, jump, otherwise end the interrupt
+1072: 20 05       jr   nz,$1079
+1074: C1          pop  bc
+1075: F1          pop  af
+1076: FB          ei
+1077: ED 4D       reti
+
+; routine that updates the music (according to 0x0f98 value, the tempo is higher or lower)
+1079: E5          push hl
+107A: D5          push de
+107B: DD E5       push ix
+107D: 3A 98 0F    ld   a,($0F98)		; decrements the music tempo, but keeps it between 0 and [0x1086]
+1080: 3D          dec  a
+1081: FE FF       cp   $FF
+1083: 20 02       jr   nz,$1087
+1085: 3E 06       ld   a,$06			; related to the music tempo (instruction modified from outside)
+1087: 32 98 0F    ld   ($0F98),a
+108A: 3E 3F       ld   a,$3F
+108C: 32 96 0F    ld   ($0F96),a		; activates the tones and noise generator for all channels
+
+108F: DD 21 A0 0F ld   ix,$0FA0
+1093: CD 4C 11    call $114C			; processes the first sound entry
+1096: DD 21 B8 0F ld   ix,$0FB8
+109A: CD 4C 11    call $114C			; processes the second sound entry
+109D: DD 21 D0 0F ld   ix,$0FD0
+10A1: CD 4C 11    call $114C			; processes the third sound entry
+
+10A4: DD 21 A0 0F ld   ix,$0FA0			; writes channel 0 data to the PSG
+10A8: CD D0 10    call $10D0
+10AB: DD 21 B8 0F ld   ix,$0FB8			; writes channel 1 data to the PSG
+10AF: CD D0 10    call $10D0
+10B2: DD 21 D0 0F ld   ix,$0FD0			; writes channel 2 data to the PSG
+10B6: CD D0 10    call $10D0
+
+10B9: 2A 96 0F    ld   hl,($0F96)		; l = channel mask
+10BC: 7D          ld   a,l
+10BD: BC          cp   h
+10BE: 28 09       jr   z,$10C9			; if the mask has changed, sets the channel state
+10C0: 32 97 0F    ld   ($0F97),a		; copies the mask to avoid setting the state if there are no modifications
+10C3: 4F          ld   c,a
+10C4: 3E 07       ld   a,$07			; mixer control register
+10C6: CD 4E 13    call $134E			; writes to the PSG on which channels the tones and noise generator are active
+
+10C9: DD E1       pop  ix
+10CB: D1          pop  de
+10CC: E1          pop  hl
+10CD: C3 74 10    jp   $1074			; ends the interrupt
+
+; writes the channel data pointed to by ix to the PSG
+10D0: DD 6E 0E    ld   l,(ix+$0e)		; reads the control register
+10D3: CB 45       bit  0,l
+10D5: C8          ret  z				; if the channel is not active, exit
+10D6: CB 55       bit  2,l
+10D8: C0          ret  nz				; if notes or envelopes don't need to be updated, exit
+10D9: CB 7D       bit  7,l
+10DB: C0          ret  nz
+
+10DC: CB 75       bit  6,l			; if bit 6 = 0, skip the following (write note frequency to PSG)
+10DE: 28 13       jr   z,$10F3
+10E0: DD 4E 03    ld   c,(ix+$03)	; reads the note frequency (lower part)
+10E3: DD 7E FD    ld   a,(ix-$03)	; reads the PSG register to write (channel frequency (lower 8 bits))
+10E6: CD 4E 13    call $134E		; writes to PSG register number 'a' the value 'c'
+10E9: DD 4E 04    ld   c,(ix+$04)	; reads the note frequency (upper part)
+10EC: DD 7E FD    ld   a,(ix-$03)
+10EF: 3C          inc  a			; PSG register to write (channel frequency (upper 4 bits))
+10F0: CD 4E 13    call $134E
+
+10F3: CB 6D       bit  5,l			; if bit 5 = 0, skip the following (write desired volume or envelope)
+10F5: 28 32       jr   z,$1129
+10F7: CB 65       bit  4,l
+10F9: 20 0B       jr   nz,$1106		; if bit 4 != 0, envelopes are generated for the volume
+10FB: DD 7E FE    ld   a,(ix-$02)	; reads the PSG register to write (amplitude)
+10FE: DD 4E 07    ld   c,(ix+$07)	; reads the volume
+1101: CD 4E 13    call $134E		; writes the new volume to the PSG
+1104: 18 23       jr   $1129
+
+1106: 3A 99 0F    ld   a,($0F99)	; reads the envelope period low byte
+1109: 4F          ld   c,a
+110A: 3E 0B       ld   a,$0B		; PSG envelope control register
+110C: CD 4E 13    call $134E
+110F: 3A 9A 0F    ld   a,($0F9A)	; reads the envelope period high byte
+1112: 4F          ld   c,a
+1113: 3E 0C       ld   a,$0C
+1115: CD 4E 13    call $134E		; writes the new envelope period (in units of 128 microseconds)
+1118: 3A 9B 0F    ld   a,($0F9B)	; reads the envelope type and writes it to the PSG
+111B: 4F          ld   c,a
+111C: 3E 0D       ld   a,$0D
+111E: CD 4E 13    call $134E
+1121: DD 7E FE    ld   a,(ix-$02)	; reads the PSG register to write (amplitude)
+1124: 0E 10       ld   c,$10
+1126: CD 4E 13    call $134E		; leaves the volume in the hands of the envelope generator
+
+; l = (ix + 0x0e)
+1129: 3E 07       ld   a,$07
+112B: CB 4D       bit  1,l
+112D: 28 11       jr   z,$1140		; if bit 1 of 0x0e is 0, doesn't activate the noise generator
+112F: 3E 3F       ld   a,$3F
+1131: CB 5D       bit  3,l
+1133: 28 0B       jr   z,$1140		; if bit 3 of 0x0e is 0, skip the following
+1135: 3A 9C 0F    ld   a,($0F9C)
+1138: 4F          ld   c,a
+1139: 3E 06       ld   a,$06
+113B: CD 4E 13    call $134E		; sets the noise generator period
+113E: 3E 3F       ld   a,$3F
+
+1140: DD A6 FF    and  (ix-$01)		; AND with the bits representing the channel
+1143: 4F          ld   c,a
+1144: 3A 96 0F    ld   a,($0F96)	; updates the noise generator configuration
+1147: A9          xor  c
+1148: 32 96 0F    ld   ($0F96),a
+114B: C9          ret
+
+; processes a sound channel
+114C: DD 7E 0E    ld   a,(ix+$0e)		; checks if the entry is active
+114F: CB 47       bit  0,a
+1151: C8          ret  z				; if not, exit
+1152: E6 87       and  $87				; (10000111) ignores the bits that don't matter and updates the value
+1154: DD 77 0E    ld   (ix+$0e),a
+1157: 3A 98 0F    ld   a,($0F98)		; loads the tempo
+115A: A7          and  a
+115B: C2 F7 11    jp   nz,$11F7			; if it's not 0, skip the tone update part
+
+115E: DD 35 02    dec  (ix+$02)			; decrements the current note duration
+1161: C2 F7 11    jp   nz,$11F7			; if it hasn't finished yet, jump
+1164: DD 36 0E 01 ld   (ix+$0e),$01		; marks entry to be processed
+
+1168: DD 5E 00    ld   e,(ix+$00)		; loads the last note address into de
+116B: DD 56 01    ld   d,(ix+$01)
+116E: 06 06       ld   b,$06			; 6 entries total
+1170: 21 06 13    ld   hl,$1306
+1173: 1A          ld   a,(de)			; compares the first byte read with possible commands
+1174: BE          cp   (hl)
+1175: 20 11       jr   nz,$1188			; if not equal, advance to the next entry
+
+1177: 23          inc  hl				; if a command has been identified, read the jump address
+1178: 7E          ld   a,(hl)
+1179: 23          inc  hl
+117A: 66          ld   h,(hl)
+117B: 6F          ld   l,a
+117C: 01 6E 11    ld   bc,$116E			; saves the return address (to reprocess the entries)
+117F: C5          push bc
+1180: EB          ex   de,hl
+1181: 23          inc  hl
+1182: 4E          ld   c,(hl)			; loads the first parameter into bc
+1183: 23          inc  hl
+1184: 46          ld   b,(hl)
+1185: 23          inc  hl
+1186: EB          ex   de,hl
+1187: E9          jp   (hl)				; jumps to the address
+
+1188: 23          inc  hl				; advance to the next entry
+1189: 23          inc  hl
+118A: 23          inc  hl
+118B: 10 E6       djnz $1173
+
+; arrives here after processing the commands
+118D: FE FF       cp   $FF				; if a = 0xff, notes end
+118F: 20 05       jr   nz,$1196			; otherwise, continue
+1191: DD 36 0E 00 ld   (ix+$0e),$00		; marks the channel as not active
+1195: C9          ret
+
+1196: EB          ex   de,hl			; continues processing the entry
+1197: 06 01       ld   b,$01
+1199: DD 70 11    ld   (ix+$11),b		; sets values so that changes occur in envelope generation, volume and base frequency
+119C: DD 70 08    ld   (ix+$08),b
+119F: DD 70 12    ld   (ix+$12),b
+11A2: DD 70 0D    ld   (ix+$0d),b
+11A5: 05          dec  b
+11A6: DD 70 0C    ld   (ix+$0c),b		; initializes the indices in the envelope generation and base frequency tables
+11A9: DD 70 09    ld   (ix+$09),b
+11AC: 4E          ld   c,(hl)			; reads the first data byte (note + octave)
+11AD: 23          inc  hl
+11AE: 7E          ld   a,(hl)			; reads the second data byte (note duration)
+11AF: 23          inc  hl
+11B0: DD 77 02    ld   (ix+$02),a		; saves the note duration
+11B3: CB 79       bit  7,c				; if bit 7 of the first byte = 1, the noise generator is activated
+11B5: 28 0D       jr   z,$11C4
+11B7: 7E          ld   a,(hl)			; reads the noise generator period and saves it
+11B8: 32 9C 0F    ld   ($0F9C),a
+11BB: DD CB 0E CE set  1,(ix+$0e)		; activates bits 1 and 3
+11BF: DD CB 0E DE set  3,(ix+$0e)
+11C3: 23          inc  hl
+
+11C4: DD 36 07 00 ld   (ix+$07),$00		; sets the channel volume to 0
+11C8: DD 75 00    ld   (ix+$00),l		; saves the current notes address

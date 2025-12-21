@@ -1,0 +1,600 @@
+09B5: A7          and  a
+09B6: 28 0A       jr   z,$09C2		; if the character searching for another is on the ground floor, jump
+09B8: 21 7D 06    ld   hl,$067D		; point to table with room connections (first floor)
+09BB: FE 0B       cp   $0B
+09BD: 28 03       jr   z,$09C2		; if the character searching for another is on the first floor, jump
+09BF: 21 85 06    ld   hl,$0685		; point to table with room connections (second floor)
+
+09C2: 22 0A 44    ld   ($440A),hl	; save the table address
+09C5: B8          cp   b
+09C6: 28 6F       jr   z,$0A37		; if they are on the same floor, jump
+
+; arrive here if the characters are not on the same floor
+09C8: 3E 10       ld   a,$10
+09CA: 38 02       jr   c,$09CE		; if the character searching for another is on a lower floor than the target character, a = 0x10
+09CC: 3E 20       ld   a,$20		; otherwise, a = 0x20
+
+09CE: 4F          ld   c,a			; c = indicator of whether to go up or down a floor
+09CF: FD 7E 03    ld   a,(iy+$03)	; get the y position of the character searching for another
+09D2: E6 F0       and  $F0			; keep the most significant part of the y position
+09D4: 5F          ld   e,a
+09D5: FD 7E 02    ld   a,(iy+$02)	; get the x position of the character searching for another
+09D8: 0F          rrca
+09D9: 0F          rrca
+09DA: 0F          rrca
+09DB: 0F          rrca
+09DC: E6 0F       and  $0F			; keep the most significant part of the x position in the lower nibble
+09DE: B3          or   e			; combine the positions to find which room on the floor they are in
+09DF: CD 2D 16    call $162D		; index into the floor table
+09E2: 7E          ld   a,(hl)		; read the value corresponding to the room where the character searching for another is
+09E3: A1          and  c
+09E4: 79          ld   a,c			; a = indicator of whether to go up or down a floor
+09E5: 20 25       jr   nz,$0A0C		; if from the room they are in it's possible to go up or down a floor, jump
+
+; arrive here if from the current room it's not possible to go up or down
+09E7: FE 10       cp   $10			; if needed to go up, a = 0x66 (check bit 4)
+09E9: 3E 66       ld   a,$66
+09EB: 28 02       jr   z,$09EF
+09ED: 3E 6E       ld   a,$6E		; if needed to go down, a = 0x6e (check bit 5)
+09EF: 32 A4 48    ld   ($48A4),a	; modify an instruction
+09F2: CD 8E 0A    call $0A8E		; return in the lower part of hl the most significant part of the position of the character passed in iy
+09F5: 22 B2 2D    ld   ($2DB2),hl	; save the most significant position of the character searching for another
+09F8: CD 30 48    call $4830		; search for the direction to follow to find the nearest stairs on this floor
+09FB: CD A3 0A    call $0AA3		; clear the bits used for pathfinding search in the current table
+09FE: 3E 76       ld   a,$76
+0A00: 32 A4 48    ld   ($48A4),a	; restore the instruction to indicate it has to search for bit 6
+0A03: 3A B6 2D    ld   a,($2DB6)
+0A06: A7          and  a
+0A07: C8          ret  z			; if no path was found, exit
+
+; arrive here if from the current room it's not possible to go up or down, but a path to a room on the floor with stairs was found
+0A08: EB          ex   de,hl		; put the destination screen in hl
+0A09: C3 C4 0A    jp   $0AC4		; search for a path to go from the current room to the destination room. If it finds the path,
+							;  recreate the room and generate the route to reach where they want to go
+
+; arrive here if from the current room it's possible to go up or down
+0A0C: FE 10       cp   $10			; if needed to go up, a = 0x0d. if needed to go down a = 0x01;
+0A0E: 3E 0D       ld   a,$0D
+0A10: 28 02       jr   z,$0A14
+0A12: 3E 01       ld   a,$01
+0A14: 32 22 0A    ld   ($0A22),a	; modify an instruction
+0A17: CD BF 0B    call $0BBF		; fill in a buffer the heights of the current screen of the character indicated by iy, mark the cells occupied by characters
+							; that are near the current screen and by doors and clear the cells occupied by the character that calls this routine
+0A1A: 21 F4 96    ld   hl,$96F4		; hl points to the start of the height buffer where the height of the current screen has been stored
+0A1D: 01 40 02    ld   bc,$0240		; bc = buffer length (24*24)
+0A20: 7E          ld   a,(hl)		; read a byte
+0A21: FE 00       cp   $00			; instruction modified from outside with a value depending on whether to go up or down
+0A23: 20 02       jr   nz,$0A27		; if it doesn't match the value, jump
+0A25: CB F6       set  6,(hl)		; mark the position as an objective to search for
+0A27: 23          inc  hl
+0A28: 0B          dec  bc			; continue processing the height buffer until finished
+0A29: 78          ld   a,b
+0A2A: B1          or   c
+0A2B: 20 F3       jr   nz,$0A20
+
+0A2D: ED 43 B4 2D ld   ($2DB4),bc	; set the destination position to 0
+0A31: CD 88 0F    call $0F88		; limit the options to try to the first option
+0A34: C3 FD 0A    jp   $0AFD		; search for the route and set the instructions to reach the stairs
+
+; arrive here searching for a path between 2 characters that are on the same floor
+; iy points to the data of the character searching for another
+; ix points to the data of the character being searched for
+0A37: DD 6E 00    ld   l,(ix+$00)	; get the x coordinate of the position to reach
+0A3A: DD 66 01    ld   h,(ix+$01)	; get the y coordinate of the position to reach
+0A3D: FD 7E 02    ld   a,(iy+$02)	; get the x position of the character searching for the other
+0A40: AD          xor  l
+0A41: 4F          ld   c,a
+0A42: E6 F0       and  $F0
+0A44: 20 6E       jr   nz,$0AB4		; if not in the same room in x, jump to search for a path to go from the current room
+							; to the destination room (hl). If found, recreate the room and generate the route to reach where they want to go
+0A46: FD 7E 03    ld   a,(iy+$03)	; get the y position of the character searching for the other
+0A49: AC          xor  h
+0A4A: 47          ld   b,a
+0A4B: E6 F0       and  $F0
+0A4D: 20 65       jr   nz,$0AB4		; if not in the same room in y, jump to search for a path to go from the current room
+							; to the destination room (hl). If found, recreate the room and generate the route to reach where they want to go
+
+; arrive here if they are in the same room
+0A4F: 3E FD       ld   a,$FD
+0A51: 32 B6 2D    ld   ($2DB6),a	; indicate that the characters are in the same room
+0A54: 78          ld   a,b
+0A55: B1          or   c
+0A56: 20 24       jr   nz,$0A7C		; if the origin position is not equal to the destination, jump
+
+0A58: DD 7E 02    ld   a,(ix+$02)	; read the height and orientation of the destination position
+0A5B: 07          rlca
+0A5C: 07          rlca
+0A5D: E6 03       and  $03			; keep the orientation in the 2 least significant bits
+0A5F: 4F          ld   c,a
+0A60: FD 7E 01    ld   a,(iy+$01)	; read the orientation of the searching character
+0A63: B9          cp   c
+0A64: C8          ret  z			; if the orientations are equal, exit
+
+0A65: CD 73 0A    call $0A73		; set the first position of the command buffer
+0A68: CD C3 47    call $47C3		; write some commands to change the character's orientation
+0A6B: 21 00 10    ld   hl,$1000
+0A6E: 06 0C       ld   b,$0C
+0A70: CD E9 0C    call $0CE9		; write b bits of the command passed in hl for the character passed in iy
+
+; set the first position of the command buffer
+0A73: FD 36 09 00 ld   (iy+$09),$00
+0A77: FD 36 0B 00 ld   (iy+$0b),$00
+0A7B: C9          ret
+
+; arrive when the 2 positions are within the same room but in different places
+0A7C: AF          xor  a
+0A7D: 32 B6 2D    ld   ($2DB6),a	; indicate that the search has failed
+0A80: E5          push hl
+0A81: CD BF 0B    call $0BBF		; fill in a buffer the heights of the current screen of the character indicated by iy, mark the cells occupied by characters
+							; that are near the current screen and by doors and clear the cells occupied by the character that calls this routine
+0A84: E1          pop  hl			; hl = destination position
+0A85: CD 9B 27    call $279B		; adjust the position passed in hl to the 20x20 central positions shown. If the position is outside, CF=1
+0A88: 22 B4 2D    ld   ($2DB4),hl
+0A8B: C3 0E 0B    jp   $0B0E		; routine called to search for the route from the character's position to what's stored in 0x2db4-0x2db5
+
+; return in the lower part of hl the most significant part of the position of the character passed in iy
+0A8E: FD 7E 02    ld   a,(iy+$02)		; get the x position of the character
+0A91: 0F          rrca
+0A92: 0F          rrca
+0A93: 0F          rrca
+0A94: 0F          rrca
+0A95: E6 0F       and  $0F
+0A97: 6F          ld   l,a				; l = most significant part of the character's x position in the lower nibble
+0A98: FD 7E 03    ld   a,(iy+$03)		; get the y position of the character
+0A9B: 0F          rrca
+0A9C: 0F          rrca
+0A9D: 0F          rrca
+0A9E: 0F          rrca
+0A9F: E6 0F       and  $0F
+0AA1: 67          ld   h,a				; h = most significant part of the character's y position in the lower nibble
+0AA2: C9          ret
+
+; make sure the table at 0x05cd is between 0x00 and 0x3f
+0AA3: 21 CD 05    ld   hl,$05CD
+0AA6: 01 30 01    ld   bc,$0130		; 0x130 bytes
+0AA9: 7E          ld   a,(hl)
+0AAA: E6 3F       and  $3F
+0AAC: 77          ld   (hl),a		; [hl] = [hl] & 0x3f
+0AAD: 23          inc  hl
+0AAE: 0B          dec  bc
+0AAF: 78          ld   a,b
+0AB0: B1          or   c
+0AB1: 20 F6       jr   nz,$0AA9		; repeat until finished
+0AB3: C9          ret
+
+; shift the positions to the lower nibble
+0AB4: CB 3C       srl  h
+0AB6: CB 3C       srl  h
+0AB8: CB 3C       srl  h
+0ABA: CB 3C       srl  h
+0ABC: CB 3D       srl  l
+0ABE: CB 3D       srl  l
+0AC0: CB 3D       srl  l
+0AC2: CB 3D       srl  l
+
+; search for a path to go from the current room to the destination room. If found, recreate the room and generate the route to reach where they want to go
+;  hl = destination screen
+;  iy = position data of character that wants to go to the destination position
+0AC4: 22 B2 2D    ld   ($2DB2),hl	; save the destination screen
+0AC7: CD 8E 0A    call $0A8E		; return in the lower part of hl the most significant part of the position of the character passed in iy
+0ACA: 22 B4 2D    ld   ($2DB4),hl	; save the origin screen
+0ACD: CD 26 48    call $4826		; search for a path to go from the current room to the destination room
+0AD0: CD A3 0A    call $0AA3		; clear the bits used for pathfinding search in the current table
+0AD3: 3A B6 2D    ld   a,($2DB6)
+0AD6: A7          and  a
+0AD7: C8          ret  z			; if the path has not been found, exit
+
+0AD8: 3A 18 44    ld   a,($4418)	; get the orientation to follow to reach the path
+0ADB: 87          add  a,a
+0ADC: 87          add  a,a			; each entry occupies 4 bytes
+0ADD: 21 8A 0C    ld   hl,$0C8A		; hl points to an auxiliary table to mark the positions the character should go to
+0AE0: 85          add  a,l
+0AE1: 6F          ld   l,a
+0AE2: 8C          adc  a,h
+0AE3: 95          sub  l
+0AE4: 67          ld   h,a			; index into the table
+0AE5: 5E          ld   e,(hl)
+0AE6: 23          inc  hl
+0AE7: 56          ld   d,(hl)		; de = [hl]
+0AE8: ED 53 FB 0A ld   ($0AFB),de	; modify the routine to call
+0AEC: 23          inc  hl
+0AED: CD 88 0F    call $0F88		; limit the options to try to the first option
+0AF0: 5E          ld   e,(hl)
+0AF1: 23          inc  hl
+0AF2: 56          ld   d,(hl)		; de = next value of the entry
+0AF3: ED 53 B4 2D ld   ($2DB4),de	; save the destination position
+0AF7: CD BF 0B    call $0BBF		; fill in a buffer the heights of the current screen of the character indicated by iy, mark the cells occupied by characters
+							; that are near the current screen and by doors and clear the cells occupied by the character that calls this routine
+
+0AFA: CD 00 00    call $0000		; instruction modified from outside with the routine to call according to the orientation to follow
+							; this routine sets bit 6 of the height buffer positions in the direction that should be followed
+							; to move to the screen according to what the pathfinder calculated
+
+
+0AFD: FD 66 03    ld   h,(iy+$03)	; get the character's position
+0B00: FD 6E 02    ld   l,(iy+$02)
+0B03: CD 9B 27    call $279B		; adjust the position passed in hl to the 20x20 central positions shown. If the position is outside, CF=1
+0B06: 22 B2 2D    ld   ($2DB2),hl	; set the search origin
+0B09: CD 29 44    call $4429		; routine called to search for the route from the position passed in 0x2db2-0x2db3 to the one in 0x2db4-0x2db5 and those with bit 6 set to 1
+0B0C: 18 0F       jr   $0B1D
+
+0B0E: FD 66 03    ld   h,(iy+$03)	; get the character's position
+0B11: FD 6E 02    ld   l,(iy+$02)
+0B14: CD 9B 27    call $279B		; adjust the position passed in hl to the 20x20 central positions shown. If the position is outside, CF=1
+0B17: 22 B2 2D    ld   ($2DB2),hl	; set the search origin
+0B1A: CD 35 44    call $4435		; routine called to search for the route from the position passed in 0x2db2-0x2db3 to the one with bit 6 set
+
+0B1D: 22 6B 46    ld   ($466B),hl	; save the pointer to the stack movement that gave the solution
+0B20: 3A B6 2D    ld   a,($2DB6)
+0B23: A7          and  a
+0B24: 20 45       jr   nz,$0B6B		; if a path was found, jump
+
+; arrive here if no path was found
+0B26: DD 2A A3 05 ld   ix,($05A3)	; get the pointer to the alternative that has been tried
+0B2A: DD 23       inc  ix
+0B2C: DD 23       inc  ix
+0B2E: DD 23       inc  ix
+0B30: DD 22 A3 05 ld   ($05A3),ix	; advance the pointer to the next alternative
+0B34: DD 7E 00    ld   a,(ix+$00)	; if all alternatives have been tried, jump
+0B37: FE FF       cp   $FF
+0B39: 28 2B       jr   z,$0B66
+0B3B: CD AE 0B    call $0BAE		; remove all traces of the search from the height buffer
+
+0B3E: DD 6E 00    ld   l,(ix+$00)	; get the position of the next alternative
+0B41: DD 66 01    ld   h,(ix+$01)
+0B44: 3E FD       ld   a,$FD
+0B46: 32 B6 2D    ld   ($2DB6),a	; indicate that the characters are in the same room
+0B49: FD 7E 02    ld   a,(iy+$02)	; get the x position of the character
+0B4C: AD          xor  l
+0B4D: 4F          ld   c,a			; c = difference in character's x position
+0B4E: FD 7E 03    ld   a,(iy+$03)	; get the y position of the character
+0B51: AC          xor  h
+0B52: B1          or   c			; c = difference in character's position in x and y
+0B53: F5          push af
+0B54: CC 58 0A    call z,$0A58		; if the alternative's position is the same as the character's, generate commands to get the correct orientation
+0B57: F1          pop  af
+0B58: 28 0C       jr   z,$0B66		; if the alternative's position is the same as the character's, exit
+
+0B5A: AF          xor  a
+0B5B: 32 B6 2D    ld   ($2DB6),a	; indicate that no path has been found
+
+0B5E: CD 9B 27    call $279B		; adjust the position passed in hl to the 20x20 central positions shown. If the position is outside, CF=1
+0B61: 22 B4 2D    ld   ($2DB4),hl	; modify the position the character should go to
+0B64: 18 A8       jr   $0B0E		; try again to see if it finds that position
+
+; arrive here if all alternatives have been tried and no path was found
+0B66: CD 76 0B    call $0B76		; restore the height buffer
+0B69: A7          and  a			; clear the carry flag
+0B6A: C9          ret
+
+; arrive here if a path was found
+0B6B: 3E 01       ld   a,$01
+0B6D: 32 A9 2D    ld   ($2DA9),a	; indicate that a path has been found in this iteration of the main loop
+0B70: CD AE 0B    call $0BAE		; remove all traces of the search from the height buffer
+0B73: CD E6 47    call $47E6		; generate all commands to go from origin to destination
+
+0B76: 21 C0 01    ld   hl,$01C0
+0B79: 22 8A 2D    ld   ($2D8A),hl	; restore the height buffer of the current screen
+0B7C: FD E5       push iy
+0B7E: FD 21 73 2D ld   iy,$2D73		; point to the data of the character the camera follows
+0B82: CD 8F 0B    call $0B8F		; restore the minimum visible screen values to the values of the character the camera follows
+0B85: FD 7E 04    ld   a,(iy+$04)	; get the character's height
+0B88: 32 BA 2D    ld   ($2DBA),a	; set the floor's base height with the character's height and save them in the engine
+0B8B: FD E1       pop  iy
+0B8D: 37          scf				; set the carry flag
+0B8E: C9          ret
+
+; given in iy the position of a character, calculate the minimum visible screen values
+0B8F: FD 7E 02    ld   a,(iy+$02)		; read the character's x position
+0B92: E6 F0       and  $F0				; keep the most significant part
+0B94: D6 04       sub  $04				; get the minimum visible X position
+0B96: 32 A9 27    ld   ($27A9),a
+0B99: FD 7E 03    ld   a,(iy+$03)		; read the character's y position
+0B9C: E6 F0       and  $F0				; keep the most significant part
+0B9E: D6 04       sub  $04
+0BA0: 32 9D 27    ld   ($279D),a
+0BA3: FD 7E 04    ld   a,(iy+$04)		; read the character's height
+0BA6: CD 73 24    call $2473			; depending on the height, return the floor's base height in b
+0BA9: 78          ld   a,b
+0BAA: 32 BA 2D    ld   ($2DBA),a		; save the floor's base height
+0BAD: C9          ret
+
+; remove all traces of the search from the height buffer
+0BAE: 01 40 02    ld   bc,$0240			; bc = 24*24
+0BB1: 2A 8A 2D    ld   hl,($2D8A)		; get a pointer to the current screen's height buffer
+0BB4: 7E          ld   a,(hl)
+0BB5: E6 3F       and  $3F
+0BB7: 77          ld   (hl),a			; remove the search traces from the height buffer
+0BB8: 23          inc  hl
+0BB9: 0B          dec  bc
+0BBA: 78          ld   a,b
+0BBB: B1          or   c
+0BBC: 20 F6       jr   nz,$0BB4			; repeat until all search traces have been erased
+0BBE: C9          ret
+
+; fill in a buffer the heights of the current screen of the character indicated by iy, mark the cells occupied by characters
+; that are near the current screen and by doors and clear the cells occupied by the character that calls this routine
+0BBF: 11 F4 96    ld   de,$96F4		; change the pointer to the current screen's height buffer
+0BC2: ED 53 8A 2D ld   ($2D8A),de
+0BC6: CD 22 2D    call $2D22		; fill the height buffer with the clipped data for the screen where the character indicated by iy is
+0BC9: 3A 38 30    ld   a,($3038)	; get guillermo's x position
+0BCC: FD 4E 02    ld   c,(iy+$02)	; get the character's x position
+0BCF: CD 75 0C    call $0C75		; calculate the distance in x between the most significant part of positions a and c, and indicate if it's >= 2
+0BD2: 47          ld   b,a			; b = distance separating them in x + 1
+0BD3: 30 1F       jr   nc,$0BF4		; if the distance is >= 2, jump
+
+0BD5: 3A 39 30    ld   a,($3039)	; get guillermo's y position
+0BD8: FD 4E 03    ld   c,(iy+$03)	; get the character's y position
+0BDB: CD 75 0C    call $0C75		; calculate the distance in y between the most significant part of positions a and c, and indicate if it's >= 2
+0BDE: 4F          ld   c,a			; c = distance separating them in y + 1
+0BDF: 30 13       jr   nc,$0BF4		; if the distance is >= 2, jump
+0BE1: C5          push bc
+0BE2: FD 7E 04    ld   a,(iy+$04)	; get the character's height
+0BE5: CD 73 24    call $2473		; depending on the height, return the floor's base height in b
+0BE8: 48          ld   c,b
+0BE9: 3A 3A 30    ld   a,($303A)	; get guillermo's height
+0BEC: CD 73 24    call $2473		; depending on the height, return the floor's base height in b
+0BEF: 78          ld   a,b
+0BF0: B9          cp   c
+0BF1: C1          pop  bc
+0BF2: 28 23       jr   z,$0C17		; if the characters are on the same floor, jump
+
+; arrive here if the distance between guillermo and the character is >= 2 in some coordinate, or they are not on the same floor
+0BF4: 3A 75 2D    ld   a,($2D75)	; get the most significant part of the x position of the character shown on screen
+0BF7: FD 4E 02    ld   c,(iy+$02)	; get the character's x position
+0BFA: CD 75 0C    call $0C75		; calculate the distance between the most significant part of positions a and c, and indicate if it's >= 2
+0BFD: 47          ld   b,a			; b = distance in x + 1
+0BFE: D0          ret  nc			; if the distance in x is >= 2, exit
+0BFF: 3A 76 2D    ld   a,($2D76)	; get the most significant part of the y position of the character shown on screen
+0C02: FD 4E 03    ld   c,(iy+$03)	; get the character's y position
+0C05: CD 75 0C    call $0C75		; calculate the distance between the most significant part of positions a and c, and indicate if it's >= 2
+0C08: 4F          ld   c,a			; c = distance in y + 1
+0C09: D0          ret  nc			; if the distance in y is >= 2, jump
+0C0A: C5          push bc
+0C0B: FD 7E 04    ld   a,(iy+$04)	; get the character's height
+0C0E: CD 73 24    call $2473		; depending on the height, return the floor's base height in b
+0C11: 3A 77 2D    ld   a,($2D77)	; get the height of the character the camera follows
+0C14: B8          cp   b
+0C15: C1          pop  bc
+0C16: C0          ret  nz			; if the character is not on the same floor as the character the camera follows, exit
+
+; arrive here if the character and guillermo are separated by a short distance on the same floor, or the character and who the camera shows are separated by a short distance on the same floor
+; bc = distance in x and y of the character that was nearby
+0C17: FD 22 30 0C ld   ($0C30),iy	; modify an instruction
+0C1B: 21 BA 2B    ld   hl,$2BBA		; point to an address that contains a pointer to adso's position data
+0C1E: 78          ld   a,b			; a = distance in x + 1
+0C1F: FE 01       cp   $01
+0C21: 06 05       ld   b,$05		; check 5 characters
+0C23: 20 09       jr   nz,$0C2E		; if distance in x + 1 is not 1, jump
+0C25: 79          ld   a,c			; a = distance in y + 1
+0C26: FE 01       cp   $01
+0C28: 20 04       jr   nz,$0C2E		; if distance in y + 1 is not 1, jump
+
+; if the distance with the nearby character is very small, start drawing at guillermo
+0C2A: 21 B0 2B    ld   hl,$2BB0		; point to an address that contains a pointer to guillermo's position data
+0C2D: 04          inc  b			; check 6 characters
+
+0C2E: C5          push bc
+0C2F: 01 00 00    ld   bc,$0000		; instruction modified with the character's data address
+0C32: 5E          ld   e,(hl)
+0C33: 23          inc  hl
+0C34: 56          ld   d,(hl)		; de = address of the position data of the character to check
+0C35: 23          inc  hl
+0C36: 7A          ld   a,d			; a = upper part of the address of the character to check
+0C37: A8          xor  b
+0C38: 20 04       jr   nz,$0C3E		; if it doesn't match the character's, jump
+0C3A: 7B          ld   a,e			; a = lower part of the address of the character to check
+0C3B: A9          xor  c
+0C3C: 28 0A       jr   z,$0C48		; if it matches the character's, jump
+
+; arrive here if the character passed to the routine is not the one being checked
+0C3E: E5          push hl
+0C3F: D5          push de
+0C40: FD E1       pop  iy			; iy points to the address of the character being checked
+0C42: 0E 10       ld   c,$10
+0C44: CD EF 28    call $28EF		; if the sprite's position is central and the height is correct, fill in the height buffer the positions occupied by the character
+0C47: E1          pop  hl
+
+0C48: 01 08 00    ld   bc,$0008		; advance to the next character
+0C4B: 09          add  hl,bc
+0C4C: C1          pop  bc
+0C4D: 10 DF       djnz $0C2E		; repeat while there are characters left to try
+
+0C4F: FD 21 E4 2F ld   iy,$2FE4		; iy points to the door data
+0C53: 11 05 00    ld   de,$0005		; each entry is 5 bytes
+
+0C56: 3E 0F       ld   a,$0F		; 0x0f = height in the height buffer of a closed door
+0C58: FD CB 01 76 bit  6,(iy+$01)	; if the door is open, mark its position in the height buffer
+0C5C: C4 19 0E    call nz,$0E19
+0C5F: 11 05 00    ld   de,$0005
+0C62: FD 19       add  iy,de		; advance to the next door
+0C64: FD 7E 00    ld   a,(iy+$00)
+0C67: FE FF       cp   $FF
+0C69: 20 EB       jr   nz,$0C56		; repeat until all doors are complete
+0C6B: FD 2A 30 0C ld   iy,($0C30)	; recover the character's data address
+0C6F: 0E 00       ld   c,$00
+0C71: CD EF 28    call $28EF		; if the sprite's position is central and the height is correct, clear the positions it occupies in the height buffer
+0C74: C9          ret
+
+; calculate the distance between the most significant part of positions a and c, and indicate if it's >= 2
+0C75: CB 39       srl  c		; leave in the lower nibble of c the most significant part of the position
+0C77: CB 39       srl  c
+0C79: CB 39       srl  c
+0C7B: CB 39       srl  c
+0C7D: CB 3F       srl  a		; leave in the lower nibble of a the most significant part of the position
+0C7F: CB 3F       srl  a
+0C81: CB 3F       srl  a
+0C83: CB 3F       srl  a
+0C85: 91          sub  c		; a = a - c + 1
+0C86: 3C          inc  a
+0C87: FE 03       cp   $03		; if a = 0, 1 or 2, CF = 1. That is, if the distance was -1, 0 or 1
+0C89: C9          ret
+
+; table to mark the positions the character should go to
+; bytes 0-1: routine to call according to the orientation the character should follow to mark the screen exit
+; byte 2: destination x position
+; byte 3: destination y position
+0C8A: 	0CAC 16 0C -> (22, 12) -> mark as destination point anyone going to the screen on the right
+ 		0C9A 0C 02 -> (12, 02) -> mark as destination point anyone going to the screen above
+ 		0CB4 02 0C -> (02, 12) -> mark as destination point anyone going to the screen on the left
+ 		0CB9 0C 16 -> (12, 22) -> mark as destination point anyone going to the screen below
+
+ ; mark as destination point anyone going to the screen above
+0C9A: 01 4C 00    ld   bc,$004C		; bc = 76 (X = 4, Y = 3)
+0C9D: 11 01 00    ld   de,$0001		; de = 1
+0CA0: 2A 8A 2D    ld   hl,($2D8A)	; hl = pointer to the current screen's height buffer
+0CA3: 09          add  hl,bc		; get the initial position of the tile buffer
+
+0CA4: 06 10       ld   b,$10		; 16 positions
+0CA6: CB F6       set  6,(hl)		; indicate that it's a direction to go to
+0CA8: 19          add  hl,de		; advance the tile buffer position
+0CA9: 10 FB       djnz $0CA6		; repeat for the 16 positions
+0CAB: C9          ret
+
+; mark as destination point anyone going to the screen on the right
+0CAC: 01 74 00    ld   bc,$0074		; bc = 116 (X = 20, Y = 4)
+0CAF: 11 18 00    ld   de,$0018		; de = 24
+0CB2: 18 EC       jr   $0CA0		; jump to mark the positions with increment of +24
+
+; mark as destination point anyone going to the screen on the left
+0CB4: 01 63 00    ld   bc,$0063		; bc = 99 (X = 3, Y = 4)
+0CB7: 18 F6       jr   $0CAF		; jump to mark the positions with increment of +24
+
+; mark as destination point anyone going to the screen below
+0CB9: 01 E4 01    ld   bc,$01E4		; bc = 484 (X = 4, Y = 20)
+0CBC: 18 DF       jr   $0C9D		; jump to mark the positions with increment of +1
+
+; if the position is not one of those in the center of the screen or the character's height doesn't match the floor's base height, exit with CF=1
+; otherwise, return in ix a pointer to the entry in the height table of the corresponding position
+; called with iy = address of the position data associated with the character/object
+0CBE: FD 7E 04    ld   a,(iy+$04)	; get the character's height
+0CC1: CD 73 24    call $2473		; depending on the height, return the floor's base height in b
+0CC4: 3A BA 2D    ld   a,($2DBA)	; get the floor's base height
+0CC7: B8          cp   b
+0CC8: 37          scf
+0CC9: C0          ret  nz			; if the heights are different, exit with CF set
+
+0CCA: FD 6E 02    ld   l,(iy+$02)	; hl = character's position
+0CCD: FD 66 03    ld   h,(iy+$03)
+0CD0: CD 9B 27    call $279B		; adjust the position passed in hl to the 20x20 central positions shown. If the position is outside, CF=1
+0CD3: D8          ret  c			; if the position is outside the center of the screen, exit
+
+; index into the height table with hl and return the corresponding address in ix
+0CD4: 7D          ld   a,l
+0CD5: 6C          ld   l,h
+0CD6: 26 00       ld   h,$00
+0CD8: 29          add  hl,hl
+0CD9: 29          add  hl,hl
+0CDA: 29          add  hl,hl	; hl = hl*8
+0CDB: 54          ld   d,h		; de = hl*8 + a
+0CDC: 85          add  a,l
+0CDD: 5F          ld   e,a
+0CDE: 29          add  hl,hl	; hl = hl*16
+0CDF: 19          add  hl,de
+0CE0: DD 2A 8A 2D ld   ix,($2D8A)	; ix = pointer to the current screen's height buffer
+0CE4: EB          ex   de,hl
+0CE5: DD 19       add  ix,de		; index into the table
+0CE7: A7          and  a
+0CE8: C9          ret
+
+; write b bits of the command passed in hl for the character passed in iy
+;  iy = points to the character's position data
+;  b = command length
+;  hl = command data
+0CE9: FD 7E 09    ld   a,(iy+$09)	; read the counter
+0CEC: FE 08       cp   $08
+0CEE: 20 17       jr   nz,$0D07		; if it's not 8, jump
+
+; arrive here when a complete byte has been processed
+0CF0: FD 36 09 00 ld   (iy+$09),$00	; if it reaches 8 it's reset
+0CF4: FD 7E 0B    ld   a,(iy+$0b)	; read the bc table index
+0CF7: FD 86 0C    add  a,(iy+$0c)
+0CFA: 5F          ld   e,a
+0CFB: FD 8E 0D    adc  a,(iy+$0d)
+0CFE: 93          sub  e
+0CFF: 57          ld   d,a			; de = address[index]
+0D00: FD 34 0B    inc  (iy+$0b)		; increment the table index
+0D03: FD 7E 0A    ld   a,(iy+$0a)	; read the command and write it to the previous position
+
+0D07: 29          add  hl,hl		; put the most significant bit into CF
+0D08: FD CB 0A 16 rl   (iy+$0a)		; rotate the value left and put CF as bit 0
+0D0C: FD 34 09    inc  (iy+$09)		; increment the counter
+0D0F: 05          dec  b
+0D10: 20 D7       jr   nz,$0CE9		; while the command is not finished, copy the bits
+0D12: C9          ret
+
+; ---------------- end of high-level algorithm for pathfinding between 2 positions -------------------------
+
+; ----------- code to process objects and doors -----------------------
+
+; arrive with ix = sprite of the object being dropped
+; arrive with iy = data of the object being dropped
+0D13: 3E C9       ld   a,$C9
+0D15: 32 64 0D    ld   ($0D64),a		; make it only process one object from the list
+0D18: 21 BB 0D    ld   hl,$0DBB			; routine to jump to for processing game objects
+0D1B: CD 3B 0D    call $0D3B			; call the routine to redraw the object
+0D1E: AF          xor  a
+0D1F: 32 64 0D    ld   ($0D64),a		; restore the object routine
+0D22: C9          ret
+
+; routine called when changing screens to process the game objects we can pick up
+0D23: 21 BB 0D    ld   hl,$0DBB			; routine to jump to for processing game objects
+0D26: DD 21 1B 2F ld   ix,$2F1B			; point to the game object sprites
+0D2A: FD 21 08 30 ld   iy,$3008			; point to the game object position data
+0D2E: 18 0B       jr   $0D3B			; process the objects
+
+; routine called when changing screens to process doors
+0D30: 21 D2 0D    ld   hl,$0DD2			; routine to jump to for processing door sprites
+0D33: DD 21 8F 2E ld   ix,$2E8F			; point to the door sprites
+0D37: FD 21 E4 2F ld   iy,$2FE4			; point to the door data
+
+0D3B: 22 4A 0D    ld   ($0D4A),hl		; modify the instruction to know which routine to jump to
+0D3E: FD 7E 00    ld   a,(iy+$00)		; read a byte and if it finds 0xff finish
+0D41: FE FF       cp   $FF
+0D43: C8          ret  z
+0D44: CD 4C 0E    call $0E4C			; get in hl the object's screen position. If not visible return CF = 1
+0D47: DD E5       push ix				;  if the object is visible, jump to the next routine
+0D49: D4 D2 0D    call nc,$0DD2			; instruction modified from outside
+0D4C: DD E1       pop  ix
+0D4E: DD 7E 01    ld   a,(ix+$01)		; set the sprite's current position as the old position
+0D51: DD 77 03    ld   (ix+$03),a
+0D54: DD 7E 02    ld   a,(ix+$02)
+0D57: DD 77 04    ld   (ix+$04),a
+0D5A: 01 05 00    ld   bc,$0005			; advance the entry
+0D5D: FD 09       add  iy,bc
+0D5F: 01 14 00    ld   bc,$0014			; point to the next sprite
+0D62: DD 09       add  ix,bc
+0D64: 00          nop					; changed from outside (ret or nop)
+0D65: 18 D7       jr   $0D3E			; continue processing the objects
+
+; ----------- end of code to process objects and doors -----------------------
+
+; --------------------- code related to doors --------------------------------------------
+
+0D67: DD 21 8F 2E ld   ix,$2E8F			; point to the door sprites
+0D6B: FD 21 E4 2F ld   iy,$2FE4			; point to the door data
+0D6F: AF          xor  a
+0D70: 32 AF 2D    ld   ($2DAF),a		; indicate that the door doesn't require flipped graphics
+0D73: FD 7E 00    ld   a,(iy+$00)		; if it has reached the last entry, exit
+0D76: FE FF       cp   $FF
+0D78: C8          ret  z
+
+; check if any door needs to be opened or closed and update the sprites accordingly
+0D79: AF          xor  a
+0D7A: 32 FF 0D    ld   ($0DFF),a		; modify an instruction (initially no need to redraw the sprite)
+0D7D: DD E5       push ix
+0D7F: CD AD 0E    call $0EAD			; check if this door needs to be opened or closed
+0D82: DD E1       pop  ix
+0D84: CD 4C 0E    call $0E4C			; return the object's position in screen coordinates. If not visible return CF = 1
+0D87: DD E5       push ix				; if CF=0, in c return the sprite's y coordinate on screen (-16) and in hl return the sprite's screen position
+0D89: D4 D2 0D    call nc,$0DD2			; if the door is visible, draw the sprite (if the door's state has changed) and mark the positions the door occupies so you can't advance through it
+0D8C: DD E1       pop  ix
+0D8E: 3A B8 2D    ld   a,($2DB8)		: read if the screen will be redrawn
+0D91: A7          and  a
+0D92: 20 1B       jr   nz,$0DAF			; if the screen will be redrawn, go to the next door
+
+; arrive here if the screen will not be redrawn
+0D94: DD 7E 00    ld   a,(ix+$00)		; read the door sprite
+0D97: FE FE       cp   $FE
+0D99: 28 14       jr   z,$0DAF			; if the door is not visible, go to the next door
+0D9B: CB 7F       bit  7,a

@@ -1,0 +1,600 @@
+605E: CF          rst  $08
+	8C -> ca = [0x3cc7]
+	40 80 -> cb = 0x80
+	3E -> c = [0x3cc7] >= 0x80
+6063: 20 12       jr  nz,$6077			; if the abbot has bit 7 of his state set
+6065: CF          rst  $08
+	89 -> ca = [0x2da1]
+	00 -> cb = 0x00
+	3D -> c = [0x2da1] == 0x00
+6069: 20 07       jr   nz,$6072			; if not playing a phrase
+606B: D7          rst  $10
+	8C 8C 7F 2A = [0x3cc7] = [0x3cc7] & 0x7f	; removes bit 7 from his state
+6070: 18 05       jr   $6077
+
+6072: D7          rst  $10
+	8B 40 FF -> [0x3cc8] = 0xff		; goes to guillermo
+6076: C9          ret
+
+6077: CF          rst  $08
+	88 -> ca = [0x2d81]
+	05 -> cb = 0x05
+	3D -> c = [0x2d81] == 0x05
+607B: 20 17       jr   nz,$6094		; if it's vespers
+607D: D7          rst  $10
+	8C 05 -> [0x3cc7] = 0x05	; goes to state 5
+6080: CD AC 43    call $43AC		; checks that guillermo is in the correct mass position (if it equals 0 he's in another room, if it equals 2 he's in the room but poorly positioned, and if it equals 1 he's well positioned)
+6083: D7          rst  $10
+	8B 00 -> [0x3cc8] = 0x00	; goes to the altar
+6086: D7          rst  $10
+	A2 17 -> [0x3f0e] = 0x17	; phrase = LET US PRAY
+6089: CF          rst  $08
+	8D -> ca = [0x2d80]
+	01 -> cb = 0x01
+	2D -> c = [0x2d80] - 0x01
+608D: CD 87 64    call $6487		; jumps to a routine to check which characters should have arrived
+6090: CD 20 65    call $6520		; waits for the abbot, the rest of the monks and guillermo to be in their place and if so advances the time of day
+6093: C9          ret
+
+6094: CF          rst  $08
+	88 -> ca = [0x2d81]
+	01 -> cb = 0x01
+	3D -> c = [0x2d81] == 0x01
+6097: 20 17       jr   nz,$60B1		; if it's prime
+609A: D7          rst  $10
+	8C 0E -> [0x3cc7] = 0x0e	; goes to state 0x0e
+609D: CD AC 43    call  $43AC		; checks that guillermo is in the correct mass position (if it equals 0 he's in another room, if it equals 2 he's in the room but poorly positioned, and if it equals 1 he's well positioned)
+60A0: D7          rst  $10
+	8B 00 -> [0x3cc8] = 0x00	; goes to mass
+60A3: D7          rst  $10
+	A2 17 -> [0x3f0e] = 0x17	; phrase = LET US PRAY
+60A6: CF          rst  $08
+	8D -> ca = [0x2d80]
+	02 -> cb = 0x02
+	2D -> c = [0x2d80] - 0x02
+60AA: CD C0 64    call $64C0		; checks if the monks have arrived at their place
+60AD: CD 20 65    call $6520		; waits for the abbot, the rest of the monks and guillermo to be in their place and if so advances the time of day
+60B0: C9          ret
+
+60B1: CF          rst  $08
+	88 -> ca = [0x2d81]
+	03 -> cb = 0x03
+	3D -> c = [0x2d81] == 0x03
+60B5: 20 1A       jr   nz,$60D1		; if it's sext
+60B7: D7          rst  $10
+	8B 01 -> [0x3cc8] = 0x01	; goes to the refectory
+60BA: CD B9 43    call $43B9		; checks if guillermo is in the proper position of the refectory (if it equals 0 he's in another room, if it equals 2 he's in the room but poorly positioned, and if it equals 1 he's well positioned)
+60BD: D7          rst  $10
+	8C 10 -> [0x3cc7] = 0x10 	; goes to state 0x10
+60C0: D7          rst  $10
+	A2 19 -> [0x3f0e] = 0x19	; phrase = YOU MAY EAT, BROTHERS
+60C3: D7          rst  $10
+	A3 01 -> [0x3c96] = 0x01	; indicates that the check is negative initially
+60C6: CF          rst  $08
+	8D -> c1 = [0x2d80]
+	02 -> c2 = 0x02
+	2D -> c = [0x2d80] - 0x02
+60CA: CD EA 64    call $64EA		; jumps to a routine to check if the monks have arrived depending on c (day)
+60CD: CD 20 65    call $6520		; waits for the abbot, the rest of the monks and guillermo to be in their place and if so advances the time of day
+60D0: C9          ret
+
+60D1: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	06 -> c2a = 0x06
+	3D -> ca = [0x2d81] == 0x06
+	8C -> c1b = [0x3cc7]
+	05 -> c2b = 0x05
+	3D -> cb = [0x3cc7] == 0x05
+	26 -> c = ([0x2d81] == 0x06) && ([0x3cc7] == 0x05)
+60D9: 20 0E       jr   nz,$60E9		; if it's compline and he's in state 5
+60DB: D7          rst  $10
+	8C 06 -> [0x3cc7] = 0x06	; goes to state 6
+60DE: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	22 -> c2a = 0x22
+	3D -> c = [0x2dbd] == 0x22
+60E2: 20 04       jr   nz,$60E8		; if the mass screen is being shown
+60E4: CD 26 50    call $5026		; puts the phrase on the scoreboard
+	0D 							YOU MAY GO TO YOUR CELLS
+60E8: C9          ret
+
+60E9: CF          rst  $08
+	A5 -> c1a = [0x3c94]
+	01 -> c2a = 0x01
+	3D -> c = [0x3c94] == 0x01
+60ED: 20 3C       jr   nz,$612B		; if berengario has warned him that guillermo has taken the parchment
+60EF: D7          rst  $10
+	8B 40 FF -> [0x3cc8] = 0xff	; goes to guillermo
+60F3: CD D7 40    call $40D7		; a = 0x10 (parchment)
+60F6: CF          rst  $08
+	A6 -> c1a = [0x2e04]
+	10 -> c2a = 0x10
+	2A -> ca = [0x2e04] & 0x10
+	10 -> cb = 0x10
+	3D -> c = ([0x2e04] & 0x10) == 0x10
+60FC: 20 0B       jr   nz,$6109		; if the abbot has the parchment
+60FE: D7          rst  $10
+	8C 15 -> [0x3cc7] = 0x15	; state = 0x15
+6101: D7          rst  $10
+	8A 40 FF -> [0x3cc6] = 0xff	; indicates that he has reached where guillermo was
+6105: D7          rst  $10
+	A5 00 -> [0x3c94] = 0x00	; clears berengario's warning
+6108: C9          ret
+
+6109: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if he's very close returns 0, otherwise != 0)
+610C: 20 18       jr   nz,$6126		; if he's close to guillermo
+610E: CF          rst  $08
+	99 -> c1a = [0x3c98]
+	40 C8 -> c2a = 0xc8
+	3E -> c = [0x3c98] >= 0xc8
+6113: 20 0A       jr   nz,$611F		; if the counter has passed the limit
+6115: CD CE 55    call $55CE		; decrements guillermo's life by 2 units
+6118: CD 26 50    call $5026		; puts the phrase on the scoreboard
+	05          				GIVE ME THE MANUSCRIPT, BROTHER GUILLERMO
+611C: D7          rst  $10
+	99 00 -> [0x3c98] = 0x00	; resets the counter
+611F: D7          rst  $10
+	99 99 01 2B -> [0x3c98] = [0x3c98] + 0x01	; increments the counter
+6124: 18 04       jr   $612A
+
+6126: D7          rst  $10
+	99 40 C9 -> [0x3c98] = 0xc9;	; sets the counter to maximum
+612A: C9          ret
+
+612B: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	06 -> c2a = 0x06
+	3D -> c = [0x2d81] == 0x06
+612F: C2 DF 61    jp   nz,$61DF		; if it's compline
+6132: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	06 -> c2a = 0x06
+	3D -> c = [0x3cc7] == 0x06
+6136: 20 10       jr   nz,$6148		; if he's in state 0x06
+6138: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+613C: 20 09       jr   nz,$6147		; if a phrase is not being shown
+613E: D7          rst  $10
+	99 00 -> [0x3c98] = 0x00	; clears the counter
+6141: D7          rst  $10
+	8B 05 -> [0x3cc8] = 0x05	; goes to the position for us to enter our cell
+6144: CD 98 3E    call $3E98		; if he has reached the place he wanted to reach, advances the state
+6147: C9          ret
+
+6148: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	07 -> c2a = 0x07
+	3D -> c = [0x3cc7] == 0x07
+614C: 20 27       jr   nz,$6175		; if he's in state 0x07
+614E: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	40 3E -> c2a = 0x3e
+	3D -> c = [0x2dbd] == 0x3e
+6153: 20 04       jr   nz,$6159		; if guillermo is in his cell
+6155: D7          rst  $10
+	8C 09 -> [0x3cc7] = 0x09	; goes to state 0x09
+6158: C9          ret
+
+6159: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if he's very close returns 0, otherwise != 0)
+615C: 20 08       jr   nz,$6166		; if he's not close, jumps
+615E: D7          rst  $10
+	8C 08 -> [0x3cc7] = 0x08	; goes to state 0x08
+6161: CD 26 50    call $5026		; puts the phrase on the scoreboard
+	10 							ENTER YOUR CELL, BROTHER GUILLERMO
+6165: C9          ret
+
+6166: D7          rst  $10			; advances the counter
+	99 99 01 2B -> [0x3c98] = [0x3c98] + 0x01
+616B: CF          rst $08
+99 -> c1a = [0x3c98]
+32 -> c2a = 0x32
+3E -> c = [0x3c98] >= 0x32
+616F: 20 03       jr   nz,$6174		; if the counter exceeds the tolerable limit
+6171: D7          rst  $10
+	8C 08 -> [0x3cc7] = 0x08	; goes to state 0x08
+6174: C9          ret
+
+6175: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	08 -> c2a = 0x08
+	3D -> c = [0x3cc7] == 0x08
+6179: 20 34       jr   nz,$61AF		; if he's in state 0x08
+617B: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	40 3E -> c2a = 0x3e
+	3D -> c = [0x2dbd] == 0x3e
+6180: 20 04       jr   nz,$6186		; if guillermo has entered his cell
+6182: D7          rst  $10
+	8C 09 -> [0x3cc7] = 0x09	; goes to state 0x09
+6185: C9          ret
+
+6186: D7          rst  $10
+	99 99 01 2B -> [0x3c98] = [0x3c98] + 1	; increments the counter
+618B: CF          rst  $08
+	99 -> c1a = [0x3c98]
+	32 -> c2b = 0x32
+	3E -> c = [0x3c98] >= 0x32
+618F: 20 03       jr   nz,$6194		; if it has passed the limit, keeps it
+6191: D7          rst  $10
+	99 32 -> [0x3c98] = 0x32
+6194: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if he's very close returns 0, otherwise != 0)
+6197: 20 11       jr   nz,$61AA		; if guillermo is close
+6199: CF          rst  $08
+	99 -> c1a = [0x3c98]
+	32 -> c2a = 0x32
+	3D -> c = [0x3c98] == 0x32
+619D: 20 0A       jr   nz,$61A9		; if the counter is at the limit
+619F: CD CE 55    call $55CE		; decrements guillermo's life by 2 units
+61A2: CD 26 50    call $5026		; puts the phrase on the scoreboard
+	10 							ENTER YOUR CELL, BROTHER GUILLERMO
+61A6: D7          rst  $10
+	99 00 -> [0x3c98] = 0x00	; resets the counter
+61A9: C9          ret
+
+61AA: D7          rst  $10
+	8B 40 FF -> [0x3cc8] = 0xff	; goes to guillermo
+61AE: C9          ret
+
+
+61AF: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	09 -> c2a = 0x09
+	3D -> c = [0x3cc7] == 0x09
+61B3: 20 1A       jr   nz,$61CF		; if he's in state 0x09
+61B5: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	40 3E -> c1b = 0x3e
+	3D -> c = [0x2dbd] == 0x3e	; if the screen being shown is guillermo's cell
+61BA: 20 08       jr   nz,$61C4
+61BC: D7          rst  $10
+	8B 06 -> [0x3cc8] = 0x06	; moves towards the door
+61BE: CD 3E 98    call $3E98		; if he has reached the place he wanted to reach, advances the state
+61C2: 18 0A       jr   $61CE
+
+61C4: CD BE 08    call $08BE		; discards planned movements and indicates that a new movement must be thought
+61C7: D7          rst  $10
+	8C 08 -> [0x3cc7] = 0x08	; changes state
+61CA: D7          rst  $10
+	8B 40 FF -> [0x3cc8] = 0xff	; goes to guillermo
+61CE: C9          ret
+
+61CF: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	0A -> c2a = 0x0a
+	3D -> c = [0x3cc7] == 0x0a
+61D3: 20 09       jr   nz,$61DE		; if he's in state 0x0a
+61D5: D7          rst  $10
+	9B 01 -> [0x3c9a] = 0x01	; indicates that the time of day must be advanced
+61D8: D7          rst  $10
+	9E 9E 40 F7 2A -> [0x3ca6] = [0x3ca6] & 0xf7	; modifies the door mask that can be opened so that the door next to guillermo's cell cannot be opened
+61DE: C9          ret
+
+61DF: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	00 -> c2a = 0x00
+	3D -> c = [0x2d81] == 0x00
+61E3: C2 45 62    jp   nz,$6245		; if it's night
+61E6: D7          rst  $10
+	8B 02 -> [0x3cc8] = 0x02	; goes to his cell
+61E9: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	0A -> c2a = 0x0a
+	3D -> ca = [0x3cc7] == 0x0a
+	8A -> c1b = [0x3cc6]
+	02 -> c2b = 0x02
+	3D -> cb = [0x3cc6] == 0x02
+	26 -> c = ([0x3cc7] == 0x0a) && ([0x3cc6] == 0x02)
+61F1: 20 06       jr   nz,$61F9	; if he's in state 0x0a and has reached his cell
+61F3: D7          rst  $10
+	99 00 -> [0x3c98] = 0x00	; sets the counter to 0
+61F6: D7          rst  $10
+	8C 0C -> [0x3cc7] = 0x0c	; goes to state 0x0c
+
+61F9: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	0C -> c2a = 0x0c
+	3D -> c = [0x3cc7] == 0x0c
+61FD: 20 20       jr   nz,$621F		; if he's in state 0x0c
+61FF: CF          rst  $08
+	80 -> c1 = [0x3038]
+	60 -> c2 = 0x60
+	3E -> c = [0x3038] >= 0x60	; if guillermo is not in the left wing of the abbey
+6203: 20 19       jr   nz,$621e
+6205: D7          rst  $10
+	99 99 01 2B -> [0x3c98] = [0x3c98] + 1	; increments the counter
+620A: CF          rst  $08
+	99 -> c1a = [0x3c98]
+	40 FA -> c2a = 0xfa
+	3E -> ca = [0x3c98] >= 0xfa
+	8D -> c1b = [0x2d80]
+	05 -> c2b = 0x05
+	3D -> cb = [0x2d80] == 0x05
+	A4 -> c1c = [0x2def]
+	08 -> c2c = 0x08
+	2A -> cc = [0x2def] & 0x08
+	08 -> cd = 0x08
+	3D -> ce = ([0x2def] & 0x08) == 0x08
+	26 -> cf = ([0x2d80] == 0x05) && ([0x2def] & 0x08) == 0x08
+	2A -> c = ([0x3c98] >= 0xfa) || ([0x2d80] == 0x05) && ([0x2def] & 0x08) == 0x08
+6219: 20 03       jr   nz,$621E	; if the counter has exceeded the limit, or it's the fifth day and we have the key to the abbot's room
+621B: D7          rst  $10
+	8C 0D -> [0x3cc7] = 0x0d	; changes to state 0x0d
+621E: C9          ret
+
+621F: CF          rst  $08
+	8C -> c1 = [0x3cc7]
+	0D -> c2 = 0x0d
+	3D -> c = [0x3cc7] == 0x0d
+6223: 20 1F       jr   nz,$6244		; if he's in state 0x0d
+6225: CF          rst  $08
+	80 -> c1a = [0x3038]
+	60 -> c2a = 0x60
+	3C -> ca = [0x3038] < 0x60
+	9A -> c1b = [0x2dbd]
+	40 3E -> c2b = 0x3e
+	3D -> cb = [0x2dbd] == 0x3e
+	2A -> c = ([0x3038] < 0x60) || ([0x2dbd] == 0x3e)
+622E: 20 07       jr   nz,$6237		; if guillermo is in the left wing of the abbey or in his cell
+6230: D7          rst  $10
+	8C 0C -> [0x3cc7] = 0x0c	; changes to state 0x0c
+6233: D7          rst  $10
+	99 32 -> [0x3c98] = 0x32;
+6236: C9          ret
+
+6237: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if he's very close, returns 0, otherwise returns something != 0)
+623A: 20 03       jr   nz,$623F		; if he's very close
+623C: D7          rst  $10
+	8C 0B -> [0x3cc7] = 0x0b	; changes to state to kick him out of the abbey
+623F: D7          rst  $10
+	8B 40 FF -> [0x3cc8] = 0xff ; goes to guillermo
+6243: C9          ret
+
+6244: C9          ret
+
+6245: CF          rst  $08
+8D -> c1 = [0x2d80]
+01 -> c2 = 0x01
+3D -> c = [0x2d80] == 0x01
+6249: C2 FA 62    jp   nz,$62FA		; if it's the first day
+624C: CF          rst  $08
+	88 -> c1 = [0x2d81]
+	04 -> c2 = 0x04
+	3D -> c = [0x2d81] == 0x04
+6250: C2 F9 62    jp   nz,$62F9		; if it's none
+6253: CF          rst  $08
+	8C -> c1 = [0x3cc7]
+	04 -> c2 = 0x04
+	3D -> c = [0x3cc7] == 0x04
+6257: 20 0D       jr   nz,$6266		; if he's in state 0x04
+6259: D7          rst  $10
+	8B 02 -> [0x3cc8] = 0x02	; goes to his cell
+625C: CF          rst  $08
+	8A -> c1 = [0x3cc6]
+	02 -> c2 = 0x02
+	3D -> c = [0x3cc6] == 0x02
+6260: 20 03       jr   nz,$6265		; if he has reached his cell
+6262: D7          rst  $10
+	9B 01 -> [0x3c9a] = 0x01	; indicates that the time of day must be advanced
+6265: C9          ret
+
+6266: CF          rst  $08
+	8C -> c1 = [0x3cc7]
+	00 -> c2 = 0x00
+	3D -> c = [0x3cc7] == 0x00
+626A: 20 17       jr   nz,$6283		; if he's in state 0x00
+626C: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if he's very close returns 0, otherwise != 0)
+626F: 20 0E       jr   nz,$627F
+6271: CD 26 50    call $5026		; puts the phrase on the scoreboard
+01 							WELCOME TO THIS ABBEY, BROTHER. I BEG YOU TO FOLLOW ME. SOMETHING TERRIBLE HAS HAPPENED
+6275: D7          rst  $10
+8C 01 -> [0x3cc7] = 0x01		; changes to state 0x01
+6278: D7          rst  $10
+8B 40 FF -> [0x3cc8] = 0xff		; goes to guillermo
+627C: C9          ret
+
+627D: 18 04       jr   $6283
+
+627F: D7          rst  $10
+	8B 03 -> [0x3cc8] = 0x03	; goes to the abbey entrance
+6282: C9          ret
+
+6283: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if he's very close returns 0, otherwise != 0)
+6286: C2 F6 62    jp   nz,$62F6		; if he's not close
+6289: CF          rst  $08
+	8C -> c1 = [0x3cc7]
+	01 -> c2 = 0x01
+	3D -> c = [0x3cc7] == 0x01
+628D: 20 1A       jr   nz,$62A9		; if he's in state 0x01
+628F: CF          rst  $08
+	8B -> c1a = [0x3cc8]
+	04 -> c2a = 0x04
+	3D -> ca = [0x3cc8] == 0x04
+	89 -> cb = [0x2da1]
+	26 -> cc = ([0x3cc8] == 0x04) && ([0x2da1] == 0)
+6295: 20 05       jr   nz,$629C		; if he goes to the first stop and no phrase is playing
+6297: D7          rst  $10
+	8C 02 -> [0x3cc7] = 0x02	; changes to state 0x02
+629A: 18 0D       jr   $62A9
+
+629C: CF          rst  $08
+	89 -> c1 = [0x2da1]
+	00 -> c2 = 0x00
+	3D -> c = [0x2da1] == 0x00
+62A0: 20 07       jr   nz,$62A9		; if a phrase is not playing
+62A2: D7          rst  $10
+	8B 04 -> [0x3cc8] = 0x04	; goes to the first stop during the welcome speech
+62A5: CD 26 50    call $5026		; puts the phrase on the scoreboard
+	02							I FEAR THAT ONE OF THE MONKS HAS COMMITTED A CRIME. I BEG YOU TO FIND HIM BEFORE BERNARDO GUI ARRIVES, FOR I DO NOT WISH THE NAME OF THIS ABBEY TO BE STAINED
+62A9: CF          rst  $08
+	8C -> c1 = [0x3cc7]
+	02 -> c2 = 0x02
+	3D -> c = [0x3cc7]
+62AD: 20 0E       jr   nz,$62BD	; if he's in state 0x02
+62AF: D7          rst  $10
+	8B 04 -> [0x3cc8] = 0x04  ; goes to the first stop during the welcome speech
+62B2: CF          rst  $08
+	8A -> c1a = [0x3cc6]
+	04 -> c2a = 0x04
+	3D -> ca = [0x3cc6] == 0x04
+	89 -> cb = [0x2da1]
+	26 -> c = ([0x3cc6] == 0x04) && ([0x2da1] == 0x00)
+62B8: 20 03       jr   nz,$62BD		; if he has arrived at the first stop and is not playing a phrase
+62BA: D7          rst  $10
+	8C 03 -> [0x3cc7] = 0x03	; goes to state 0x03
+62BD: CF          rst  $08
+8C -> c1 = [0x3cc7]
+03 -> c2 = 0x03
+3D -> c = [0x3cc7] == 0x03
+62C1: 20 1A       jr   nz,$62DD		; if he's in state 0x03
+62C3: CF          rst  $08
+8B -> c1a = [0x3cc8]
+05 -> c2a = 0x05
+3D -> ca = [0x3cc8] == 0x05
+89 -> cb = [0x2da1]
+26 -> c = ([0x3cc8] == 0x05) && ([0x2da1] == 0)
+62C9: 20 05       jr   nz,$62D0		; if he goes to our cell and is not playing a voice
+62CB: D7          rst  $10
+	8C 1F -> [0x3cc7] = 0x1f	; changes to state 0x1f
+62CE: 18 0D       jr   $62DD
+
+62D0: CF          rst  $08
+	89 -> c1 = [0x2da1]
+	00 -> c2 = 0x00
+	3D -> c = [0x2da1] == 0x00
+62D4: 20 07       jr   nz,$62DD		; if he's not playing a voice
+62D6: D7          rst  $10
+	8B 05 -> [0x3cc8] = 0x05	; goes to the entrance of our cell
+62D9: CD 26 50    call $5026		; puts the phrase on the scoreboard
+	03							YOU MUST RESPECT MY ORDERS AND THOSE OF THE ABBEY. ATTEND THE OFFICES AND THE MEAL. AT NIGHT YOU MUST BE IN YOUR CELL
+62DD: CF          rst  $08
+	8C -> c1 = [0x3cc7]
+	1F -> c2 = 0x1f
+	3D -> c = [0x3cc7] == 0x1f
+62E1: 20 12       jr   nz,$62F5		; if he's in state 0x1f
+62E3: D7          rst  $10
+	8B 05 -> [0x3cc8] = 0x05	; goes to the entrance of our cell
+62E6: CF          rst  $08
+	8A -> c1a = [0x3cc6]
+	05 -> c2a = 0x05
+	3D -> ca = [0x3cc6] == 0x05
+	89 -> cb = [0x2da1] == 0x00
+	26 -> c = ([0x3cc6] == 0x05) && ([0x2da1] == 0x00)
+62EC: 20 07       jr   nz,$62F5		; if he has reached the entrance of our cell and is not playing a voice
+62EE: D7          rst  $10
+	8C 04 -> [0x3cc7] = 0x04	; goes to state 0x04
+62F1: CD 26 50    call $5026		; puts the phrase on the scoreboard
+	07							THIS IS YOUR CELL, I MUST GO
+62F5: C9          ret
+
+62F6: C3 6C 64    jp   $646C		; scolds guillermo
+
+62F9: C9          ret
+
+62FA: CF          rst  $08
+	8D -> c1 = [0x2d80]
+	02 -> c2 = 0x02
+	3D -> c = [0x2d80] == 0x02
+62FE: 20 06       jr   nz,$6306		; if it's the second day
+6300: D7          rst  $10
+A2 16 -> [0x3f0e] = 0x16		; phrase = YOU MUST KNOW THAT THE LIBRARY IS A SECRET PLACE. ONLY MALAQUIAS MAY ENTER. YOU MAY GO
+6303: C3 CF 63    jp   $63CF
+
+6306: CF          rst  $08
+	8D -> c1 = [0x2d80]
+	03 -> c2 = 0x03
+	3D -> c = [0x2d80] == 0x03
+630A: 20 2A       jr   nz,$6336		; if it's the third day
+630C: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	10 -> c2a = 0x10
+	3D -> ca = [0x3cc7] == 0x10
+	88 -> c1b = [0x2d81]
+	02 -> c2b = 0x02
+	3D -> cb = [0x2d81] == 0x02
+	26 -> c = ([0x3cc7] == 0x10) && ([0x2d81] == 0x02)
+6314: 20 1A       jr   nz,$6330		; if he's in state 0x10 and the time of day is terce
+6316: CD 61 3E    call $3E61		; compares the distance between guillermo and the abbot (if he's very close returns 0, otherwise != 0)
+6319: 20 04       jr   nz,$631F		; if he's close to guillermo
+631B: D7          rst  $10
+	8B 07 -> [0x3cc8] = 0x07	; goes to the screen where he introduces jorge
+631E: C9          ret
+
+631F: CF          rst  $08
+	92 -> c1 = [0x3ce8]
+	1E -> c2 = 0x1e
+	3E -> c = [0x3ce8] >= 0x1e
+6323: 20 05       jr   nz,$632A		; if jorge's state >= 0x1e (has already introduced guillermo to jorge)
+6325: D7          rst  $10
+	92 92 01 2D -> [0x3ce8] = [0x3ce8] - 1
+632A: D7          rst  $10
+	9B 00 -> [0x3c9a] = 0x00	; no need to advance the time of day
+632D: C3 6C 64    jp   $646C		; scolds guillermo
+
+6330: D7          rst  $10
+	A2 30 -> [0x3f0e] = 0x30	; phrase = I WANT YOU TO MEET THE OLDEST AND WISEST MAN IN THE ABBEY
+6333: C3 CF 63    jp  $63CF
+
+6336: CF          rst  $08
+	8D -> c1 = [0x2d80]
+	04 -> c2 = 0x04
+	3D -> c = [0x2d80] == 0x04
+633A: 20 06       jr   nz,$6342		; if it's the fourth day
+633C: D7          rst  $10
+	A2 11 -> [0x3f0e] = 0x11	; phrase = BERNARDO HAS ARRIVED, YOU MUST ABANDON THE INVESTIGATION
+633F: C3 CF 63    jp  $63CF
+
+6342: CF          rst  $08
+8D -> c1 = [0x2d80]
+05 -> c2 = 0x05
+3D -> c = [0x2d80] == 0x05
+6346: 20 65       jr   nz,$63AD		; if it's the fifth day
+6348: CF          rst  $08
+88 -> c1 = [0x2d81]
+04 -> c2 = 0x04
+3D -> c = [0x2d81] == 0x04
+634C: 20 59       jr   nz,$63A7		; if it's none
+634E: CF          rst  $08
+8A -> c1 = [0x3cc6]
+08 -> c2 = 0x08
+3D -> c = [0x3cc6] == 0x08		; if he has arrived at severino's cell door
+6352: 20 20       jr   nz,$6374
+6354: CF          rst  $08
+99 -> c1 = [0x3c98]
+00 -> c2 = 0x00
+3D -> c = [0x3c98] == 0x00
+6358: 20 03       jr   nz,$635D		; if the counter has not been started
+635A: CD 2A 10    call $102A		; plays a sound
+635D: D7          rst  $10
+99 99 01 2B -> [0x3c98] = [0x3c98] + 1	; increments the counter
+6362: CF          rst  $08
+	99 -> c1 = [0x3c98]
+	1E -> c2 = 0x1e
+	3C -> c = [0x3c98] < 0x1e
+6366: 20 01       jr   nz,$6369		; if the counter is < 0x1e, exits
+6368: C9          ret
+
+6369: D7          rst  $10
+8C 10 -> [0x3cc7] = 0x10		; changes the state 0x10
+636C: CD 26 50    call $5026		; puts the phrase on the scoreboard
+1C 								GOOD GOD... THEY HAVE MURDERED SEVERINO AND LOCKED HIM IN
+6370: D7          rst  $10
+	9B 01 -> [0x3c9a] = 0x01	; advances the time of day
+6373: C9          ret
+
+6374: CF          rst  $08
+	8B -> c1a = [0x3cc8]
+	08 -> c2a = 0x08
+	3D -> ca = [0x3cc8] == 0x08
+	8C -> c1b = [0x3cc7]
+	13 -> c2b = 0x13
+	3E -> cb = [0x3cc7] == 0x13
+	2A -> c = ([0x3cc8] == 0x08) || ([0x3cc7] == 0x13)
+637C: 20 21       jr   nz,$639F		; if the abbot goes to severino's cell or is in state 0x13
+637E: D7          rst  $10
+99 00 -> [0x3c9a] = 0x00		; starts the counter
+6381: CF          rst  $08
+8C -> c1 = [0x3cc7]
+13 -> c2 = 0x13
+3D -> c = [0x3cc7] == 0x13

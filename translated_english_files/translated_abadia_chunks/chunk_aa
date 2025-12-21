@@ -1,0 +1,600 @@
+; --------------- Commented disassembly of the game "The Abbey of Crime" for Amstrad CPC 6128, by Manuel Abadia ------------------
+;
+; There are 2 versions of the game circulating, the original, which is loaded with '|cpm', and the pirate version, which is loaded with 'run "abadia'
+; The pirate version is the same as the original, except that the presentation screen uses different colors for the palette, and that the
+; game data is not stored directly on the tracks as in the original, but instead the disk has a file system.
+; Another disadvantage of the pirate version is that since the game allows saving the game, and it does so on the cylinders where the
+; information was in the original game, but since the data in the pirate version is not in the same place and the disk does not have the same
+; format, it is not saved correctly.
+;
+; To understand how the game works, there are a series of files that accompany it. These files are:
+; * mapamemoria.txt -> contains the game's memory map
+; * maparoms.txt -> contains the memory map of the game files
+; * mapadisco.txt -> contains information about what data and in what way it is saved on the original game disk
+; * pista0.asm -> contains the code from track 0 of the game disk that loads the data into memory and jumps to the start of the game
+; * pirata.asm -> contains the code to load the game data and jump to the start of the game in the pirate version
+;
+; To name the data areas, the name of the file containing the data in the pirate game is used, since it is more manageable
+; to say that it places the data from abadia7.bin at 0x4000-0x7fff than to say it loads the data from tracks 0x12-0x16
+;
+; During game startup, the Amstrad's memory banks have ended up in the following state:
+; 0 -> abadia1.bin (from 0x100)
+; 1 -> abadia2.bin
+; 2 -> abadia3.bin
+; 3 -> abadia0.bin (screen memory)
+; 4 -> abadia5.bin
+; 5 -> abadia6.bin
+; 6 -> abadia7.bin
+; 7 -> abadia8.bin
+;
+; The memory configuration normally used throughout the program is (0, 1, 2, 3)
+; Throughout the game, in positions 0x0000-0x3fff, 0x8000-0xbfff and 0xc000-0xffff banks 0, 2 and 3 are mapped respectively
+; In the 0x4000-0x7fff area, bank 1 is usually mapped, although when necessary banks 4, 5, 6 and 7 are mapped
+; Bank 4 contains a debugger for the Z80, which I suppose was used by Paco Menendez to debug the game. The commented code for
+; this debugger is available in the file depurador.asm and the associated memory map is in the file depmem.txt
+;
+; Once the load is complete, it jumps to 0x0400, which is where the game really starts
+;
+; NOTE: some comments may be outdated or incorrect, but I have not had time to review all the code
+; ------------------------------------------------------------------------------------------------------------------
+
+
+
+
+; abadia1.bin (0x0100-0x3fff)
+; -------------- from 0x0103 to 0x03ff there is code that gets overwritten with program data --------------------------
+0100: F3          di
+0101: 31 00 01    ld   sp,$0100		; sets the stack
+0104: 21 00 03    ld   hl,$0300		; puts 0x0300 as return address (??? there is no valid code at 0x0300)
+0107: E5          push hl
+0108: 01 8D 7F    ld   bc,$7F8D		; gate array -> 10001101 (select screen mode, rom cfig and int control)
+010B: ED 49       out  (c),c		;  selects mode 1 and disables upper and lower rom
+010D: CD 82 01    call $0182		; writes the color palette
+	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00	; border color and pen colors (from 15 to 0)
+
+0121: 3E 01       ld   a,$01
+0123: 01 7E FA    ld   bc,$FA7E		; activates the disk drive motor
+0126: ED 79       out  (c),a
+0128: 3E 03       ld   a,$03
+012A: CD B5 01    call $01B5		; delay sometimes
+
+012D: 01 C7 01    ld   bc,$01C7		; initial track = 1, memory configuration 7 (0, 7, 2, 3)
+0130: 21 FF FF    ld   hl,$FFFF		; data starts copying from 0xffff downwards
+0133: 3E 11       ld   a,$11		; copies to 0xc000-0xffff abadia0.bin in 0x8000-0xbfff abadia3, in 0x4000-0x7fff abadia8.bin and in 0x0100-0x3fff abadia1.bin
+0135: CD 5C 01    call $015C		; reads disk data from a tracks from track b, setting the memory configuration indicated by c, and saving the data at hl (downwards)
+0138: 01 C6 12    ld   bc,$12C6		; copies to bank 6 (tracks 0x12-0x16) (abadia7.bin)
+013B: CD 57 01    call $0157		; reads disk data from track b to track b+4, setting the memory configuration indicated by c, and saving the data at 0x4000-0x7fff
+013E: 01 C5 17    ld   bc,$17C5		; copies to bank 5 (tracks 0x17-0x1b) (abadia6.bin)
+0141: CD 57 01    call $0157		; reads disk data from track b to track b+4, setting the memory configuration indicated by c, and saving the data at 0x4000-0x7fff
+0144: 01 C4 1C    ld   bc,$1CC4		; copies to bank 4 (tracks 0x1c-0x20) (abadia5.bin)
+0147: CD 57 01    call $0157		; reads disk data from track b to track b+4, setting the memory configuration indicated by c, and saving the data at 0x4000-0x7fff
+014A: 01 C0 21    ld   bc,$21C0		; copies to bank 0 (tracks 0x21-0x25) (abadia2.bin)
+014D: CD 57 01    call $0157		; reads disk data from track b to track b+4, setting the memory configuration indicated by c, and saving the data at 0x4000-0x7fff
+0150: AF          xor  a
+0151: 01 7E FA    ld   bc,$FA7E
+0154: ED 79       out  (c),a		; turns off the disk drive motor
+0156: C9          ret				; jumps to 0x0300
+
+; reads disk data from track b to track b+4, setting the memory configuration indicated by c, and saving the data at 0x4000-0x7fff
+0157: 21 FF 7F    ld   hl,$7FFF		; copy to 0x4000-0x7fff
+015A: 3E 05       ld   a,$05		; copies 5 tracks
+
+; reads disk data from a tracks from track b, setting the memory configuration indicated by c, and saving the data at hl (downwards)
+; a = number of tracks to copy
+; b = initial track
+; c = memory configuration to set
+; hl = memory position where to start copying the data (copies from top to bottom)
+015C: 80          add  a,b
+015D: 32 7E 01    ld   ($017E),a	; modifies an instruction with the last track to read
+0160: 78          ld   a,b			; a = initial track
+0161: 06 7F       ld   b,$7F
+0163: ED 49       out  (c),c		; sets the memory configuration passed in c
+0165: 01 7E FB    ld   bc,$FB7E		; bc = disk drive main register
+
+0168: F5          push af
+0169: 32 25 02    ld   ($0225),a	; modifies the track in the command
+016C: CD 96 01    call $0196		; writes a seek command for track a
+016F: 11 22 02    ld   de,$0222		; points to the read command data
+0172: CD C0 01    call $01C0		; writes the command pointed to by de to the drive
+0175: CD 18 02    call $0218		; reads bytes from the disk drive and copies them to memory in descending order
+0178: CD CD 01    call $01CD		; reads the bytes sent by the disk drive after a command, and saves them in a buffer
+017B: F1          pop  af
+017C: 3C          inc  a			; advances to the next track
+017D: FE 12       cp   $12			; instruction modified from outside with the last track to read
+017F: 20 E7       jr   nz,$0168
+0181: C9          ret
+
+; writes the color palette
+0182: E1          pop  hl			; gets the return address
+0183: 3E 11       ld   a,$11
+0185: 06 7F       ld   b,$7F		; pen and border selection
+0187: 4F          ld   c,a
+0188: 0D          dec  c
+0189: ED 49       out  (c),c		; selects a pen or border
+018B: 4E          ld   c,(hl)
+018C: 23          inc  hl
+018D: CB F1       set  6,c
+018F: ED 49       out  (c),c
+0191: 3D          dec  a
+0192: 20 F3       jr   nz,$0187		; repeats until all colors are complete
+0194: E5          push hl
+0195: C9          ret
+
+; writes a seek command for track a
+0196: F5          push af
+0197: 3E 0F       ld   a,$0F		; seek command
+0199: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+019C: AF          xor  a			; head 0, drive 0
+019D: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+01A0: F1          pop  af			; recovers the track to seek
+01A1: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+01A4: 3E 01       ld   a,$01
+01A6: 11 20 4E    ld   de,$4E20
+01A9: CD B5 01    call $01B5		; small delay
+01AC: 3E 08       ld   a,$08		; command to get status information
+01AE: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+01B1: CD CD 01    call $01CD		; reads the bytes sent by the disk drive after a command, and saves them in a buffer
+01B4: C9          ret
+
+; waits an amount of time proportional to a and de
+01B5: F5          push af
+01B6: 1B          dec  de
+01B7: 7B          ld   a,e
+01B8: B2          or   d
+01B9: 20 FB       jr   nz,$01B6		; while de is not 0, decrements it
+01BB: F1          pop  af
+01BC: 3D          dec  a			; repeats a times
+01BD: 20 F6       jr   nz,$01B5
+01BF: C9          ret
+
+; writes the command pointed to by de to the drive
+01C0: 1A          ld   a,(de)		; reads the number of bytes in the command
+01C1: 13          inc  de
+01C2: F5          push af			; saves the number of bytes in the command
+01C3: 1A          ld   a,(de)
+01C4: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+01C7: 13          inc  de			; moves to the next position
+01C8: F1          pop  af
+01C9: 3D          dec  a
+01CA: 20 F6       jr   nz,$01C2		; repeats until all command bytes are done
+01CC: C9          ret
+
+; reads the bytes sent by the disk drive after a command, and saves them in a buffer
+01CD: E5          push hl
+01CE: D5          push de
+01CF: 16 00       ld   d,$00		; initializes the written bytes counter
+01D1: 21 64 00    ld   hl,$0064		; points to a buffer
+01D4: E5          push hl
+01D5: ED 78       in   a,(c)		; reads status register 0
+01D7: FE C0       cp   $C0
+01D9: 38 FA       jr   c,$01D5		; waits for the drive to be ready
+01DB: 0C          inc  c			; points to the data register
+01DC: ED 78       in   a,(c)		; reads the result of the seek command
+01DE: 0D          dec  c			; points to the status register
+01DF: 77          ld   (hl),a		; saves the read data
+01E0: 23          inc  hl
+01E1: 14          inc  d
+01E2: 3E 05       ld   a,$05		; waits a bit
+01E4: 3D          dec  a
+01E5: 20 FD       jr   nz,$01E4
+01E7: ED 78       in   a,(c)		; waits for the transfer to finish
+01E9: E6 10       and  $10
+01EB: 20 E8       jr   nz,$01D5
+01ED: E1          pop  hl			; recovers the initial buffer position
+01EE: 7E          ld   a,(hl)		; checks the operation status
+01EF: E6 C0       and  $C0
+01F1: 2B          dec  hl
+01F2: 72          ld   (hl),d		; saves the number of bytes read
+01F3: D1          pop  de
+01F4: E1          pop  hl
+01F5: C0          ret  nz			; if there was an error, exits
+01F6: 37          scf				; if things went well, sets the carry flag
+01F7: C9          ret
+
+; waits for the drive to be ready, and if possible, sends data
+01F8: F5          push af
+01F9: F5          push af
+01FA: ED 78       in   a,(c)		; reads the drive status register
+01FC: 87          add  a,a
+01FD: 30 FB       jr   nc,$01FA		; waits for the data register to be ready to receive or send data
+01FF: 87          add  a,a
+0200: 30 03       jr   nc,$0205		; if a transfer from processor to data register is needed, jumps
+0202: F1          pop  af
+0203: F1          pop  af
+0204: C9          ret
+
+; arrives here if the drive expects data
+0205: F1          pop  af			; recovers the value
+0206: 0C          inc  c			; points to the data register
+0207: ED 79       out  (c),a		; writes the value to the data register
+0209: 0D          dec  c			; points to the control register
+020A: 3E 05       ld   a,$05
+020C: 3D          dec  a
+020D: 00          nop
+020E: 20 FC       jr   nz,$020C		; waits a bit
+0210: F1          pop  af
+0211: C9          ret
+
+; reads a byte from the disk drive and copies it to memory
+0212: 0C          inc  c			; points to the data register
+0213: ED 78       in   a,(c)		; reads a byte from the selected sector of the current track
+0215: 77          ld   (hl),a		; saves it to memory
+0216: 0D          dec  c			; points to the status register
+0217: 2B          dec  hl			; decrements the buffer pointer
+
+; reads bytes from the disk drive and copies them to memory in descending order
+0218: ED 78       in   a,(c)		; reads the status register
+021A: F2 18 02    jp   p,$0218
+021D: E6 20       and  $20
+021F: 20 F1       jr   nz,$0212		; if the read operation is not complete, reads another byte
+0221: C9          ret
+
+; read command data
+0222: 	09 -> number of bytes in the command
+	66 -> read data command, double density, single track
+	00 -> head 0, drive 0
+	25 -> track number (modified from outside)
+	00 -> head 0
+	21 -> initial sector number for reading
+	01 -> number of bytes per sector (in multiples of 0x100)
+	2F -> final sector number for reading
+	0E -> gap length (GAP3)
+	1F -> not used
+
+; write command data
+022C: 	09 -> number of bytes in the command
+	45 -> write data command, double density, single track
+	00 -> head 0, drive 0
+	11 -> track number
+	00 -> head 0
+	21 -> initial sector number for writing
+	01 -> number of bytes per sector (in multiples of 0x100)
+	2F -> final sector number for writing
+	0E -> gap length (GAP3)
+	FF -> not used
+
+; ??? this routine is never called
+0236: F3          di
+0237: 3E 01       ld   a,$01
+0239: 01 7E FA    ld   bc,$FA7E		; activates the disk drive motor
+023C: ED 79       out  (c),a
+023E: 3E 06       ld   a,$06
+0240: CD B5 01    call $01B5		; delay sometimes
+
+0243: CD D5 02    call $02D5		; recalibrates the disk drive
+
+0246: 31 00 01    ld   sp,$0100		; sets the stack
+0249: CD 21 01    call $0121		; loads all game data
+024C: 3E 12       ld   a,$12
+024E: 32 7E 01    ld   ($017E),a	; modifies the value of a routine (last track to read in the data read)
+0251: 31 00 01    ld   sp,$0100		; sets the stack again
+
+0254: F3          di
+0255: CD EF 02    call $02EF		; copies the 4x8 cursor to the upper left corner of the screen and saves what it overwrote on the screen
+0258: 3E 01       ld   a,$01
+025A: 11 10 27    ld   de,$2710
+025D: CD B5 01    call $01B5		; waits a while
+0260: CD EF 02    call $02EF		; removes the cursor from the upper left corner and restores what was on the screen
+0263: 3E 01       ld   a,$01
+0265: 11 10 27    ld   de,$2710
+0268: CD B5 01    call $01B5		; waits a while
+026B: CD 0C 03    call $030C		; checks if space has been pressed
+026E: 20 E4       jr   nz,$0254		; while space hasn't been pressed, keeps showing the blinking cursor
+
+0270: 3E 01       ld   a,$01
+0272: 01 7E FA    ld   bc,$FA7E		; activates the disk drive motor
+0275: ED 79       out  (c),a
+0277: 3E 06       ld   a,$06
+0279: CD B5 01    call $01B5		; delay sometimes
+027C: CD D5 02    call $02D5		; recalibrates the disk drive
+027F: 01 C7 01    ld   bc,$01C7		; initial track = 1, memory configuration 7 (0, 7, 2, 3)
+0282: 21 FF FF    ld   hl,$FFFF		; data starts copying from 0xffff downwards
+0285: 3E 11       ld   a,$11		; copies 0xc000-0xffff abadia0.bin, 0x8000-0xbfff abadia3, 0x4000-0x7fff abadia8.bin and 0x0100-0x3fff abadia1.bin to disk
+0287: CD AF 02    call $02AF		; writes data to disk from a tracks from track b, setting the memory configuration indicated by c, and reading the data from hl (downwards)
+028A: 01 C6 12    ld   bc,$12C6		; writes what's in bank 6 (tracks 0x12-0x16) (abadia7.bin)
+028D: CD AA 02    call $02AA		; copies the data to disk from track b to track b+4, setting the memory configuration indicated by c, and reading the data at 0x4000-0x7fff
+0290: 01 C5 17    ld   bc,$17C5		; writes what's in bank 5 (tracks 0x17-0x1b) (abadia6.bin)
+0293: CD AA 02    call $02AA		; copies the data to disk from track b to track b+4, setting the memory configuration indicated by c, and reading the data at 0x4000-0x7fff
+0296: 01 C4 1C    ld   bc,$1CC4		; writes what's in bank 4 (tracks 0x1c-0x20) (abadia5.bin)
+0299: CD AA 02    call $02AA		; copies the data to disk from track b to track b+4, setting the memory configuration indicated by c, and reading the data at 0x4000-0x7fff
+029C: 01 C0 21    ld   bc,$21C0		; writes what's in bank 0 (tracks 0x21-0x25) (abadia2.bin)
+029F: CD AA 02    call $02AA		; copies the data to disk from track b to track b+4, setting the memory configuration indicated by c, and reading the data at 0x4000-0x7fff
+02A2: AF          xor  a
+02A3: 01 7E FA    ld   bc,$FA7E
+02A6: ED 79       out  (c),a		; turns off the disk drive motor
+02A8: 18 AA       jr   $0254		; jumps to the routine that waits for space to be pressed to save the data again
+
+; writes data to disk from track b to track b+4, setting the memory configuration indicated by c, and reading the data from 0x4000-0x7fff
+02AA: 21 FF 7F    ld   hl,$7FFF
+02AD: 3E 05       ld   a,$05
+
+; writes data to disk from a tracks from track b, setting the memory configuration indicated by c, and reading the data from hl (downwards)
+; a = number of tracks to write
+; b = initial track
+; c = memory configuration to set
+; hl = memory position where to start getting the data (writes from top to bottom)
+02AF: 80          add  a,b
+02B0: 32 D1 02    ld   ($02D1),a	; modifies an instruction with the last track to write
+02B3: 78          ld   a,b			; a = initial track
+02B4: 06 7F       ld   b,$7F
+02B6: ED 49       out  (c),c		; sets the memory configuration passed in c
+02B8: 01 7E FB    ld   bc,$FB7E		; bc = disk drive main register
+02BB: F5          push af
+02BC: 32 2F 02    ld   ($022F),a	; modifies the track in the command
+02BF: CD 96 01    call $0196		; writes a seek command for track a
+02C2: 11 2C 02    ld   de,$022C		; points to the write command data
+02C5: CD C0 01    call $01C0		; writes the command pointed to by de to the drive
+02C8: CD 44 03    call $0344		; writes memory bytes to the disk drive
+02CB: CD CD 01    call $01CD		; reads the bytes sent by the disk drive after a command, and saves them in a buffer
+02CE: F1          pop  af
+02CF: 3C          inc  a			; advances to the next track
+02D0: FE 12       cp   $12			; instruction modified from outside with the last track to write
+02D2: 20 E7       jr   nz,$02BB
+02D4: C9          ret
+
+; recalibrates the disk drive
+02D5: 01 7E FB    ld   bc,$FB7E		; bc = disk drive main register
+02D8: 3E 07       ld   a,$07		; command to recalibrate the drive
+02DA: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+02DD: AF          xor  a			; drive 0
+02DE: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+02E1: 3E 03       ld   a,$03
+02E3: CD B5 01    call $01B5		; waits for the drive to be ready, and if possible, sends data
+02E6: 3E 08       ld   a,$08		; command to get status information
+02E8: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+02EB: CD CD 01    call $01CD		; reads the bytes sent by the disk drive after a command, and saves them in a buffer
+02EE: C9          ret
+
+; copies a 4x8 pixel rectangle from a buffer to screen, and saves what's on the screen in the buffer
+02EF: 21 00 C0    ld   hl,$C000		; points to screen
+02F2: 11 04 03    ld   de,$0304		; points to a buffer
+
+; copies a 4x8 pixel rectangle from de to hl, and saves what's in hl to de
+02F5: 06 08       ld   b,$08		; 8 bytes (32 pixels)
+02F7: 4E          ld   c,(hl)		; reads a byte from screen
+02F8: 1A          ld   a,(de)		; reads a byte from buffer
+02F9: 77          ld   (hl),a		; copies the byte from buffer to screen
+02FA: 79          ld   a,c
+02FB: 12          ld   (de),a		; copies the byte from screen to buffer
+02FC: 13          inc  de			; moves to the next buffer position
+02FD: 7C          ld   a,h
+02FE: C6 08       add  a,$08		; moves to the next screen line
+0300: 67          ld   h,a
+0301: 10 F4       djnz $02F7
+0303: C9          ret
+
+; buffer for the previous routine
+0304: 00 00 0F 0F F0 F0 FF FF
+
+; checks if space has been pressed
+030C: F3          di
+030D: 01 0E F4    ld   bc,$F40E		; 1111 0100 0000 1110 (8255 PPI port A)
+0310: ED 49       out  (c),c
+0312: 06 F6       ld   b,$F6
+0314: ED 78       in   a,(c)
+0316: E6 30       and  $30
+0318: 4F          ld   c,a
+0319: F6 C0       or   $C0
+031B: ED 79       out  (c),a		; PSG write register index operation (activates 14 for port A communication)
+031D: ED 49       out  (c),c		; PSG operation: inactive
+031F: 04          inc  b			; points to the 8255 PPI control port
+0320: 3E 92       ld   a,$92		; 1001 0010 (port A: input, port B: input, port C upper: output, port C lower: output)
+0322: ED 79       out  (c),a
+0324: C5          push bc
+
+0325: 3E 45       ld   a,$45
+0327: B1          or   c
+0328: 4F          ld   c,a
+0329: 06 F6       ld   b,$F6		; PSG operation: read data from register (line 5)
+032B: ED 49       out  (c),c
+032D: 06 F4       ld   b,$F4
+032F: ED 78       in   a,(c)
+0331: C1          pop  bc
+0332: F5          push af			; saves the read line
+0333: 3E 82       ld   a,$82		; 1001 0010 (port A: output, port B: input, port C upper: output, port C lower: output)
+0335: ED 79       out  (c),a
+0337: 05          dec  b
+0338: ED 49       out  (c),c		; PSG operation: inactive
+033A: F1          pop  af			; recovers the read line
+033B: E6 80       and  $80			; keeps the space bar bit
+033D: C9          ret
+
+; writes a byte from memory to the disk drive
+033E: 0C          inc  c			; points to the data register
+033F: 7E          ld   a,(hl)		; reads a byte from memory
+0340: ED 79       out  (c),a		; saves it to the selected sector of the current track
+0342: 0D          dec  c			; points to the status register
+0343: 2B          dec  hl			; points to the next byte to write
+
+; writes bytes from memory to the disk drive
+0344: ED 78       in   a,(c)		; reads the status register
+0346: F2 44 03    jp   p,$0344
+0349: E6 20       and  $20
+034B: 20 F1       jr   nz,$033E		; if the write operation is not complete, writes another byte
+034D: C9          ret
+
+; ??? this routine is never called
+034E: F1          pop  af
+034F: 3C          inc  a
+0350: FE 00       cp   $00
+0352: 20 E7       jr   nz,$033B
+0354: C9          ret
+
+; recalibrates the disk drive
+0355: 01 7E FB    ld   bc,$FB7E		; bc = disk drive main register
+0358: 3E 07       ld   a,$07		; command to recalibrate the drive
+035A: CD F8 01    call $01F8		; waits for the drive to be ready, and if possible, sends data
+035D: AF          xor  a            ; drive 0
+035E: CD F8 01    call $01F8        ; waits for the drive to be ready, and if possible, sends data
+0361: 3E 03       ld   a,$03
+0363: CD B5 01    call $01B5        ; waits for the drive to be ready, and if possible, sends data
+0366: 3E 08       ld   a,$08        ; command to get status information
+0368: CD F8 01    call $01F8        ; waits for the drive to be ready, and if possible, sends data
+036B: CD CD 01    call $01CD        ; reads the bytes sent by the disk drive after a command, and saves them in a buffer
+036E: C9          ret
+
+; copies a 4x8 pixel rectangle from a buffer to screen, and saves what's on the screen in the buffer
+036F: 21 00 C0    ld   hl,$C000		; points to screen
+0372: 11 04 03    ld   de,$0304		; points to a buffer
+
+; copies a 4x8 pixel rectangle from de to hl, and saves what's in hl to de
+0375: 06 08       ld   b,$08        ; 8 bytes (32 pixels)
+0377: 4E          ld   c,(hl)       ; reads a byte from screen
+0378: 1A          ld   a,(de)       ; reads a byte from buffer
+0379: 77          ld   (hl),a       ; copies the byte from buffer to screen
+037A: 79          ld   a,c
+037B: 12          ld   (de),a       ; copies the byte from screen to buffer
+037C: 13          inc  de           ; moves to the next buffer position
+037D: 7C          ld   a,h
+037E: C6 08       add  a,$08        ; moves to the next screen line
+; the routine is incomplete...
+; from 0x380 to 0x3ff there are 0x00
+; -------------- end of code that gets overwritten with program data --------------------------
+
+; --------------------------------- actual game start --------------------------
+; this is reached after copying the ROMs to the different memory banks
+0400: C3 9A 24    jp   $249A	; jumps to perform game initialization
+
+; -------------- code to save saved games from memory to disk --------------------------
+
+; writes a seek command for track a
+0403: F5          push af
+0404: 3E 0F       ld   a,$0F	; seek command
+0406: CD 65 04    call $0465	; waits for the drive to be ready, and if possible, sends data
+0409: AF          xor  a		; head 0, drive 0
+040A: CD 65 04    call $0465	; waits for the drive to be ready, and if possible, sends data
+040D: F1          pop  af       ; recovers the track to seek
+040E: CD 65 04    call $0465	; waits for the drive to be ready, and if possible, sends data
+0411: 3E 01       ld   a,$01
+0413: 11 20 4E    ld   de,$4E20
+0416: CD 22 04    call $0422	; small delay
+0419: 3E 08       ld   a,$08    ; command to get status information
+041B: CD 65 04    call $0465	; waits for the drive to be ready, and if possible, sends data
+041E: CD 3A 04    call $043A	; reads the bytes sent by the disk drive after a command, and saves them in a buffer
+0421: C9          ret
+
+; waits an amount of time proportional to a and de
+0422: F5          push af
+0423: 1B          dec  de
+0424: 7B          ld   a,e
+0425: B2          or   d
+0426: 20 FB       jr   nz,$0423		; while de is not 0, decrements it
+0428: F1          pop  af
+0429: 3D          dec  a
+042A: 20 F6       jr   nz,$0422		; repeats a times
+042C: C9          ret
+
+; writes the command pointed to by de to the drive
+042D: 1A          ld   a,(de)		; reads the number of bytes in the command
+042E: 13          inc  de
+042F: F5          push af           ; saves the number of bytes in the command
+0430: 1A          ld   a,(de)
+0431: CD 65 04    call $0465		; waits for the drive to be ready, and if possible, sends data
+0434: 13          inc  de           ; moves to the next position
+0435: F1          pop  af
+0436: 3D          dec  a
+0437: 20 F6       jr   nz,$042F     ; repeats until all command bytes are done
+0439: C9          ret
+
+; reads the bytes sent by the disk drive after a command, and saves them in a buffer
+043A: E5          push hl
+043B: D5          push de
+043C: 16 00       ld   d,$00			; initializes the written bytes counter
+043E: 21 64 00    ld   hl,$0064         ; points to a buffer
+0441: E5          push hl
+0442: ED 78       in   a,(c)			; reads status register 0
+0444: FE C0       cp   $C0
+0446: 38 FA       jr   c,$0442          ; waits for the drive to be ready
+0448: 0C          inc  c				; points to the data register
+0449: ED 78       in   a,(c)            ; reads the result of the seek command
+044B: 0D          dec  c				; points to the status register
+044C: 77          ld   (hl),a           ; saves the read data
+044D: 23          inc  hl
+044E: 14          inc  d
+044F: 3E 05       ld   a,$05            ; waits a bit
+0451: 3D          dec  a
+0452: 20 FD       jr   nz,$0451
+0454: ED 78       in   a,(c)            ; waits for the transfer to finish
+0456: E6 10       and  $10
+0458: 20 E8       jr   nz,$0442
+045A: E1          pop  hl               ; recovers the initial buffer position
+045B: 7E          ld   a,(hl)           ; checks the operation status
+045C: E6 C0       and  $C0
+045E: 2B          dec  hl
+045F: 72          ld   (hl),d           ; saves the number of bytes read
+0460: D1          pop  de
+0461: E1          pop  hl
+0462: C0          ret  nz               ; if there was an error, exits
+0463: 37          scf                   ; if things went well, sets the carry flag
+0464: C9          ret
+
+; waits for the drive to be ready, and if possible, sends data
+0465: F5          push af
+0466: F5          push af
+0467: ED 78       in   a,(c)		; reads the status register
+0469: 87          add  a,a
+046A: 30 FB       jr   nc,$0467		; waits for the data register to be ready to receive or send data
+046C: 87          add  a,a
+046D: 30 03       jr   nc,$0472		; if a transfer from processor to data register is needed, jumps
+046F: F1          pop  af
+0470: F1          pop  af
+0471: C9          ret
+
+; arrives here if the drive expects data
+0472: F1          pop  af			; recovers the value
+0473: 0C          inc  c            ; points to the data register
+0474: ED 79       out  (c),a		; writes the value to the data register
+0476: 0D          dec  c            ; points to the control register
+0477: 3E 05       ld   a,$05
+0479: 3D          dec  a
+047A: 00          nop
+047B: 20 FC       jr   nz,$0479     ; waits a bit
+047D: F1          pop  af
+047E: C9          ret
+
+; write command data
+047F: 	09 -> number of bytes in the command
+	45 -> write data command, double density, single track
+	00 -> head 0, drive 0
+	11 -> track number
+	00 -> head 0
+	21 -> initial sector number for writing
+	01 -> number of bytes per sector (in multiples of 0x100)
+	2F -> final sector number for writing
+	0E -> gap length (GAP3)
+	FF -> not used
+
+; checks if ctrl+tab was pressed and acts accordingly
+0489: 3E 44       ld   a,$44
+048B: CD 72 34    call $3472		; checks if there was any change in the tab key state
+048E: C8          ret  z			; if there was no change, exits
+048F: 3E 17       ld   a,$17
+0491: CD 82 34    call $3482		; checks if control is pressed
+0494: C8          ret  z			; if not, exits
+
+; enters here when pressing ctrl+tab
+0495: F3          di
+0496: 3E 07       ld   a,$07
+0498: 0E 3F       ld   c,$3F
+049A: CD 4E 13    call $134E		; disables sound output
+049D: 3E 01       ld   a,$01
+049F: 01 7E FA    ld   bc,$FA7E		; activates the disk drive motor
+04A2: ED 79       out  (c),a
+04A4: 3E 06       ld   a,$06
+04A6: CD 22 04    call $0422		; delay
+04A9: CD 36 05    call $0536		; recalibrates the disk drive
+04AC: 3E 01       ld   a,$01		; initial track
+04AE: F5          push af
+04AF: CD 03 04    call $0403		; writes a seek command for track a
+04B2: F1          pop  af
+04B3: 3C          inc  a			; advances to the next track
+04B4: FE 11       cp   $11
+04B6: 38 F6       jr   c,$04AE		; at the end of this loop it's at cylinder 0x11
+
+04B8: CD 50 05    call $0550		; shows the cursor graphic
+04BB: 3E 01       ld   a,$01
+04BD: 11 10 27    ld   de,$2710
+04C0: CD 22 04    call $0422		; delay
+04C3: CD 50 05    call $0550		; hides the cursor graphic
+04C6: 3E 01       ld   a,$01
+04C8: 11 10 27    ld   de,$2710

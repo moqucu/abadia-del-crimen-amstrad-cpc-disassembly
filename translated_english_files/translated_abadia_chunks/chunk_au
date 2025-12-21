@@ -1,0 +1,600 @@
+5340: FD 74 04    ld   (iy+$04),h	; stores the destination height of the object
+5343: FD 75 01    ld   (iy+$01),l	; stores the orientation of the object
+5346: FD 73 02    ld   (iy+$02),e	; stores the global destination position of the object
+5349: FD 72 03    ld   (iy+$03),d
+534C: C3 13 0D    jp   $0D13		; jumps to the object redraw routine to redraw only the object being dropped
+
+; modifies a routine with the character's position data and orientation
+; returns in bc the character's position + 2*displacement according to orientation
+;  and in a the character's height
+534F: DD 5E 01    ld   e,(ix+$01)		; reads the address of the character's position data
+5352: DD 56 02    ld   d,(ix+$02)
+5355: 1B          dec  de
+5356: 1A          ld   a,(de)			; reads the character's orientation
+5357: 21 53 28    ld   hl,$2853			; hl points to the displacement table to add if continuing to advance in that orientation
+535A: CD 92 27    call $2792			; hl = hl + 8*a
+535D: 13          inc  de
+535E: 1A          ld   a,(de)			; reads the character's x position
+535F: 86          add  a,(hl)			; adds 2 times the value read from the table
+5360: 86          add  a,(hl)
+5361: 32 6E 51    ld   ($516E),a		; modifies a comparison
+5364: 4F          ld   c,a				; stores the position value in c
+5365: 13          inc  de
+5366: 23          inc  hl
+5367: 1A          ld   a,(de)			; reads the character's y position
+5368: 86          add  a,(hl)			; adds 2 times the value read from the table
+5369: 86          add  a,(hl)
+536A: 32 73 51    ld   ($5173),a		; modifies a comparison
+536D: 47          ld   b,a
+536E: 13          inc  de
+536F: 1A          ld   a,(de)			; reads the character's height
+5370: 32 67 51    ld   ($5167),a		; modifies a subtraction
+5373: C9          ret
+; ---------------------------- end of code related to picking up/dropping objects ---------------------------------------
+
+; ------------- code to perform the mirror reflection effect ------------------------
+
+; if the mirror is not open, perform the mirror effect
+5374: 3A 8C 2D    ld   a,($2D8C)		; reads if the mirror's secret room is open
+5377: A7          and  a
+5378: C8          ret  z				; if it's open, exit
+5379: FD 21 36 30 ld   iy,$3036			; points to william's characteristics
+537D: DD 21 53 2E ld   ix,$2E53			; points to the abbot's sprite
+5381: 21 DC 9A    ld   hl,$9ADC			; points to a buffer for flipping graphics
+5384: 11 9F 31    ld   de,$319F			; points to william's animation table
+5387: 01 8D 2D    ld   bc,$2D8D			; points to a buffer
+538A: CD 9E 53    call $539E			; performs the mirror effect in the mirror room for william
+538D: 01 92 2D    ld   bc,$2D92			; points to a buffer
+5390: 21 D6 9B    ld   hl,$9BD6			; points to a buffer for flipping graphics
+5393: 11 BF 31    ld   de,$31BF			; points to adso's animation table
+5396: FD 21 45 30 ld   iy,$3045			; points to adso's characteristics
+539A: DD 21 67 2E ld   ix,$2E67			; points to berengario's sprite
+									; performs the mirror effect in the mirror room for adso
+
+; iy points to the character's position data
+; ix points to a sprite
+; hl points to a buffer for flipping graphics
+; de points to the character's animation table
+; bc points to a buffer
+539E: C5          push bc
+539F: CD AD 53    call $53AD		; performs the mirror effect in the mirror room
+53A2: C1          pop  bc
+53A3: 7D          ld   a,l
+53A4: 02          ld   (bc),a		; saves the sprite's visibility state
+53A5: FE FE       cp   $FE			; if the sprite is visible, exit
+53A7: C0          ret  nz
+53A8: DD CB 0B BE res  7,(ix+$0b)	; indicates that the sprite is of a monk
+53AC: C9          ret
+
+; if the character is in front of the mirror, fills the sprite passed in ix to perform the mirror effect
+; iy points to the character's position data
+; ix points to a sprite
+; hl points to a buffer for flipping graphics
+; de points to the character's animation table
+; bc points to a buffer
+53AD: 22 83 54    ld   ($5483),hl	; modifies an instruction with the buffer address
+53B0: 2E FE       ld   l,$FE		; indicates that initially the sprite is not visible
+53B2: 3A A9 27    ld   a,($27A9)	; a = minimum x position visible on screen
+53B5: FE 1C       cp   $1C			; if not in the mirror room, exit
+53B7: C0          ret  nz
+53B8: 3A 9D 27    ld   a,($279D)	; a = minimum y position visible on screen
+53BB: FE 5C       cp   $5C			; if not in the mirror room, exit
+53BD: C0          ret  nz
+
+53BE: 0A          ld   a,(bc)		; gets the sprite's previous state
+53BF: 32 53 54    ld   ($5453),a	; modifies a call
+53C2: 03          inc  bc
+53C3: ED 43 44 54 ld   ($5444),bc	; modifies 2 instructions
+53C7: ED 43 4C 54 ld   ($544C),bc
+53CB: 03          inc  bc
+53CC: 03          inc  bc
+53CD: ED 43 48 54 ld   ($5448),bc	; modifies 2 instructions
+53D1: ED 43 50 54 ld   ($5450),bc
+53D5: FD 7E 04    ld   a,(iy+$04)	; a = character's height
+53D8: CD 73 24    call $2473		; depending on the height, returns the floor's base height in b
+53DB: 90          sub  b
+53DC: FE 08       cp   $08			; if the height above the floor's base is >= 0x08, exit
+53DE: D0          ret  nc
+53DF: 78          ld   a,b
+53E0: FE 16       cp   $16			; if not on the second floor, exit
+53E2: C0          ret  nz
+
+53E3: FD 7E 02    ld   a,(iy+$02)	; a = character's x position
+53E6: 47          ld   b,a
+53E7: D6 20       sub  $20			; if not in the mirror's visible zone in x, exit
+53E9: D8          ret  c
+53EA: FE 0A       cp   $0A
+53EC: D0          ret  nc
+53ED: FD 7E 03    ld   a,(iy+$03)	; a = character's y position
+53F0: D6 62       sub  $62
+53F2: D8          ret  c			; if not in the mirror's visible zone in y, exit
+53F3: FE 0A       cp   $0A
+53F5: D0          ret  nc
+
+53F6: FD 4E 01    ld   c,(iy+$01)	; c = character's orientation
+53F9: FD 7E 00    ld   a,(iy+$00)	; a = character's animation
+53FC: F5          push af			; saves the character's animation
+53FD: EE 02       xor  $02			; inverts the animation
+53FF: FD 77 00    ld   (iy+$00),a
+5402: C5          push bc			; saves the orientation and x position
+5403: 78          ld   a,b			; recovers the character's x position
+5404: D6 21       sub  $21
+5406: ED 44       neg
+5408: C6 21       add  a,$21		; reflects the x position with respect to the mirror
+540A: FD 77 02    ld   (iy+$02),a
+540D: 79          ld   a,c
+540E: CB 47       bit  0,a
+5410: 20 02       jr   nz,$5414		; reflects the character's orientation
+5412: EE 02       xor  $02
+5414: FD 77 01    ld   (iy+$01),a
+
+5417: FD CB 05 7E bit  7,(iy+$05)	; if the character occupies 4 positions, jump
+541B: 28 03       jr   z,$5420
+541D: FD 35 02    dec  (iy+$02)		; decrements the x position
+
+5420: 21 73 54    ld   hl,$5473
+5423: 22 59 2A    ld   ($2A59),hl	; modifies the address of the routine in charge of flipping graphics
+5426: ED 53 84 2A ld   ($2A84),de	; modifies the character's animation table
+542A: DD CB 0B FE set  7,(ix+$0b)	; indicates that it's not a monk
+542E: DD 7E 00    ld   a,(ix+$00)	; reads and preserves the sprite's state
+5431: F5          push af
+5432: CD 27 2A    call $2A27		; advances the sprite's animation and redraws it
+5435: F1          pop  af
+5436: DD 6E 01    ld   l,(ix+$01)	; reads the sprite's position
+5439: DD 66 02    ld   h,(ix+$02)
+543C: DD 5E 05    ld   e,(ix+$05)	; reads the sprite's width and height
+543F: DD 56 06    ld   d,(ix+$06)
+5442: D9          exx
+5443: 2A 8D 2D    ld   hl,($2D8D)	; instruction modified from outside
+5446: ED 5B 8F 2D ld   de,($2D8F)	; instruction modified from outside
+544A: D9          exx
+544B: 22 8D 2D    ld   ($2D8D),hl	; instruction modified from outside
+544E: ED 53 8F 2D ld   ($2D8F),de	; instruction modified from outside
+5452: 3E 00       ld   a,$00		; instruction modified from outside
+5454: FE FE       cp   $FE
+5456: 28 01       jr   z,$5459		; if the sprite is not visible, don't change the registers
+5458: D9          exx
+5459: DD 75 03    ld   (ix+$03),l	; writes the previous position and the previous width and height of the sprite
+545C: DD 74 04    ld   (ix+$04),h
+545F: DD 73 09    ld   (ix+$09),e
+5462: DD 72 0A    ld   (ix+$0a),d
+5465: C1          pop  bc
+5466: FD 70 02    ld   (iy+$02),b	; restores the character's orientation and x position
+5469: FD 71 01    ld   (iy+$01),c
+546C: F1          pop  af
+546D: FD 77 00    ld   (iy+$00),a	; restores the character's animation counter
+5470: 2E 00       ld   l,$00		; indicates that the sprite is visible
+5472: C9          ret
+
+; routine in charge of flipping graphics
+5473: DD 6E 05    ld   l,(ix+$05)	; gets the sprite's width and height
+5476: DD 66 06    ld   h,(ix+$06)
+5479: E5          push hl
+547A: 7C          ld   a,h
+547B: 26 00       ld   h,$00
+547D: CD 24 4D    call $4D24		; de = a*hl (de = width*height)
+5480: 42          ld   b,d			; bc = de
+5481: 4B          ld   c,e
+5482: 11 40 9B    ld   de,$9B40		; instruction modified from outside
+5485: D5          push de
+5486: DD 6E 07    ld   l,(ix+$07)	; hl = address of the sprite's graphics
+5489: DD 66 08    ld   h,(ix+$08)
+548C: DD 73 07    ld   (ix+$07),e	; sets the new graphics address
+548F: DD 72 08    ld   (ix+$08),d
+5492: ED B0       ldir				; copies the graphics to the destination
+5494: E1          pop  hl
+5495: C1          pop  bc
+5496: C3 52 35    jp   $3552		; flips the graphics pointed to by hl according to the characteristics indicated by bc
+
+; ------------- end of code to perform the mirror reflection effect ------------------------
+
+; if the scroll of the time of day change hasn't completed, advance it one step
+5499: 3A A5 2D    ld   a,($2DA5)	; checks if the scroll of the time of day change has completed
+549C: A7          and  a
+549D: C8          ret  z			; if the day has already changed completely, exit
+549E: 3D          dec  a
+549F: 32 A5 2D    ld   ($2DA5),a	; otherwise, one less iteration remains
+54A2: FE 07       cp   $07
+54A4: 3E 20       ld   a,$20		; a = blank space
+54A6: 30 08       jr   nc,$54B0		; if no character needs to be placed yet (0x2da5 > 7), jump with space
+54A8: 2A 82 2D    ld   hl,($2D82)	; gets the pointer to the next time of day
+54AB: 7E          ld   a,(hl)		; reads a character
+54AC: 23          inc  hl
+54AD: 22 82 2D    ld   ($2D82),hl	; updates the pointer
+
+; performs the scroll effect of the day text 8 pixels to the left
+54B0: 21 0D B4    ld   hl,$B40D		; l = X coordinate (in bytes) + 32 pixels, h = Y coordinate (in pixels)
+54B3: 22 97 2D    ld   ($2D97),hl	; saves the initial position for the scroll (84, 180)
+
+54B6: 21 EB E6    ld   hl,$E6EB		; points to screen (44, 180)
+54B9: 06 08       ld   b,$08		; b = 8 lines
+54BB: F5          push af
+54BC: C5          push bc
+54BD: E5          push hl
+54BE: 01 0C 00    ld   bc,$000C		; c = 12 bytes
+54C1: 54          ld   d,h			; de = hl
+54C2: 5D          ld   e,l
+54C3: 1B          dec  de
+54C4: 1B          dec  de
+54C5: ED B0       ldir				; performs the scroll 8 pixels to the left
+54C7: E1          pop  hl
+54C8: CD 4D 3A    call $3A4D		; goes to the next line
+54CB: C1          pop  bc
+54CC: 10 EE       djnz $54BC		; completes the 8 lines
+54CE: F1          pop  af			; recovers the character to print
+54CF: C3 17 3B    jp   $3B17		; prints a character
+
+; initializes the day and time of day
+54D2: 3A 4F BF    ld   a,($BF4F)
+54D5: 32 80 2D    ld   ($2D80),a	; writes the day
+54D8: 3A 4E BF    ld   a,($BF4E)
+54DB: 32 81 2D    ld   ($2D81),a	; writes the time of day
+54DE: C9          ret
+
+; sets the palette according to the time of day and displays the day number
+54DF: 3A 81 2D    ld   a,($2D81)	; reads the time of day
+54E2: 3D          dec  a
+54E3: FE 05       cp   $05
+54E5: F5          push af
+54E6: DC 44 3F    call c,$3F44		; if a <=, select palette 2
+54E9: F1          pop  af
+54EA: F5          push af
+54EB: D4 49 3F    call nc,$3F49		; otherwise, select palette 3
+
+54EE: 3A 80 2D    ld   a,($2D80)
+54F1: CD 59 55    call $5559		; draws the day number on the indicator
+54F4: 21 BC 4F    ld   hl,$4FBC
+54F7: F1          pop  af			; recovers the time of day
+54F8: 32 81 2D    ld   ($2D81),a
+54FB: 3C          inc  a
+54FC: 47          ld   b,a
+54FD: 87          add  a,a
+54FE: 4F          ld   c,a
+54FF: 87          add  a,a
+5500: 81          add  a,c
+5501: 80          add  a,b
+5502: CD 2D 16    call $162D		; hl = hl + 7*(a + 1)
+5505: 22 82 2D    ld   ($2D82),hl	; points to the name of the time of day
+5508: 18 34       jr   $553E		; advances the time of day
+
+550A: 3A 80 2D    ld   a,($2D80)	; reads the day
+550D: 3D          dec  a			; adjusts for indexing
+550E: 47          ld   b,a
+550F: 87          add  a,a
+5510: 4F          ld   c,a
+5511: 87          add  a,a
+5512: 80          add  a,b
+5513: 81          add  a,c			; a = 7*a
+5514: 21 7A 4F    ld   hl,$4F7A		; hl = hl + a
+5517: CD 2D 16    call $162D
+551A: 3A 81 2D    ld   a,($2D81)	; reads the day period
+551D: CD 2D 16    call $162D		; adjusts the index in the table
+5520: 66          ld   h,(hl)		; stores the duration of the day stage
+5521: 2E 00       ld   l,$00
+5523: 22 86 2D    ld   ($2D86),hl
+5526: C9          ret
+
+; checks if it's time to move to the next time of day
+5527: 3E 06       ld   a,$06
+5529: CD 72 34    call $3472		; checks if the enter state has changed
+552C: CD C6 41    call $41C6		; sets a to 0, so enter is never considered pressed
+552F: 20 0D       jr   nz,$553E		; if enter was pressed, advance the day stage
+5531: 2A 86 2D    ld   hl,($2D86)	; if the counter for the time of day to pass is 0, exit
+5534: 7C          ld   a,h
+5535: B5          or   l
+5536: C8          ret  z
+
+5537: 2B          dec  hl			; decrements the time of day counter and if it reaches 0, updates the time of day
+5538: 22 86 2D    ld   ($2D86),hl
+553B: 7C          ld   a,h
+553C: B5          or   l
+553D: C0          ret  nz
+
+; updates the time of day
+553E: 3A 81 2D    ld   a,($2D81)	; gets the time of day
+5541: 3C          inc  a
+5542: FE 07       cp   $07			; advances the time of day
+5544: 20 2F       jr   nz,$5575		; if it went out of the table, return to the first time of day
+5546: 21 BC 4F    ld   hl,$4FBC
+5549: 22 82 2D    ld   ($2D82),hl
+554C: 3A 80 2D    ld   a,($2D80)	; advances one day
+554F: 3C          inc  a
+5550: 32 80 2D    ld   ($2D80),a	; in case it went past the seventh day, return to the first day
+5553: FE 08       cp   $08
+5555: 38 05       jr   c,$555C
+5557: 3E 01       ld   a,$01
+
+; updates the day, reflecting it on the indicator
+5559: 32 80 2D    ld   ($2D80),a	; updates the day
+555C: 3D          dec  a			; adjusts the index to 0
+555D: 4F          ld   c,a
+555E: 87          add  a,a
+555F: 81          add  a,c			; each table entry occupies 3 bytes
+5560: 21 A7 4F    ld   hl,$4FA7		; indexes into the days table
+5563: CD 2D 16    call $162D
+5566: EB          ex   de,hl
+5567: 21 51 EE    ld   hl,$EE51		; points to screen (68, 165)
+556A: CD 83 55    call $5583		; places the first day number on the indicator
+556D: CD 83 55    call $5583		; places the second day number on the indicator
+5570: CD 83 55    call $5583		; places the third day number on the indicator
+5573: 3E 00       ld   a,$00		; sets the first time of day
+5575: 32 81 2D    ld   ($2D81),a
+5578: 3E 09       ld   a,$09
+557A: 32 A5 2D    ld   ($2DA5),a	; 9 positions to perform the scroll of the time of day change
+557D: CD 0A 55    call $550A		; sets a value in 0x2d86 depending on the day and time
+5580: C9          ret
+
+; table of 8 pixels with color 3
+5581: FF FF
+
+; places a day number
+5583: E5          push hl			; saves the screen address
+5584: 3E 03       ld   a,$03
+5586: 32 A8 55    ld   ($55A8),a	; initially inc bc
+5589: 1A          ld   a,(de)		; reads a byte from the data that forms the day number
+558A: 01 49 AB    ld   bc,$AB49		; points to 'I'
+558D: FE 02       cp   $02
+558F: 28 0E       jr   z,$559F		; if a 2 was read, jump
+5591: 01 39 AB    ld   bc,$AB39		; points to 'V'
+5594: A7          and  a
+5595: 20 08       jr   nz,$559F		; if it's not a 0, jump
+5597: 3E 0B       ld   a,$0B
+5599: 32 A8 55    ld   ($55A8),a	; changes inc bc to dec bc
+559C: 01 81 55    ld   bc,$5581		; points to pixels with colors 3, 3, 3, 3
+
+559F: 3E 08       ld   a,$08		; fills the 8 lines that the letter occupies (8x8)
+55A1: F5          push af
+55A2: 0A          ld   a,(bc)		; reads a byte and copies it to screen
+55A3: 77          ld   (hl),a
+55A4: 23          inc  hl			; advance
+55A5: 03          inc  bc
+55A6: 0A          ld   a,(bc)		; reads another byte and copies it to screen
+55A7: 77          ld   (hl),a
+55A8: 03          inc  bc			; instruction modified from outside (advance or go back)
+55A9: 2B          dec  hl
+55AA: CD 4D 3A    call $3A4D		; advances to the next screen line
+55AD: F1          pop  af
+55AE: 3D          dec  a
+55AF: 20 F0       jr   nz,$55A1		; repeats for the 8 lines
+55B1: E1          pop  hl
+55B2: 23          inc  hl			; advances to the next position
+55B3: 23          inc  hl
+55B4: 13          inc  de
+55B5: C9          ret
+
+; checks if time-related variables need to be modified (time of day, lamp fuel, etc)
+55B6: C5          push bc
+55B7: E5          push hl
+55B8: D5          push de
+55B9: CD 27 55    call $5527		; checks if the day stage needs to advance (also changes if enter was pressed)
+55BC: CD FD 41    call $41FD		; checks if the lamp is being used, and if so, if it's running out
+55BF: 79          ld   a,c
+55C0: 32 8D 3C    ld   ($3C8D),a	; updates the lamp state
+55C3: CD 2B 42    call $422B		; checks if the night is ending
+55C6: 79          ld   a,c
+55C7: 32 8C 3C    ld   ($3C8C),a	; updates the variable that indicates if the night is ending
+55CA: D1          pop  de
+55CB: E1          pop  hl
+55CC: C1          pop  bc
+55CD: C9          ret
+
+55CE: CD D3 55    call $55D3		; decrements william's life by 2 units
+55D1: 02
+55D2: C9          ret
+
+; decrements and updates the energy bar on screen (obsequium)
+55D3: E1          pop  hl			; gets the address it would have to return to and reads the byte there
+55D4: 4E          ld   c,(hl)		; gets the life units to subtract
+55D5: 23          inc  hl
+55D6: E5          push hl			; will return to the address after that byte
+55D7: 3A 7F 2D    ld   a,($2D7F)	; reads the energy
+55DA: 91          sub  c			; subtracts the read units
+55DB: 30 0C       jr   nc,$55E9		; if energy >= 0, jump
+
+; arrives here if there's no energy left
+55DD: 3A 97 3C    ld   a,($3C97)
+55E0: A7          and  a
+55E1: 20 05       jr   nz,$55E8		; if william has died, jump
+55E3: 3E 0B       ld   a,$0B
+55E5: 32 C7 3C    ld   ($3CC7),a	; changes the abbot's state to throw him out of the abbey
+55E8: AF          xor  a			; resets the counter
+
+55E9: 32 7F 2D    ld   ($2D7F),a	; updates the energy counter
+55EC: 4F          ld   c,a			; saves the counter
+55ED: 21 2A 56    ld   hl,$562A		; points to a pixel table for the last 4 pixels of life
+55F0: E6 03       and  $03
+55F2: CD 2D 16    call $162D		; indexes into the table according to the 2 least significant bits
+55F5: 5E          ld   e,(hl)		; e = value from the table
+55F6: 21 1C CF    ld   hl,$CF1C		; points to screen (252, 177)
+55F9: CB 39       srl  c
+55FB: CB 39       srl  c
+55FD: 79          ld   a,c			; calculates the life bar width rounded to the nearest multiple of 4
+55FE: 16 0F       ld   d,$0F		; value to write
+5600: CD 0E 56    call $560E		; draws the first part of the life bar
+5603: 3E 01       ld   a,$01		; 4 pixels wide
+5605: 53          ld   d,e			; value to write depending on remaining life
+5606: CD 0E 56    call $560E		; draws the second part of the life bar
+5609: 3E 07       ld   a,$07		; gets the lost life
+560B: 91          sub  c
+560C: 16 FF       ld   d,$FF		; fills with black
+
+; draws a rectangle of a bytes wide and 6 lines high (writes d)
+560E: A7          and  a			; if a = 0, exit
+560F: C8          ret  z
+5610: 47          ld   b,a			; b = number of bytes wide
+5611: C5          push bc
+5612: E5          push hl
+5613: 06 06       ld   b,$06		; 6 lines high
+5615: 72          ld   (hl),d		; writes to screen
+5616: CD 4D 3A    call $3A4D		; goes to the next line
+5619: 10 FA       djnz $5615
+561B: E1          pop  hl
+561C: C1          pop  bc
+561D: 23          inc  hl			; advances to the next byte in x
+561E: 10 F1       djnz $5611
+5620: C9          ret
+
+; table with the roman numerals of the stairs in the mirror room
+5621: 	49 58 D8 -> IXX
+	58 49 D8 -> XIX
+	58 58 C9 -> XXI
+
+; table with pixels to fill the last 4 pixels of the obsequium bar
+562A: FF 7F 3F 1F
+
+; if the roman numeral of the mirror room puzzle hasn't been generated, generate it
+562E: 3A BC 2D    ld   a,($2DBC)		; gets the roman numeral of the mirror room puzzle
+5631: A7          and  a
+5632: 20 07       jr   nz,$563B			; if the number was already calculated, jump
+5634: ED 5F       ld   a,r				; otherwise, generate a random number between 1 and 3
+5636: E6 03       and  $03
+5638: 20 01       jr   nz,$563B
+563A: 3C          inc  a
+563B: C4 43 56    call nz,$5643			; copies the generated number to the scroll string
+563E: CD 26 50    call $5026			; places on the indicator the phrase SECRETUM FINISH AFRICAE, MANUS SUPRA XXX AGE PRIMUM ET SEPTIMUM DE QUATOR
+	00								;  (where XXX is the generated number)
+5642: C9          ret
+
+; copies the roman numerals of the mirror room to the scroll string
+5643: 32 BC 2D    ld   ($2DBC),a		; gets the entry for the roman numeral of the stairs where QR must be pressed in front of the mirror
+5646: 3D          dec  a
+5647: 4F          ld   c,a				; each entry occupies 3 bytes
+5648: 87          add  a,a
+5649: 81          add  a,c
+564A: 21 21 56    ld   hl,$5621			; table with the roman numerals of the stairs in the mirror room
+564D: CD 2D 16    call $162D			; hl = hl + a
+5650: 11 9E B5    ld   de,$B59E			; points to the scroll string data
+5653: 01 03 00    ld   bc,$0003
+5656: ED B0       ldir					; copies the roman numerals to the scroll string
+5658: C9          ret
+
+; table of octaves and notes for the game phrases
+5659: 	38 41 41 41 35 45 41 41 41 49 49 54 54 41 41 51
+	41 41 54 54 41 41 41 41 41 41 41 41 41 41 41 49
+	41 39 39 54 54 41 51 54 54 41 54 54 51 41 39 39
+	41 41 39 49 49 35 35 51
+
+; --------------- code related to bonus calculation and camera changes ---------------------------------
+5691: CF          rst  $08			; interprets the commands following this instruction
+	90 -> c1a = [0x3ce9]
+	40 FD -> c2a = 0xfd
+	3D -> ca = [0x3ce9] == 0xfd ; ca = if berengario is going for the book
+	9D -> c1b = [0x3074]
+	50 -> c2b = 0x50
+	3C -> cb = c1b < c2b		; cb = if berengario's x position is < 0x50
+	26 -> cc = ca & cb
+	AB -> cd = [0x3ca1]			; cd = berengario is alive
+	26 -> ce = cc & cd
+	90 -> c1f = [0x3ce9]
+	40 FE -> c2f = 0xfe			; ce = if berengario/bernardo gui is going for the abbot
+	3D -> cf = c1f == c2f
+	2A -> c = ce | cf
+56A1: 20 04       jr   nz,$56A7		; if need to follow berengario
+56A3: D7          rst  $10			; interprets the commands following this instruction
+	A7 04 -> [0x3c92] = 0x04	; indicates that the camera follows berengario
+56A6: C9          ret
+
+56A7: CF          rst  $08			; interprets the commands following this instruction
+	88 -> c1a = [0x2d81]
+	03 -> c2a = 0x03
+	3D -> ca = if the time of day is sext
+	8A -> c1b = [0x3cc6]
+	02 -> c2b = 0x02
+	3E -> cb = [0x3cc6] >= 2
+	26 -> cc = if the time of day is sext and the abbot has reached some interesting place
+	8C -> c1d = [0x3cc7]
+	15 -> c2d = 0x15
+	3D -> cd = [0x3cc7] == 0x15
+	2A -> ce = (if the time of day is sext and the abbot has reached some interesting place) or (the abbot is going to leave the scroll)
+	A5 -> c1f = [0x3c94]
+	01 -> c2f = 0x01
+	3D -> cf = [0x3c94] == 0x01
+	2A -> cg = ((if the time of day is sext and [0x3cc6] > 2) or ([0x3cc7] == 0x15)) or (the abbot is going to ask william for the scroll)
+	8C -> c1h = [0x3cc7]
+	0B -> c2h = 0x0b
+	3D -> ch = [0x3cc7] == 0x0b
+	2A -> c = (((if the time of day is sext and [0x3cc6] > 2) or ([0x3cc7] == 0x15)) or ([0x3c94] == 0x01)) or (if the abbot is going to throw william out)
+56BB: 20 04       jr   nz,$56C1		; if in an interesting situation
+56BD: D7          rst  $10			; interprets the commands following this instruction
+A7 03 -> [0x3c92] = 0x03		; indicates that the camera follows the abbot
+56C0: C9          ret
+
+56C1: CF          rst  $08			; interprets the commands following this instruction
+	86 -> c1a = [0x3caa]
+	40 FE -> c2a = 0xfe
+	3D -> ca = [0x3caa] == 0xfe	; if malachi is going to warn the abbot
+	88 -> c1b = [0x2d81]
+	05 -> c2b = 0x05
+	3D -> cb = if the time of day is vespers
+	8E -> c1c = [0x3ca9]
+	06 -> c2c = 0x06
+	3C -> cc = [0x3ca9] < 0x06
+	26 -> cd = (if the time of day is vespers) and (malachi's state < 0x06)
+	2A -> c = ((if the time of day is vespers) and (malachi's state < 0x06)) or (if malachi is going to warn the abbot)
+56CE: 20 04       jr   nz,$56D4		; if malachi is in an interesting situation
+56D0: D7          rst  $10			; interprets the commands following this instruction
+	A7 02 -> [0x3c92] = 0x02	; indicates that the camera follows malachi
+56D3: C9          ret
+
+56D4: CF          rst  $08			; interprets the commands following this instruction
+93 -> c1 = [0x3d01]
+40 FF -> c2 = 0xff
+3D -> c = [0x3d01] == 0xff
+56D9: 20 04       jr   nz,$56DF		; if severino is going for william
+56DB: D7          rst  $10			; interprets the commands following this instruction
+A7 05 -> [0x3c92] = 0x05		; indicates that the camera follows severino
+56DE: C9          ret
+
+56DF: D7          rst  $10			; interprets the commands following this instruction
+A7 00 -> [0x3c92] = 0x00		; indicates that the camera follows william
+
+56E2: CF          rst  $08			; interprets the commands following this instruction
+	A4 -> c1a = [0x2def]
+	10 -> c2a = 0x10
+	2A -> ca = [0x2def] & 0x10
+	10 -> cb = 0x10
+	3D -> c = if we have the scroll
+56E8: 20 2E       jr   nz,$5718		; if we have the scroll
+56EA: CF          rst  $08			; interprets the commands following this instruction
+	8D -> c1a = [0x2d80]
+	03 -> c2a = 0x03
+	3D -> ca = if it's the third day
+	88 -> c1b = [0x2d81]
+	00 -> c2b = 0x00
+	3D -> cb = if it's night
+	26 -> c = if it's the third day and it's night
+56F2: 20 05       jr   nz,$56F9		; if it's the third day and it's night
+56F4: D7          rst  $10			; interprets the commands following this instruction
+C0 C0 10 26 -> [0x2dbf] = [0x2dbf] | 0x10	; gives us a bonus
+
+56F9: CF          rst  $08			; interprets the commands following this instruction
+	A4 -> c1a = [0x2def]
+	40 20 -> c2a = 0x20
+	2A -> ca = [0x2def] & 0x20
+	40 20 -> cb = 0x20
+	3D -> c = if william has the glasses
+5701: 20 05       jr   nz,$5708		; if william has the glasses
+5703: D7          rst  $10			; interprets the commands following this instruction
+	C0 C0 01 26 -> [0x2dbf] = [0x2dbf] | 0x01
+5708: CF          rst  $08			; interprets the commands following this instruction
+	9A -> c1a = [0x2dbd]
+	0D -> c2a = 0x0d
+	3D -> ca = [0x2dbd] == 0x0d
+	A7 -> c1b = [0x3c92]
+	00 -> c2b = 0x00
+	3D -> cb = [0x3c92] == 0x00
+	26 -> c = ([0x2dbd] == 0x0d) && ([0x3c92] == 0x00)
+5710: 20 06       jr   nz,$5718		; if william enters the abbot's room
+5712: D7          rst  $10			; interprets the commands following this instruction
+	C0 C0 40 20 26 -> [0x2dbf] = [0x2dbf] | 0x20	; gets a bonus
+
+5718: CF          rst  $08			; interprets the commands following this instruction
+	88 -> c1a = [0x2d81]
+	00 -> c2a = 0x00
+	3D -> ca = if it's night
+	80 -> c1b = [0x3038]
+	60 -> c2b = 0x60
+	3C -> cb = if [0x3038] < 0x60
+	26 -> c = it's night and ([0x3038] < 0x60)
+5720: 20 05       jr   nz,$5727		; if it's night and in the left wing of the abbey
+5722: D7          rst  $10			; interprets the commands following this instruction

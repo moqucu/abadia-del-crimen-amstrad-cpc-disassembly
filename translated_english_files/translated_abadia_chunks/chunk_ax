@@ -1,0 +1,600 @@
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+5D63: 20 07       jr   nz,$5D6C		; if no voice is being played
+5D65: CD 26 50    call $5026		; puts the phrase in the marker
+	26 							IT IS VERY STRANGE, BROTHER GUILLERMO. BERENGARIO HAD BLACK SPOTS ON HIS TONGUE AND FINGERS
+5D69: D7          rst  $10
+	9B 01 -> [0x3c9a] = 0x01	; indicates that upon finishing the phrase the time of day advances
+5D6C: C9          ret
+
+5D6D: CF          rst  $08
+	94 -> c1a = [0x3cff]		; if he has reached his cell
+	02 -> c2a = 0x02
+	3D -> c = [0x3cff] == 0x02
+5D71: 20 26       jr   nz,$5D99
+5D73: CF          rst  $08
+	8D -> c1a = [0x2d80]
+	05 -> c2a = 0x05
+	3D -> c = [0x2d80] == 0x05
+5D77: 20 03       jr   nz,$5D7C		; if it's the fifth day
+5D79: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to find any route
+
+5D7C: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	02 -> c2a = 0x02
+	3D -> ca = [0x2d81] == 0x02
+	8D -> c1b = [0x2d80]
+	04 -> c2b = 0x04
+	3D -> cb = [0x2d80] == 0x04
+	26 -> c = ([0x2d81] == 0x02) && ([0x2d80] == 0x04)
+5D84: 20 0E       jr   nz,$5D94		; if it's terce of the fourth day
+5D86: D7          rst  $10
+	93 40 FF -> [0x3d01] = 0xff	; goes after guillermo
+5D8A: CD 61 3E    call $3E61		; compares the distance between guillermo and severino (if very close returns 0, otherwise != 0)
+5D8D: 20 04       jr   nz,$5D93		; if he's far away, exits
+5D8F: CD 26 50    call $5026		; puts the phrase in the marker
+	2C         					WAIT, BROTHER
+5D93: C9          ret
+
+5D94: D7          rst  $10
+	93 03 -> [0x3d01] = 0x03	; goes to the room next to the monks' cells
+5D97: 18 03       jr   $5D9C
+5D99: D7          rst  $10
+	93 02 -> [0x3d01] = 0x02	; goes to his cell
+5D9C: C9          ret
+
+5D9D: D7          rst  $10
+	93 00 -> [0x3d01] = 0x00	; goes to the church
+5DA0: C9          ret
+; -------------------- end of severino/jorge logic ----------------------------------------
+
+; -------------------- start of adso logic ----------------------------------------
+5DA1: CF          rst  $08
+	A4 -> c1a = [0x2def]
+	10 -> c2a = 0x10
+	2A -> ca = [0x2def] & 0x10
+	10 -> cb = 0x10
+	3D -> c = ([0x2def] & 0x10) == 0x10
+5DA7: 20 03       jr   nz,$5DAC		; if guillermo has the parchment
+5DA9: D7          rst  $10
+	B3 00 -> [0x3c90] = 0x00	; indicates it
+
+5DAC: CF          rst  $08
+	B4 -> ca = [0x3c8c]
+	01 -> cb = 0x01
+	3D -> [0x3c8c] == 0x01		; if the night is ending, informs of it
+5DB0: 20 04       jr   nz,$5DB6
+5DB2: CD 26 50    call $5026		; puts the phrase in the marker
+	27          				IT WILL BE DAWN SOON, MASTER
+
+5DB6: CF          rst  $08
+	B5 -> ca = [0x3c8d]
+	01 -> cb = 0x01
+	3D -> c = [0x3c8d] == 0x01	; if the lamp state has changed to 1
+5DBA: 20 07       jr   nz,$5DC3
+5DBC: D7          rst  $10
+	B5 00 -> [0x3c8d] = 0x00	; indicates that the lamp state change has been processed
+5DBF: CD 1B 50    call $501B		; writes the phrase in the marker
+	28 							THE LAMP IS RUNNING OUT
+
+5DC3: CF          rst  $08
+	B5 -> ca = [0x3c8d]			; if the lamp state has changed to 2
+	02 -> cb = 0x02
+	3D -> c = [0x3c8d] == 0x02
+5DC7: 20 13       jr   nz,$5DDC
+5DC9: D7          rst  $10
+	B5 00 -> [0x3c8d] = 0		; indicates that the lamp state change has been processed
+5DCC: D7          rst  $10
+	B6 32 -> [0x3c8e] = 0x32	; initiates the counter for the time they can go in the dark
+5DCF: D7          rst  $10
+	B7 00 -> [0x3c8b] = 0x00	; indicates that the lamp is no longer being used?
+5DD2: CD 6C 1A    call $1A6C		; hides the game area
+5DD5: CD F7 3F    call $3FF7		; takes the lamp from adso and resets the counters?
+5DD8: CD 1B 50    call $501B		; writes the phrase in the marker
+	2A 							THE LAMP HAS RUN OUT
+
+5DDC: CF          rst  $08
+	9C -> ca = [0x3c97]
+	00 -> cb = 0x00
+	3D -> c = [0x3c97] == 0
+5DE0: 20 4A       jr   nz,$5E2C		; if 0x3c97 == 0
+
+; if guillermo hasn't died, execute this
+5DE2: CF          rst  $08
+	B6 -> [0x3c8e]
+	01 -> 0x01
+	3E -> [0x3c8e] >= 0x01
+5DE6: 20 20       jr   nz,$5E08		; if the darkness time counter has been activated
+5DE8: CF          rst  $08
+	82 -> ca = [0x303a]
+	40 18 -> cb = 0x18
+	3C -> [0x303a] < 0x18
+5DED: 20 04       jr   nz,$5DF3		; guillermo's height in the scenario < 0x18, i.e., if he has left the library
+5DEF: D7          rst  $10
+	B6 00 -> [0x3c8e] = 0x00	; if he has left the library, sets the counter to 0
+5DF2: C9          ret
+
+; arrives here if he's still in the library
+5DF3: D7          rst  $10
+	B6 B6 01 2D -> [0x3c8e] = [0x3c8e] - 0x01	; decrements the counter for the time they can go in the dark
+5DF8: CF          rst  $08
+	B6 -> c1a = [0x3c8e]
+	01 -> c2a = 0x01
+	3D -> [0x3c8e] == 0x01
+5DFC: 20 08       jr   nz,$5E06		; if it's not 1, jumps
+5DFE: D7          rst  $10
+	9C 01 -> [0x3c97] = 0x01	; indicates that guillermo has died
+5E01: CD 1B 50    call $501B		; writes the phrase in the marker
+	2B							WE WILL NEVER GET OUT OF HERE
+5E05: C9          ret
+
+; arrives here if the darkness time counter is active, but hasn't finished yet
+5E06: 18 24       jr   $5E2C
+
+; arrives here if the darkness time counter hasn't been activated
+5E08: CF          rst  $08
+	85 -> c1a = [0x3049]
+	40 18 -> c2a = 0x18
+	3E -> c = [0x3049] >= 0x18
+5E0D: 20 17       jr   nz,$5E26			; if adso's height >= 0x18 (if adso just entered the library)
+5E0F: D7          rst  $10
+	96 40 FF -> [0x3d13] = 0xff		; indicates that adso follows guillermo
+5E13: CF          rst  $08
+	B8 -> c1a = [0x2df3]
+	40 80 -> c2a = 0x80
+	2A -> c = [0x2df3] & 0x80		; if adso doesn't have the lamp
+5E18: 20 08       jr   nz,$5E22
+5E1A: CD 1B 50    call $501B			; writes the phrase in the marker
+	13								WE MUST FIND A LAMP, MASTER
+5E1E: D7          rst  $10
+	B6 64 -> [0x3c8e] = 0x64		; activates the counter for the time they can be in the dark
+5E21: C9          ret
+
+; arrives here if adso has the lamp and just entered the library
+5E22: D7          rst  $10
+	B7 01 -> [0x3c8b] = 0x01
+5E25: C9          ret
+
+; arrives here if adso is not in the library
+5E26: D7          rst  $10
+	B7 00 -> [0x3c8b] = 0x00		; indicates that the lamp is not being used
+5E29: D7          rst  $10
+	B6 00 -> [0x3c8e] = 0x00		; cancels the counter for the time they can go in the dark
+
+; also arrives here if guillermo has died
+5E2C: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	03 -> c2a = 0x03
+	3D -> c = [0x2d81] == 0x03
+5E30: 20 0C       jr   nz,$5E3E			; if it's sext
+5E32: D7          rst  $10
+	96 01 -> [0x3d13] = 0x01		; goes to the refectory
+5E35: D7          rst  $10
+	A3 07 -> [0x3c96] = 0x07
+5E38: D7          rst  $10
+	A2 0C -> [0x3f0e] = 0x0c		; changes the phrase to display to WE MUST GO TO THE REFECTORY, MASTER
+5E3B: C3 E5 5E    jp   $5EE5
+
+5E3E: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	05 -> c2a = 0x05
+	3D -> ca = [0x2d81] == 0x05
+	88 -> c1b = [0x2d81]
+	01 -> c2b = 0x01
+	3D -> cb = [0x2d81] == 0x01
+	2A -> c = ([0x2d81] == 0x05) || ([0x2d81] == 0x01)
+5E46: 20 0C       jr   nz,$5E54		; if it's prime or vespers
+5E48: D7          rst  $10
+	96 00 -> [0x3d13] = 0x00	; goes to the church
+5E4B: D7          rst  $10
+	A3 01 -> [0x3c96] = 0x01
+5E4E: D7          rst $10
+	A2 0B -> [0x3f0e] = 0x0b	; changes the phrase to display to WE MUST GO TO THE CHURCH, MASTER
+5E51: C3 E5 5E    jp   $5EE5
+
+; arrives here if it's not prime nor vespers nor sext
+5E54: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	06 -> c2a = 0x06
+	3D -> c = [0x2d81] == 0x06
+5E58: 20 07       jr   nz,$5E61		; if it's compline
+5E5A: D7          rst  $10
+	98 06 -> [0x3d12] = 0x06	; changes adso's state
+5E5D: D7       ld   b,$D7
+	96 02 -> [0x3d13] = 0x02	; heads to the cell
+5E60: C9          ret
+
+; arrives here if it's not prime nor vespers nor sext nor compline
+5E61: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	00 -> c2a = 0x00
+	3D -> c = [0x2d81] == 0x00
+5E65: C2 E0 5E    jp   nz,$5EE0		; if it's nighttime
+5E68: CF          rst  $08
+	98 -> c1a = [0x3d12]
+	04 -> c2a = 0x04
+	3D -> c = [0x3d12] == 0x04
+5E6C: 20 40       jr   nz,$5EAE		; if the state is 4 (was in the cell waiting for answer)
+5E6E: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	37 -> c2a = 0x37
+	3D -> c = [0x2dbd] == 0x37
+5E72: 20 03       jr   nz,$5E77		; if screen number 0x37 is shown (outside our cell)
+5E74: D7          rst  $10
+	9B 02 -> [0x3c9a] = 0x02	; advances to the next day
+
+5E77: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+5E7B: 20 30       jr   nz,$5EAD		; if no voice is being played
+5E7D: CF          rst  $08
+	A1 -> c1a = [0x3c99]
+	64 -> c2a = 0x64
+	3E -> c = [0x3c99] >= 0x64	; if the answer counter is >= 100
+5E81: 20 04       jr   nz,$5E87
+5E83: D7          rst  $10
+	9B 02 -> [0x3c9a] = 0x02	; if we take too long to answer, advances to the next day
+5E86: C9          ret
+
+5E87: D7          rst  $10
+	A1 A1 01 2B -> [0x3c99] = [0x3c99] + 0x01	; increments the counter
+5E8C: CD 65 50    call $5065		; prints S:N or clears S:N depending on bit 1 of 0x3c99
+5E8F: CF          rst  $08
+	A1 -> c1a = [0x3c99]
+	01 -> c2a = 0x01
+	2A -> ca = [0x3c99] & 0x01
+	01 -> cb = 0x01
+	3D -> c = ([0x3c99] & 0x01) == 0x01
+5E95: 20 16       jr   nz,$5EAD		; depending on bit 1, reads keyboard state
+5E97: 3E 3C       ld   a,$3C
+5E99: CD 82 34    call $3482		; checks if S has been pressed
+5E9C: 20 0C       jr   nz,$5EAA
+5E9E: 3E 2E       ld   a,$2E
+5EA0: CD 82 34    call $3482		; checks if N has been pressed
+5EA3: 20 01       jr   nz,$5EA6
+5EA5: C9          ret
+
+; arrives here if N is pressed
+5EA6: D7          rst  $10
+	98 05 -> [0x3d12] = 0x05
+5EA9: C9          ret
+
+; arrives here if S is pressed
+5EAA: D7          rst  $10
+	9B 02 -> [0x3c9a] = 0x02	; advances to the next day
+5EAD: C9          ret
+
+; arrives here if it's nighttime and 0x3d12 was not 4
+5EAE: D7          rst  $10
+	96 40 FF -> [0x3d13] = 0xff	; follows guillermo
+5EB2: CF          rst  $08
+	98 -> c1a = [0x3d12]
+	05 -> c2a = 0x05
+	3D -> c = [0x3d12] == 0x05
+5EB6: 20 0B       jr   nz,$5EC3		; if the state is 5 (we don't sleep)
+5EB8: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	40 3E -> c2a = 0x03e
+	3D -> c = [0x2dbd] == 0x3e
+5EBD: 20 01       jr   nz,$5EC0			; if we're on screen 0x3e, jumps
+5EBF: C9          ret
+
+; arrives here if we're not in our cell
+5EC0: D7          rst  $10
+	98 06 -> [0x3d12] = 0x06		; if we leave our cell, changes to state 6
+
+5EC3: CF          rst  $08
+	98 -> c1a = [0x3d12]
+	06 -> c2a = 0x06
+	3D -> c = [0x3d12] == 0x06
+5EC7: 20 17       jr   nz,$5EE0
+5EC9: CD 61 3E    call $3E61			; compares the distance between guillermo and adso (if very close returns 0, otherwise != 0)
+5ECC: 20 11       jr   nz,$5EDF			; if not close to guillermo, jumps
+5ECE: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	40 3E -> c2a = 0x03e
+	3D -> c = [0x2dbd] == 0x3e
+5ED3: 20 0A       jr   nz,$5EDF			; if we're on screen 0x3e (our cell)
+5ED5: D7          rst  $10
+	A1 00 -> [0x3c99] = 0x00		; initiates the counter for guillermo's response time to the sleep question
+5ED8: D7          rst  $10
+	98 04 -> [0x3d12] = 0x04
+5EDB: CD 26 50    call $5026			; puts the phrase in the marker
+	12					a			SHALL WE SLEEP?, MASTER
+5EDF: C9          ret
+
+5EE0: D7          rst  $10
+	96 40 FF -> [0x3d13] = 0xff		; follows guillermo
+5EE4: C9          ret
+
+
+5EE5: CF          rst  $08
+	98 -> c1a = [0x3d12]
+	A3 -> c2a = [0x3c96]
+	3D -> c = c1a == c2a
+5EE9: 20 01       jr   nz,$5EEC		; if they're equal, exits
+5EEB: C9          ret
+
+5EEC: CD 61 3E    call $3E61		; compares the distance between guillermo and adso (if very close returns 0, otherwise != 0)
+5EEF: 20 03       jr   nz,$5EF4		; if not close to guillermo, jumps
+5EF1: CD 0B 3F    call $3F0B		; puts a phrase in the marker (the phrase changes depending on the state)
+5EF4: D7          rst  $10
+	98 A3 -> [0x3d12] = [0x3c96]
+5EF7: C9          ret
+
+5EF8: C9          ret
+; ------------ end of adso logic ----------------------------------------
+
+; ------------ logic dependent on the time of day ----------------------------------------
+
+; if the time of day has changed, execute some actions depending on the time of day
+5EF9: CF          rst  $08			; interprets the commands following this instruction
+	88 -> c1 = [0x2d81]
+	AA -> c2 = [0x3c95]
+	3D -> compares c1 and c2
+5EFD: 20 03       jr   nz,$5F02		; if the time of day hasn't changed, exits
+5EFF: C9          ret
+
+5F00: 18 1C       jr   $5F1E		; jumps to ret (???)
+
+5F02: D7          rst  $10			; interprets the commands following this instruction
+	AA 88 -> [0x3c95] = [0x2d81]; puts the time of day in 0x3c95
+5F05: CD C8 41    call $41C8		; [0x3c93] = next data
+5F08: 00							; data used by previous call
+5F09: CF          rst  $08			; interprets the commands following this instruction
+	88 -> c = [0x2d81]
+5F0B: CD 10 3F    call $3F10		; jumps to a routine depending on the current time of day (in c)
+	5F1F -> 0 (night)
+	5F3B -> 1 (prime)
+	5F8C -> 2 (terce)
+	5F93 -> 3 (sext)
+	5FA6 -> 4 (none)
+	5FB9 -> 5 (vespers)
+	5FBD -> 6 (compline)
+	0000
+5F1E: C9          ret
+
+; routine called at night
+5F1F: CF          rst  $08			; interprets the commands following this instruction
+	8D -> c1 = [0x2d80]
+	05 -> c2 = 0x05
+	3D -> compares c1 and c2
+5F23: 20 06       jr   nz,$5F2B		; if it's not day 5, jumps
+5F25: CD 31 41    call $4131		; puts guillermo's glasses in the illuminated room of the labyrinth
+5F28: CD 13 41    call $4113		; puts the key to the altar room on the altar
+
+5F2B: CF          rst  $08			; interprets the commands following this instruction
+	8D -> c1 = [0x2d80]
+	06 -> c2 = 0x06
+	3D -> compares c1 and c2
+5F2F: 20 09       jr   nz,$5F3A		; if it's not day 6, jumps
+5F31: CD 27 41    call $4127		; puts the key to severino's room on malaquias's table
+5F34: CD 68 40    call $4068		; changes severino's face to jorge's and appears in the mirror room
+5F37: D7          rst  $10			; interprets the commands following this instruction
+	AD 00 -> [0x3ca3] = 0		; indicates that jorge is active
+5F3A: C9          ret
+
+; routine called at prime
+5F3B: CD 6B 3F    call $3F6B		; draws and clears the spiral
+5F3E: D7          rst  $10			; interprets the commands following this instruction
+	9E 40 EF-> [0x3ca6] = 0xef	; modifies the mask of doors that can be opened
+5F42: CD 44 3F    call $3F44		; selects palette 2
+5F45: CD 85 35    call $3585		; opens the doors of the left wing of the abbey
+5F48: CD 0C 10    call $100C		; sound
+5F4B: CF          rst  $08			; interprets the commands following this instruction
+	8D -> c1 = [0x2d80]
+	03 -> c2 = 0x03
+	3E -> c1 >= c2?
+5F4F: 20 06       jr   nz,$5F57		; if we haven't reached the third day, jumps
+5F51: CD F7 3F    call $3FF7		; takes the lamp from adso and resets the lamp counters
+5F54: CD 00 41    call $4100		; if the lamp was missing, it appears in the kitchen
+
+5F57: CF          rst  $08			; interprets the commands following this instruction
+	8D -> c1 = [0x2d80]
+	02 -> c2 = 0x02
+	3D -> compares c1 and c2
+5F5B: 20 03       jr   nz,$5F60		; if it's not day 2, jumps
+5F5D: CD 37 40    call $4037		; the lenses disappear
+
+5F60: CF          rst  $08			; interprets the commands following this instruction
+	8D -> c1 = [0x2d80]
+	03 -> c2 = 0x03
+	3D -> compares c1 and c2
+5F64: 20 18       jr   nz,$5F7E		; if it's not day 3, jumps
+5F66: CD F1 40    call $40F1		; gives the book to jorge
+5F69: CD 78 40    call $4078		; changes berengario's face to jorge's and places him at the end of the cell corridor
+5F6C: D7          rst  $10			; interprets the commands following this instruction
+	A8 00 -> [0x2e0b] = 0x00	; berengario/jorge has no object
+5F6F: D7          rst  $10			; interprets the commands following this instruction
+	A6 00 -> [0x2e04] = 0x00	; the abbot has no object
+5F72: CF          rst  $08			; interprets the commands following this instruction
+	A4 -> c1 = [0x2def]
+	10 -> c2 = 0x10
+	2A -> c = c1 & c2
+5F76: 20 06       jr   nz,$5F7E		; if guillermo has the parchment, jumps
+5F78: CD DD 40    call $40DD		; puts the parchment in the room behind the mirror
+5F7B: D7          rst  $10			; interprets the commands following this instruction
+	B3 01 -> [0x3c90] = 0x01	; indicates that guillermo doesn't have the parchment
+5F7E: CF          rst $08			; interprets the commands following this instruction
+	8D -> c1a = [0x2d80]
+	05 -> c2a = 5
+	3D -> ca = compares c1 and c2	; ca = if it's the fifth day
+	A4 -> c1b = [0x2def]
+	08 -> c2b = 0x08
+	2A -> cb = c1b & c2b		; cb = 0 if we don't have the key to the abbot's room
+	26 -> c = ca & cb			; c = if it's the fifth day and we don't have the key to the abbot's room
+5F86: 20 03       jr   nz,$5F8B		; if it's the fifth day and we don't have the key to the abbot's room, it disappears
+5F88: CD 1D 41    call $411D		; key 1 disappears
+5F8B: C9          ret
+
+; routine called at terce
+5F8C: CD 6B 3F    call $3F6B		; draws and clears the spiral
+5F8F: CD 11 10    call $1011		; puts the bell sound on channel 1
+5F92: C9          ret
+
+; routine called at sext
+5F93: CD 0C 10    call $100C
+5F96: CF          rst  $08			; interprets the commands following this instruction
+	8D -> c1 = [0x2d80]
+	04 -> c2 = 0x04
+	3D -> compares c1 and c2
+5F9A: 20 09       jr   nz,$5FA5		; if it's not the fourth day, exits
+5F9C: CD 58 40    call $4058		; bernardo appears at the church entrance
+5F9F: D7          rst  $10			; interprets the commands following this instruction
+	AB 00 -> [0x3ca1] = 0x00
+5FA2: D7          rst  $10			; interprets the commands following this instruction
+	B0 10 -> [0x2e0d] = 0x10
+5FA5: C9          ret
+
+; routine called at none
+5FA6: CD 6B 3F    call $3F6B		; draws and clears the spiral
+5FA9: CF          rst  $08			; interprets the commands following this instruction
+	8D -> c1 = [0x2d80]
+	03 -> c2 = 0x03
+	3D -> compares c1 and c2
+5FAD: 20 06       jr   nz,$5FB5		; if it's not the third day, jumps
+5FAF: D7          rst  $10			; interprets the commands following this instruction
+	AB 01 -> [0x3ca1] = 0x01	; jorge becomes inactive
+5FB2: D7          rst  $10			; interprets the commands following this instruction
+	9D 00 -> [0x3074] = 0x00	; jorge disappears
+5FB5: CD 11 10    call $1011		; puts the bell sound on channel 1
+5FB8: C9          ret
+
+; routine called at vespers
+5FB9: CD 0C 10    call $100C		; sound
+5FBC: C9          ret
+
+; routine called at compline
+5FBD: CD 6B 3F    call $3F6B		; draws and clears the spiral
+5FC0: CD 49 3F    call $3F49		; sets palette 3
+5FC3: D7          rst  $10			; interprets the commands following this instruction
+	9E 40 DF -> [0x3ca6] = 0xdf		; modifies the doors that can be opened
+5FC7: CD 11 10    call $1011		; puts the bell sound on channel 1
+5FCA: C9          ret
+
+; ------------ end of logic dependent on the time of day ----------------------------------------
+
+; ------------------ abbot logic ----------------
+5FCB: CF          rst  $08
+	80 -> c1a = [0x3038]
+	60 -> c2a = 0x60
+	3C -> ca = c1a < c2a			; ca = 0 if guillermo's position is < 0x60
+	88 -> c1b = [0x2d81]
+	01 -> c2b = 0x01
+	3D -> cb = [0x2d81] == 0x01		; cb = 0 if it's prime
+	8D -> c1c = [0x2d80]
+	01 -> c2c = 0x01
+	3D -> cc = [0x2d80] == 0x01		; cc = 0 if it's day 1
+	2A -> cd = cb | cc				; cd = 0 if it's day 1 or if it's prime
+	26 -> c = ca & cd				; c = (if guillermo's position is < 0x60) and (it's day 1 or it's prime)
+5FD7: 20 03       jr  nz,$5fdc
+5FD9: D7          rst  $10
+	8C 0B -> [0x3cc7] = 0x0b	; changes the abbot's state to kick guillermo out of the abbey
+5FDC: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	01 -> c2a = 0x01
+	3E -> ca = [0x2d81] >= 0x01 ; ca = 0 if the time of day is >= prime (not nighttime)
+	82 -> c1b = [0x303a]
+	16 -> c2b = 0x16
+	3E -> cb = [0x303a] >= 0x16	; cb = 0 if guillermo's height is >= 0x16 (goes up to the library)
+	26 -> c = ca & cb			; c = 0 if guillermo goes up to the library when it's not nighttime
+5FE3: 20 07       jr   nz,$5FED		; if guillermo goes up to the library when it's not nighttime, he gets kicked out, otherwise jumps
+5FE6: D7          rst  $10
+	8B 09 -> [0x3cc8] = 0x09	; indicates that the abbot goes to the door of the corridor leading to the library
+5FE9: D7          rst  $10
+	8C 0B -> [0x3cc7] = 0x0b	; changes the abbot's state to kick guillermo out of the abbey
+5FEC: C9          ret
+
+5FED: CF          rst  $08
+	8C -> c1 = [0x3cc7]
+	0B -> c2 = 0x0b
+	3D -> c = [0x3cc7] == 0x0b	; c = 0 if the abbot is in the state to expel guillermo from the abbey
+5FF1: 20 1E       jr   nz,$6011
+5FF3: D7          rst  $10
+	8B 40 FF -> [0x3cc8] = 0xff	; indicates that the abbot chases guillermo
+5FF7: CD 61 3E    call $3E61		; checks if the abbot is close to guillermo
+5FFA: 20 14       jr   nz,$6010		; if guillermo is not close, exits
+5FFC: CF          rst  $08
+	9C -> c1 = [0x3c97]
+	01 -> c2 = 0x01
+	3D -> c = [0x3c97] == 0x01
+6000: 20 01       jr   nz,$6003		; if guillermo is not dead, jumps
+6002: C9          ret
+
+; arrives here if guillermo is close to the abbot when he's going to kick him out, but still alive
+6003: CF          rst  $08
+	89 -> c1 = [0x2da1]
+	00 -> c2 = 0x00
+	3D -> c = [0x2da1] == 0
+6007: 20 07       jr   nz,$6010		; if any voice is being played, jumps
+6009: CD 26 50    call $5026		; otherwise, puts the phrase in the marker
+	0E 							YOU HAVE NOT RESPECTED MY ORDERS. LEAVE THIS ABBEY FOREVER
+600D: D7          rst  $10
+	9C 01 -> [0x3c97] = 0x01		; kills guillermo
+6010: C9          ret
+
+6011: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	0D -> c2a = 0x0d
+	3D -> ca = [0x2dbd] == 0x0d	; ca = if the screen currently being shown is the abbot's
+	A7 -> cb = [0x3c92]
+	26 -> c = ca & cb			; c = 0 if the screen currently being shown is the abbot's and the camera follows guillermo
+6017: 20 15       jr   nz,$602E
+6019: CD 61 3E    call $3E61		; checks if the abbot is close to guillermo
+601C: 20 0C       jr   nz,$602A		; if close to guillermo
+601E: CD 26 50    call $5026		; puts the phrase in the marker
+	29          				YOU HAVE ENTERED MY CELL
+6022: D7          rst  $10
+	8B 40 FF -> [0x3cc8] = 0xff	; goes after guillermo
+6026: D7          rst  $10
+	8C 0B -> [0x3cc7] = 0x0b	; puts the abbot in the state to expel guillermo from the abbey
+6029: C9          ret
+
+602A: D7          rst  $10
+	8B 02 -> [0x3cc8] = 0x02	; goes to his cell
+602D: C9          ret
+
+
+602E: CF          rst  $08
+	8B -> c1a = [0x3cc8]
+	8A -> c2a = [0x3cc6]
+	3D -> ca = [0x3cc6] == [0x3cc8]	; if the abbot has reached where he wanted to go
+	8A -> c1b = [0x3cc6]
+	02 -> c2b = 0x02
+	3D -> cb = [0x3cc6] == 0x02		; if he has reached his cell
+	26 -> cc = ca & cb
+	A6 -> c1d = [0x2e04]
+	10 -> c2d = 0x10
+	2A -> cd = [0x2e04] & 0x10		; if he has the parchment
+	10 -> ce = 0x10
+	3D -> cf = cd == ce
+	26 -> c = cc & cf
+603C: 20 16       jr   nz,$6054			; if he has reached his cell and has the parchment
+603E: D7          rst  $10
+	B3 01 -> [0x3c90] = 0x01		; indicates that guillermo doesn't have the parchment
+6041: CD B9 40   call $40B9				; leaves the parchment
+6044: CF         rst  $08
+	8C -> c1a = [0x3cc7]
+	15 -> c2a = 0x15
+	3D -> ca = [0x3cc7] == 0x15
+	A6 -> c1b = [0x2e04]
+	10 -> c2b = 0x10
+	2A -> cb = [0x2e04] & 0x10
+	26 -> c = ca & cb
+604C: 20 06      jr  nz,$6054			; if he's in state 0x15 and doesn't have the parchment
+604E: D7         rst  $10
+	9B 01 -> [0x3c9a] = 0x01			; indicates that the time of day must advance
+6051: D7         rst  $10
+	8C 10 -> [0x3cc7] = 0x10			; moves to state 0x10
+
+6054: CF          rst  $08
+	8C -> ca = [0x3cc7]
+	15 -> cb = 0x15
+	3D -> c = [0x3cc7] == 0x15
+6058: 20 04       jr   nz,$605E			; if he's in state 0x15
+605A: D7          rst  $10
+	8B 02 -> [0x3cc8] = 0x02		; goes to his cell
+605D: C9          ret
+

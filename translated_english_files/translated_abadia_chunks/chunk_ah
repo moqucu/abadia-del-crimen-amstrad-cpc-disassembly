@@ -1,0 +1,600 @@
+6E
+00
+EA 8C 19
+
+; characteristics of material 0x43
+1F2B: 1C3F			; pointer to the tiles that form the block
+F7 6E 6D 01
+F7 71 01 71
+F7 70 02 84 70
+FD
+F7 6D 00
+E4 1EE8		CallPreserve(0x1ee8);
+F5
+F5
+F4
+F4
+FC
+F7 71 06 84 71
+F7 6D 06
+F9 68
+FE
+F9 69
+FA
+FB
+F5
+F4
+FA
+FF
+
+; characteristics of material 0x44
+1F59: 1C36			; pointer to the tiles that form the block
+1F5B: E9        	FlipX();
+1F5C: EA 1F2D		ChangePC(0x1f2d);
+
+; characteristics of material 0x15
+1F5F: 	1C78		; pointer to the tiles that form the block
+	EA 19AD		; ChangePC(0x19ad)
+
+; characteristics of material 0x16
+1F64: 	1C7C		; pointer to the tiles that form the block
+	EA 19C6		; ChangePC(0x19c6)
+
+; characteristics of material 0x5c
+1F69: 169F			; pointer to the tiles that form the block
+	EA 19C6		; ChangePC(0x19c6)
+
+1F6E: 2B 0A 49 4A		; thin red brick forming a right triangle parallel to the x axis
+1F72: 28 09 4C 4B		; pyramid of thin red and black brick (and thin red brick forming a right triangle parallel to the y axis)
+
+; characteristics of material 0x37
+1F76: 1F72			; pointer to the tiles that form the block
+EC 1F86   	Call(0x1f86)
+F3
+EC 1F80 	Call(0x1f80)
+FF
+
+; characteristics of material 0x41
+1F80: 1F6E			; pointer to the tiles that form the block
+	E9 	FlipX();
+	EA 1F88
+
+; characteristics of material 0x42
+1F86: 1F72
+1F88:
+F7 6D 6E 6D
+F7 6E 6D 01
+F7 71 01 6D 6D 84 71
+F7 70 02 6D 6D 84 70
+FD
+FC
+F9 61
+FE
+F9 62 80 62 80 62
+FA
+F9 63 80 64
+F7 6D 01 84 6D
+FB
+F5
+F4
+FA
+FF
+
+	// param1 = param 1 + param2
+	actualizaRegistro(0x6d, valorRegistro(0x6e) + valorRegistro(0x6d));
+
+	// param2 = param 1 + 1
+	actualizaRegistro(0x6e, valorRegistro(0x6d) + 1);
+
+	// pos y en el grid = pos y en el grid - (2*param1 + 1)
+	actualizaRegistro(0x71, -(1 + 2*valorRegistro(0x6d)) + reg(0x71));
+
+	// pos x en el grid = pos x en el grid - (2*param1 + 2)
+	actualizaRegistro(0x70, -(2 + 2*valorRegistro(0x6d)) + reg(0x70));
+
+	while (param2 > 0){
+		PushTilePos();
+		DrawTileDecY(0x61);
+		while (param1 > 0){
+			DrawTileDecY(0x62, 0x80, 0x62, 0x80, 0x62);
+			(param1--;)
+		}
+		DrawTileDecY(0x63, 0x80, 0x64);
+		UpdateReg(0x6d, -1 + Param1);
+		PopTilepos();
+		IncTilePosX();
+		DecTilePosY();
+		(param2--;)
+	}
+
+; if the entry is 4 bytes, transforms the block position to grid coordinates
+; the coordinate system change equations are:
+; tile map -> grid
+; Xgrid = Ymap + Xmap - 15
+; Ygrid = Ymap - Xmap + 16
+; grid -> tile map
+; Xmap = Xgrid - Ymap + 15
+; Ymap = Ygrid + Xmap - 16
+; this way the grid data is stored in the tile map so that conversion to screen is direct
+; parameters:
+; a = 0xff if the entry is 3 bytes or byte 3 otherwise
+; h = block position in y (tile buffer coordinate system)
+; l = block position in x (tile buffer coordinate system)
+1FB8: FE FF       cp   $FF			; if the entry is 3 bytes, exit
+1FBA: C8          ret  z
+1FBB: CB 3F       srl  a			; a = a*2
+1FBD: 84          add  a,h
+1FBE: 57          ld   d,a			; d = h + a*2
+1FBF: 85          add  a,l
+1FC0: D6 0F       sub  $0F
+1FC2: 5F          ld   e,a			; e = h + l + a*2 - 15
+1FC3: 3E 10       ld   a,$10
+1FC5: 82          add  a,d			; a = h + a*2 + 16
+1FC6: 95          sub  l
+1FC7: 57          ld   d,a			; d = h - l + a*2 + 16
+1FC8: ED 53 DE 1F ld   ($1FDE),de	; save the new coordinates
+1FCC: C9          ret
+
+; variables used for block generation
+1FCD-1FDF: 00
+
+; table of routines related to block construction
+1FE0: 	2032 -> 0x00 (0xff) retrieves the address of the next block to process and if coordinates x were changed (x = -x), undo the change
+	2091 -> 0x01 (0xfe) saves on the stack the block length in y and the current position of the block construction data
+	209E -> 0x02 (0xfd) saves on the stack the block length in x and the current position of the block construction data
+	20CF -> 0x03 (0xfc)	saves on the stack the current position in the tile buffer
+	20D3 -> 0x04 (0xfb)	retrieves from the stack the position stored in the tile buffer
+	20D7 -> 0x05 (0xfa) retrieves the block length, decrements it and if not zero, returns to the address saved from the block
+	20E7 -> 0x06 (0xf9) paints the tile indicated by hl with the next byte read and changes the position of hl (y--)
+	20F5 -> 0x07 (0xf8) paints the tile indicated by hl with the next byte read and changes the position of hl (x++)
+	2141 -> 0x08 (0xf7) modifies a position in the block construction buffer with a calculated expression
+	204F -> 0x09 (0xf6) changes the position of hl (y++)
+	2052 -> 0x0a (0xf5) changes the position of hl (x++)
+	2055 -> 0x0b (0xf4) changes the position of hl (y--)
+	2058 -> 0x0c (0xf3) changes the position of hl (x--)
+	205B -> 0x0d (0xf2) modifies the position in y with the expression read
+	2066 -> 0x0e (0xf1) modifies the position in x with the expression read
+	2077 -> 0x0f (0xf0) increments the block length in y in the block construction buffer
+	2071 -> 0x10 (0xef)	increments the block length in x in the block construction buffer
+	2083 -> 0x11 (0xee) decrements the block length in y in the block construction buffer
+	207D -> 0x12 (0xed) decrements the block length in x in the block construction buffer
+	21B4 -> 0x13 (0xec) interprets another block modifying the values of the tiles to use
+	20EE -> 0x14 (0xeb) paints the tile indicated by hl with the next byte read and changes the position of hl (x--)
+	21A1 -> 0x15 (0xea)	changes the pointer to the block construction data with the first address read in the data
+	218D -> 0x16 (0xe9) changes the instructions that update the x coordinate of the tiles (incx -> decx)
+	218D -> 0x17 (0xe8) changes the instructions that update the x coordinate of the tiles (incx -> decx)
+	218D -> 0x18 (0xe7) changes the instructions that update the x coordinate of the tiles (incx -> decx)
+	218D -> 0x19 (0xe6) changes the instructions that update the x coordinate of the tiles (incx -> decx)
+	218D -> 0x1a (0xe5) changes the instructions that update the x coordinate of the tiles (incx -> decx)
+	21AA -> 0x1b (0xe4) interprets another block without modifying the values of the tiles to use, and changing the direction of x
+
+; initiates the interpretation process of block construction bytes
+; sp = pointer to the block construction data
+2018: DD E3       ex   (sp),ix		; gets the pointer to the block construction data
+201A: ED 43 DB 1F ld   ($1FDB),bc
+
+; evaluates the block construction data
+; h = initial block position in y (tile buffer coordinate system)
+; l = initial block position in x (tile buffer coordinate system)
+; b = element length in y
+; c = element length in x
+; ix = pointer to the block construction data
+201E: DD 7E 00    ld   a,(ix+$00)	; reads the first byte and extracts the routine number to use
+2021: DD 23       inc  ix
+2023: 2F          cpl				; commands are stored complemented since parser routines interpret
+2024: 87          add  a,a			;  values < 0x60 as immediate numbers that form part of expressions
+2025: E5          push hl
+2026: 21 E0 1F    ld   hl,$1FE0		; points to a routine table
+2029: CD 2D 16    call $162D		; hl = hl + a
+202C: 5E          ld   e,(hl)
+202D: 23          inc  hl
+202E: 56          ld   d,(hl)		; de = [hl]
+202F: E1          pop  hl
+2030: D5          push de			; puts on the stack the routine to jump to
+2031: C9          ret				; jumps to the corresponding routine
+
+; retrieves the address of the next block to process and if coordinates x were changed (x = -x), undo the change
+2032: DD E1       pop  ix			; retrieves the address of the next block to process
+2034: 3A CE 1F    ld   a,($1FCE)	; reads if the operations working with x coordinates in tiles were changed (from incx to decx)
+2037: A7          and  a
+2038: 3E 00       ld   a,$00
+203A: 32 CE 1F    ld   ($1FCE),a	; clears the state
+203D: C0          ret  nz			; if coordinates were changed, exit
+
+; if they were not changed, restore the state of operations
+203E: 3E 2C       ld   a,$2C
+2040: 32 52 20    ld   ($2052),a	; updates the posx++ and posx-- instructions for tile position
+2043: 32 F8 20    ld   ($20F8),a
+2046: 3C          inc  a
+2047: 32 58 20    ld   ($2058),a
+204A: AF          xor  a
+204B: 32 30 22    ld   ($2230),a
+204E: C9          ret
+
+; changes the position of hl (y++)
+204F: 24          inc  h
+2050: 18 CC       jr   $201E
+
+; changes the position of hl (x++)
+2052: 2C          inc  l
+2053: 18 C9       jr   $201E
+
+; changes the position of hl (y--)
+2055: 25          dec  h
+2056: 18 C6       jr   $201E
+
+; changes the position of hl (x--)
+2058: 2D          dec  l
+2059: 18 C3       jr   $201E
+
+205B: CD 14 22    call $2214	; reads an immediate value or a register
+205E: CD 66 21    call $2166	; modifies c with an expression
+2061: 7C          ld   a,h		; modifies the position in y with the expression read
+2062: 81          add  a,c
+2063: 67          ld   h,a
+2064: 18 B8       jr   $201E
+
+2066: CD 14 22    call $2214	; reads an immediate value or a register
+2069: CD 66 21    call $2166	; modifies c with an expression
+206C: 7D          ld   a,l		; modifies the position in x with the expression read
+206D: 81          add  a,c
+206E: 6F          ld   l,a
+206F: 18 AD       jr   $201E
+
+; increments the block length in x
+2071: 0E 01       ld   c,$01
+2073: 3E 6E       ld   a,$6E	; block length in x entry
+2075: 18 10       jr   $2087	; block length in x = block length in x + 1
+
+; increments the block length in y
+2077: 3E 6D       ld   a,$6D	; block length in y entry
+2079: 0E 01       ld   c,$01
+207B: 18 0A       jr   $2087	; block length in y = block length in y + 1
+
+; decrements the block length in x
+207D: 3E 6E       ld   a,$6E	; block length in x entry
+207F: 0E FF       ld   c,$FF
+2081: 18 04       jr   $2087	; block length in x = block length in x - 1
+
+; decrements the block length in y
+2083: 3E 6D       ld   a,$6D	; block length in y entry
+2085: 0E FF       ld   c,$FF
+
+; modifies the value at position a of the block construction buffer, adding c to it
+2087: C5          push bc
+2088: CD 19 22    call $2219		; gets the value at position a of the block construction buffer
+208B: 79          ld   a,c
+208C: C1          pop  bc
+208D: 81          add  a,c			; adds the value passed as parameter
+208E: 12          ld   (de),a		; updates the material characteristics
+208F: 18 8D       jr   $201E
+
+2091: 3E 6D       ld   a,$6D
+2093: CD 19 22    call $2219		; gets the block length in y
+2096: 28 0D       jr   z,$20A5		; if it's != 0, continue processing the material, otherwise skip symbols until construction data ends
+
+2098: DD E5       push ix
+209A: C5          push bc
+209B: C3 1E 20    jp   $201E		; continue processing the block
+
+; saves on the stack the block length in x and the current position of the block construction data
+209E: 3E 6E       ld   a,$6E
+20A0: CD 19 22    call $2219		; gets the block length in x
+20A3: 20 F3       jr   nz,$2098		; if it's != 0, continue processing the material, otherwise skip symbols until construction data ends
+
+; if the loop doesn't execute, skip intermediate commands
+20A5: 06 01       ld   b,$01		; initially we're inside a while
+20A7: DD 7E 00    ld   a,(ix+$00)
+20AA: DD 23       inc  ix
+20AC: DD 23       inc  ix
+20AE: FE 82       cp   $82
+20B0: 28 F5       jr   z,$20A7		; if it's 0x82 (marker), advance by 2
+20B2: DD 2B       dec  ix			; otherwise, by 1
+20B4: 04          inc  b			; assume the instruction is a new loop
+20B5: FE FE       cp   $FE			; if it finds 0xfe and 0xfd (new while) or 0xe8 and 0xe7 (patched???), continue advancing
+20B7: 28 EE       jr   z,$20A7
+20B9: FE FD       cp   $FD
+20BB: 28 EA       jr   z,$20A7
+20BD: FE E8       cp   $E8
+20BF: 28 E6       jr   z,$20A7
+20C1: FE E7       cp   $E7
+20C3: 28 E2       jr   z,$20A7
+20C5: 05          dec  b			; if it gets here the instruction was not a loop
+20C6: FE FA       cp   $FA
+20C8: 20 DD       jr   nz,$20A7		; continue until finding an end while
+20CA: 10 DB       djnz $20A7		; repeat until reaching the end of the first loop
+20CC: C3 1E 20    jp   $201E
+
+20CF: E5          push hl
+20D0: C3 1E 20    jp   $201E		; continue processing block data
+
+20D3: E1          pop  hl
+20D4: C3 1E 20    jp   $201E		; continue processing block data
+
+; retrieves the length and if not 0, jumps back to process instructions from the saved address. Otherwise, clears the stack and continues
+20D7: C1          pop  bc			; retrieves from the stack the block length (either in x or y)
+20D8: 0D          dec  c			; decrements the length
+20D9: 28 08       jr   z,$20E3		; if the length is finished, pop the other value from the stack and jump
+20DB: DD E1       pop  ix			; otherwise, retrieve the sequence data, decrement the position and process the block again
+20DD: DD E5       push ix
+20DF: C5          push bc
+20E0: C3 1E 20    jp   $201E		; continue processing the block
+
+20E3: C1          pop  bc			; retrieves the current position of the block construction data
+20E4: C3 1E 20    jp   $201E		; continue processing the block
+
+; paints the tile indicated by hl with the next byte read and changes the position of hl (y--)
+20E7: CD FC 20    call $20FC
+20EA: 25          dec  h		; this instruction updates one from the previous routine
+20EB: C3 1E 20    jp   $201E	; continue processing the block
+
+; paints the tile indicated by hl with the next byte read and changes the position of hl (x--)
+20EE: CD FC 20    call $20FC
+20F1: 2D          dec  l		; this instruction updates one from the previous routine
+20F2: C3 1E 20    jp   $201E	; continue processing the block
+
+; paints the tile indicated by hl with the next byte read and changes the position of hl (x++)
+20F5: CD FC 20    call $20FC
+20F8: 2C          inc  l		; this instruction updates one from the previous routine
+20F9: C3 1E 20    jp   $201E	; continue processing the block
+
+; reads a byte from the block construction buffer indicating the tile number, reads the next byte and paints it at hl, modifying hl
+;  if the next byte >= 0xc8, exit
+;  if the next byte read is 0x80 draws the tile at hl, updates coordinates and continues processing
+;  if the next byte read is 0x81, draws the tile at hl and continues processing
+;  if it's something else != 0x00, draws the tile at hl, updates coordinates as many times as bytes read, checks if it skips a byte and exits
+;  if it's something else = 0x00, checks if it skips a byte and exits
+; hl = position in tile buffer (tile buffer coordinate system)
+; ix = pointer to the block construction data
+20FC: D1          pop  de			; gets the return address
+20FD: 1A          ld   a,(de)
+20FE: 32 1B 21    ld   ($211B),a	; modifies an instruction with the read data
+2101: 13          inc  de
+2102: D5          push de			; saves the new return address
+
+2103: CD 14 22    call $2214		; reads a position from the block construction buffer or an operand
+2106: DD 7E 00    ld   a,(ix+$00)	; reads the next byte of construction data
+2109: FE C8       cp   $C8			; if it's >= 0xc8, paint, change hl according to operation and exit
+210B: 30 0B       jr   nc,$2118
+210D: DD 23       inc  ix			; if it gets here, the byte is used, so point to next element
+210F: FE 80       cp   $80
+2111: 20 0A       jr   nz,$211D		; if the byte read was not 0x80, jump
+
+; arrives here if the byte read is 0x80
+2113: CD 18 21    call $2118		; draws the tile at hl, updates coordinates and continues processing
+2116: 18 EB       jr   $2103
+
+; when it arrives here, paint, do operation and exit
+2118: CD 33 16    call $1633		; checks if the tile indicated by hl is visible, and if so, updates the tile buffer
+211B: 25          dec  h			; this instruction is changed from outside
+211C: C9          ret
+
+; arrives here if the byte read is not 0x80
+211D: FE 81       cp   $81			; if the byte read was not 0x81, jump
+211F: 20 05       jr   nz,$2126
+
+; arrives here if the byte read is 0x81
+2121: CD 33 16    call $1633		; draws the tile at hl and continues processing
+2124: 18 DD       jr   $2103
+
+; arrives here if the byte read is not 0x80 nor 0x81
+2126: C5          push bc			; preserves the previously read byte
+2127: CD 14 22    call $2214		; a = number of times to perform the operation
+212A: 79          ld   a,c
+212B: C1          pop  bc
+212C: A7          and  a
+212D: C4 3A 21    call nz,$213A		; if what was read is != 0, paint a times and perform the operation a times
+
+2130: DD 7E 00    ld   a,(ix+$00)
+2133: FE C8       cp   $C8			; if it's >= 0xc8, exit
+2135: D0          ret  nc
+2136: DD 23       inc  ix			; skip and continue processing
+2138: 18 C9       jr   $2103
+
+213A: CD 18 21    call $2118		; paint and do operation
+213D: 3D          dec  a
+213E: 20 FA       jr   nz,$213A		; repeat the same while a is not 0
+2140: C9          ret
+
+
+; modifies the block construction buffer position (indicated in the first byte) with a calculated expression (indicated by the following bytes)
+; h = block position in y (tile buffer coordinate system)
+; l = block position in x (tile buffer coordinate system)
+; ix = pointer to the block construction data
+2141: DD 7E 00    ld   a,(ix+$00)	; reads a byte
+2144: FE 70       cp   $70
+2146: F5          push af			; saves the read byte
+2147: CD 14 22    call $2214		; reads a position from the block construction buffer and saves in de the accessed address
+214A: D5          push de			; saves the buffer address obtained in the previous routine
+214B: CD 14 22    call $2214		; c = initial value
+214E: CD 66 21    call $2166		; modifies the initial value with sums of values or registers and sign changes
+2151: D1          pop  de			; retrieves the address obtained with the first byte
+2152: F1          pop  af			; a = first byte read
+2153: 38 0C       jr   c,$2161		; if the first byte read < 0x70 (doesn't access local grid coordinates), jump
+
+2155: 1A          ld   a,(de)		; reads the value of the position to modify in the block construction buffer
+2156: A7          and  a
+2157: CA 1E 20    jp   z,$201E		; if local grid data is not calculated for the block, exit
+215A: 79          ld   a,c			; c = calculated value
+215B: FE 64       cp   $64
+215D: 38 02       jr   c,$2161		; adjusts the value to save between 0x00 and 0x64 (0 and 100)
+215F: 0E 00       ld   c,$00		; otherwise set it to 0
+
+2161: 79          ld   a,c			; updates the calculated value
+2162: 12          ld   (de),a
+2163: C3 1E 20    jp   $201E		; continue generating the block
+
+; modifies c with sums of values or registers and sign changes read from the block construction data
+; c = operand 1
+; de = pointer to a position in the block construction buffer
+; ix = pointer to the block construction data
+2166: DD 7E 00    ld   a,(ix+$00)	; reads a byte
+2169: FE C8       cp   $C8			; if it's >= 0xc8, exit
+216B: D0          ret  nc
+216C: FE 84       cp   $84
+216E: 20 08       jr   nz,$2178		; if it's not 0x84, jump
+2170: DD 23       inc  ix			; if it's 0x84, advance the pointer and negate the read byte
+2172: 79          ld   a,c			; c = -c
+2173: ED 44       neg
+2175: 4F          ld   c,a
+2176: 18 EE       jr   $2166
+
+; if it arrives here it's because it accesses a register or is an immediate value
+2178: C5          push bc
+2179: CD 14 22    call $2214		; gets in c the next byte
+217C: 79          ld   a,c
+217D: C1          pop  bc
+217E: 81          add  a,c			; adds it with what was already there
+217F: 4F          ld   c,a
+2180: 18 E4       jr   $2166
+
+; gets in de the address of [ix]
+2182: DD 5E 00    ld   e,(ix+$00)	; de = [ix]
+2185: DD 23       inc  ix
+2187: DD 56 00    ld   d,(ix+$00)
+218A: DD 23       inc  ix
+218C: C9          ret
+
+; changes the instructions that update the x coordinate of the tiles (incx -> decx)
+218D: 3E 2D       ld   a,$2D
+218F: 32 52 20    ld   ($2052),a
+2192: 32 F8 20    ld   ($20F8),a
+2195: 3D          dec  a
+2196: 32 58 20    ld   ($2058),a
+2199: 3E 01       ld   a,$01
+219B: 32 30 22    ld   ($2230),a
+219E: C3 1E 20    jp   $201E
+
+; h = block position in y (tile buffer coordinate system)
+; l = block position in x (tile buffer coordinate system)
+; b = element length in y
+; c = element length in x
+; ix = pointer to the block construction data
+; changes the pointer to the block construction data
+21A1: CD 82 21    call $2182	; gets the next address from the material entry
+21A4: D5          push de
+21A5: DD E1       pop  ix		; ix = de
+21A7: C3 1E 20    jp   $201E	; continue evaluating the block data
+
+21AA: 3E 01       ld   a,$01
+21AC: 32 CE 1F    ld   ($1FCE),a	; marks that a change was made in the operations working with x coordinates in tiles
+21AF: 11 B9 1B    ld   de,$1BB9		; points to the routine that initiates the evaluation of the current block without modifying the tiles that form the block
+21B2: 18 03       jr   $21B7
+
+21B4: 11 BC 1B    ld   de,$1BBC		; points to the routine that initiates the evaluation of the current block, modifying the tiles that form the block
+21B7: ED 53 EE 21 ld   ($21EE),de	; modifies an instruction with the address
+21BB: E5          push hl			; saves the current position in the grid
+21BC: 3A 52 20    ld   a,($2052)	; gets the instructions used to work with x
+21BF: 4F          ld   c,a			; c = what's used in incTilePosX
+21C0: 3A 58 20    ld   a,($2058)
+21C3: 47          ld   b,a			; b = what's used in decTilePosX
+21C4: C5          push bc			; saves the values used in incTilePosX and decTilePosX instructions
+21C5: 3A F8 20    ld   a,($20F8)
+21C8: 4F          ld   c,a			; c = what's used in DrawTileIncX
+21C9: 3A 30 22    ld   a,($2230)
+21CC: 47          ld   b,a			; b = xor used for the possible swap between reg 0x70 and 0x71
+21CD: C5          push bc			; saves the values on the stack
+21CE: ED 4B DE 1F ld   bc,($1FDE)	; gets the positions in the grid coordinate system and saves them on the stack
+21D2: C5          push bc
+21D3: ED 4B DB 1F ld   bc,($1FDB)	; gets the parameters for block construction and saves them on the stack
+21D7: C5          push bc
+21D8: 3A DD 1F    ld   a,($1FDD)	; gets the parameter dependent on byte 4 and saves it on the stack
+21DB: F5          push af
+
+21DC: 11 F0 21    ld   de,$21F0		; saves the return address on the stack
+21DF: D5          push de
+21E0: CD 82 21    call $2182		; gets in de the pointer that's in the block construction data
+21E3: 3A DD 1F    ld   a,($1FDD)	; a = parameter dependent on fourth byte
+21E6: E5          push hl			; puts the position on the stack
+21E7: EB          ex   de,hl		; de = [hl]
+21E8: 5E          ld   e,(hl)
+21E9: 23          inc  hl
+21EA: 56          ld   d,(hl)
+21EB: 23          inc  hl
+21EC: E3          ex   (sp),hl		; retrieves the position from the stack and puts the address of the data that defines the block tiles
+21ED: C3 BC 1B    jp   $1BBC		; instruction modified from outside
+
+; retrieves all values saved on the stack
+21F0: F1          pop  af
+21F1: 32 DD 1F    ld   ($1FDD),a
+21F4: C1          pop  bc
+21F5: ED 43 DB 1F ld   ($1FDB),bc
+21F9: C1          pop  bc
+21FA: ED 43 DE 1F ld   ($1FDE),bc
+21FE: C1          pop  bc
+21FF: 79          ld   a,c
+2200: 32 F8 20    ld   ($20F8),a
+2203: 78          ld   a,b
+2204: 32 30 22    ld   ($2230),a
+2207: C1          pop  bc
+2208: 79          ld   a,c
+2209: 32 52 20    ld   ($2052),a
+220C: 78          ld   a,b
+220D: 32 58 20    ld   ($2058),a
+2210: E1          pop  hl
+2211: C3 1E 20    jp   $201E
+
+; reads a byte from the block construction data, advancing the pointer. If it read data from the block construction buffer,
+; at exit, de will point to that register
+; if the byte read is < 0x60, it's a value and returns it
+; if the byte read is 0x82, exits returning the next byte
+; otherwise, it's a read operation of block characteristics register
+; ix = pointer to the block construction data
+2214: DD 7E 00    ld   a,(ix+$00)	; reads the current byte and increments the pointer
+2217: DD 23       inc  ix
+
+2219: 11 CF 1F    ld   de,$1FCF		; points to the texture data buffer
+221C: FE 60       cp   $60			; if the byte read is < 0x60, check and exit
+221E: 38 19       jr   c,$2239
+2220: FE 82       cp   $82
+2222: 20 07       jr   nz,$222B		; if the byte read != 0x82, jump
+2224: DD 7E 00    ld   a,(ix+$00)	; gets the next byte and jumps
+2227: DD 23       inc  ix
+2229: 18 0E       jr   $2239
+
+222B: FE 70       cp   $70			; if the byte read is < 0x70, jump
+222D: 38 02       jr   c,$2231
+222F: EE 00       xor  $00			; swaps between register 0x70 and 0x71
+
+2231: D6 61       sub  $61			; a = index in the block construction buffer
+
+; de points to the beginning of the buffer
+2233: 83          add  a,e			; de = de + a
+2234: 5F          ld   e,a
+2235: 8A          adc  a,d
+2236: 93          sub  e
+2237: 57          ld   d,a
+2238: 1A          ld   a,(de)		; reads the buffer entry
+
+2239: 4F          ld   c,a			; checks if it's 0 before exiting
+223A: A7          and  a
+223B: C9          ret
+; ---------------------- end of code and data related to screen generation -----------------------------------
+
+; ??? never reaches here
+223C: 00          nop
+223D: C3 9A 24    jp   $249A		; jumps to the real start of the program
+
+; restores the mirror room, changes the interrupt to a ret, turns off sound, gets the stack address at game start and jumps there
+; probably this code is used in conjunction with the debugger to be able to debug the game, but the code that loads the debugger
+; has been removed from the final version of the game
+2240: F3          di
+2241: 01 C6 7F    ld   bc,$7FC6
+2244: ED 49       out  (c),c			; puts abadia7 at 0x4000
+2246: 2A D9 34    ld   hl,($34D9)		; gets the pointer to the mirror room height data
+2249: 36 FF       ld   (hl),$FF			; restores the original mirror height
+224B: 01 C0 7F    ld   bc,$7FC0			; restores the previous configuration
+224E: ED 49       out  (c),c
+2250: CD 76 13    call $1376			; turns off sound
+2253: ED 7B C2 2D ld   sp,($2DC2)		; gets the stack address at game start
+2257: 3E C9       ld   a,$C9
+2259: 38 32 00    ld   ($0038),a		; interrupt = ret
+225C: C9          ret
+
+;----------------------- data and code related to the graphics engine -------------------------------------
+; table of routines to call at 0x2add according to camera orientation
+225D:
+	248A 2485 248B 2494
+
+2265:
+; table with ground floor data (0x2255-0x2304) (actually starts before because at Y = 0 there is nothing)

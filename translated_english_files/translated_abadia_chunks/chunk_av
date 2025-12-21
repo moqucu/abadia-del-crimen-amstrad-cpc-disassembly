@@ -1,0 +1,600 @@
+	BF BF 01 26 -> [0x2dbe] = [0x2dbe] | 0x01	; gets a bonus
+
+5727: CF          rst  $08			; interprets the commands following this instruction
+	82 -> c1 = [0x303a]
+	16 -> c2 = 0x16
+	3E -> c = [0x303a] >= 0x16
+572B: 20 25       jr   nz,$5752		; if william goes up to the library
+572D: CF          rst  $08			; interprets the commands following this instruction
+	A4 -> c1a = [0x2def]
+	40 20 -> c2a = 0x20
+	2A -> ca = [0x2def] & 0x20
+	40 20 -> cb = 0x20
+	3D -> c = if william has the glasses
+5735: 20 06       jr   nz,$573D		; if william has the glasses
+5737: D7          rst  $10			; interprets the commands following this instruction
+	BF BF 40 80 26 -> [0x2dbe] = [0x2dbe] | 0x80
+573D: CF          rst  $08			; interprets the commands following this instruction
+	B8 -> c1a = [0x2df3]
+	40 80 -> c2a = 0x80
+	2A -> ca = [0x2df3] & 0x80
+	40 80 -> cb = 0x80
+	3D -> c = ([0x2df3] & 0x80) == 0x80
+5745: 20 06       jr   nz,$574D		; if adso has the lamp
+5747: D7          rst  $10			; interprets the commands following this instruction
+	BF BF 40 20 26 -> [0x2dbe] = [0x2dbe] | 0x20
+574D: D7          rst  $10			; interprets the commands following this instruction
+	BF BF 10 26 -> [0x2dbe] = [0x2dbe] | 0x10
+
+5752: CF          rst  $08			; interprets the commands following this instruction
+	9A -> c1 = [0x2dbd]
+	72 -> c2 = 0x72
+	3D -> compares c1 and c2
+5756: 20 05       jr   nz,$575D		; if he's in the mirror room
+5758: D7          rst  $10			; interprets the commands following this instruction
+	C0 C0 02 26 -> [0x2dbf] = [0x2dbf] | 0x02
+575D: C9          ret
+; ------------------------------------------------------
+
+; ------------------ malaquias logic ----------------
+575E: CF          rst  $08
+	AC -> c1a = [0x3ca2]
+	02 -> c2a = 0x02
+	3D -> c = [0x3ca2] == 0x02	; if malaquias has died, exits
+5762: 20 03       jr   nz,$5767
+5764: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5767: CF          rst  $08
+	AC -> c1a = [0x3ca2]
+	01 -> c2a = 0x01
+	3D -> c = [0x3ca2] == 0x01
+576B: 20 06       jr   nz,$5773
+576C: CD 86 43    call $4386		; if he's dying, advances malaquias' height
+5770: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5773: CF          rst  $08
+	8C -> c1a = [0x3cc7]
+	0B -> c2a = 0x0b
+	3D -> c = [0x3cc7] == 0x0b
+5777: 20 03       jr   nz,$577C		; if the abbot is in the state of throwing william out of the abbey
+5779: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+577C: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	00 -> c2a = 0x00
+	3D -> ca = [0x2d81] == 0x00
+	88 -> c1a = [0x2d81]
+	06 -> c1b = 0x06
+	3D -> cb = [0x2d81] = 0x06
+	2A -> c = ([0x2d81] == 0x00) | ([0x2d81] == 0x06)
+5784: 20 07       jr   nz,$578D		; if it's night or compline
+5786: D7          rst  $10
+	86 07 -> [0x3caa] = 0x07	; goes to his cell
+5789: D7          rst  $10
+	8E 08 -> [0x3ca9] = 0x08	; moves to state 8
+578C: C9          ret
+
+578D: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	05 -> c2a = 0x05
+	3D -> c = [0x2d81] == 0x05
+5791: C2 89 58    jp   nz,$5889		; if it's vespers
+5794: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	0C -> c2a = 0x0c
+	3D -> c = [0x3ca9] == 0x0c	; if he's in state 0x0c
+5798: 20 12       jr   nz,$57AC
+579A: D7          rst  $10
+	86 40 FE -> [0x3caa] = 0xfe	; goes to look for the abbot
+579E: CF          rst  $08
+	87 -> c1a = [0x3ca8]
+	40 FE -> c2a = 0xfe
+	3D -> c = [0x3ca8] == 0xfe
+57A3: 20 06       jr   nz,$57AB		; if he has reached the abbot's position
+57A5: D7          rst  $10
+	8C 0B -> [0x3cc7] = 0x0b		; changes the abbot's state so he throws william out
+57A8: D7          rst  $10
+	8E 06 -> [0x3ca9] = 0x06	; changes to state 6
+57AB: C9          ret
+
+57AC: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	00 -> c2a = 0x00
+	3D -> c = [0x3ca9] = 0x00
+57B0: 20 12       jr   nz,$57C4		; if he's in state 0
+57B2: D7          rst  $10
+	BA 02 -> [0x2dff] = 0x02	; modifies the mask of objects that malaquias can take (can take the passage key)
+57B5: D7          rst  $10
+	86 06 -> [0x3caa] = 0x06	; goes to the scriptorium table to take the key
+57B8: CF          rst  $08
+	87 -> c1a = [0x3ca8]
+	06 -> c2a = 0x06
+	3D -> c = [0x3ca8] == 0x06
+57BC: 20 05       jr   nz,$57C3		; if he has reached the scriptorium table where the key is
+57BE: D7          rst  $10
+	8E 02 -> [0x3ca9] = 0x02	; moves to state 2
+57C1: 18 01       jr   $57C4
+57C3: C9          ret
+
+57C4: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	04 -> c2a = 0x04
+	3C -> c = [0x3ca9] < 0x04
+57C8: 20 40       jr   nz,$580A		; if his state is < 4
+57CA: CF          rst  $08
+	82 -> c1a = [0x303a]
+	0C -> c2a = 0x0c
+	3E -> c = [0x303a] >= 0x0c	; if william's height is >= 0x0c
+57CE: 20 06       jr   nz,$57D6
+57D0: D7          rst  $10
+	86 40 FF -> [0x3caa] = 0xff	; goes after william
+57D4: 18 04       jr   $57DA
+57D6: D7          rst  $10
+	8E 04 -> [0x3ca9] = 0x04	; moves to state 4
+57D9: C9          ret
+
+57DA: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	02 -> c2a = 0x02
+	3D -> c = [0x3ca9] == 0x02
+57DE: 20 10       jr   nz,$57F0		; if he's in state 2
+57E0: CD 61 3E    call $3E61		; compares the distance between william and malaquias (if very close returns 0, otherwise != 0)
+57E3: 20 0A       jr   nz,$57EF		; if he's close
+57E5: CD 1B 50    call $501B		; writes the phrase on the scoreboard
+	09          				THOU MUST ABANDON BUILDING, BROTHER
+57E9: D7          rst  $10
+	8E 03 -> [0x3ca9] = 0x03	; moves to state 3
+57EC: D7          rst  $10
+	8F 00 -> [0x3c9e] = 0x00	; starts the counter for the time allowed for william to be in the scriptorium
+57EF: C9          ret
+
+57F0: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	03 -> c2a = 0x03
+	3D -> c = [0x3ca9] == 0x03
+57F4: 20 14       jr   nz,$580A		; if he's in state 3
+57F6: D7          rst  $10
+	8F 8F 01 2B -> [0x3c9e] = [0x3c9e] + 1	; increments the counter
+57FB: CF          rst  $08
+	8F -> c1a = [0x3c9e]
+	40 FA -> c2a = 0xfa
+	3E -> c = [0x3c9e] >= 0xfa
+5800: 20 07       jr   nz,$5809		; if the counter reaches the tolerable limit
+5802: CD 1B 50    call $501B		; writes the phrase on the scoreboard
+	0A							I SHALL WARN THE ABBOT
+5806: D7          rst  $10
+	8E 0C -> [0x3ca9] = 0x0c	; changes to state 0x0c
+5809: C9          ret
+
+580A: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	04 -> c2a = 0x04
+	3D -> c = [0x3ca9] == 0x04
+580E: 20 22       jr   nz,$5832		; if he's in state 4
+5810: D7          rst  $10
+	86 04 -> [0x3caa] = 0x04	; goes to close the doors of the abbey's left wing
+5813: CF          rst  $08
+	87 -> c1a = [0x3ca8]
+	04 -> c2a = 0x04
+	3D -> c = [0x3ca8] == 0x04
+5817: 20 18       jr   nz,$5831		; if he has reached the doors of the abbey's left wing
+5819: CF          rst  $08
+	9D -> c1a = [0x3074]
+	62 -> c2a = 0x62
+	3C -> ca = [0x3074] < 0x62
+	AB -> cb = [0x3ca1]
+	26 -> c = ([0x3074] < 0x62) & ([0x3ca1])
+581F: 20 03       jr   nz,$5824		; if berengario or bernardo gui haven't left the abbey's left wing
+5821: C3 5B 3E    jp   $3E5B			; indicates that the character doesn't want to search for any route
+
+5824: D7          rst  $10
+	8E 05 -> [0x3ca9] = 0x05	; moves to state 5
+5827: D7          rst  $10
+	9F 9F 7F 2A -> [0x2ffe] = [0x2ffe] & 0x7f	; indicates that the doors no longer remain fixed
+582C: D7          rst  $10
+	A0 A0 7F 2A -> [0x3003] = [0x3003] & 0x7f
+5831: C9          ret
+
+5832: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	05 -> c2a = 0x05
+	3D -> c = [0x3ca9] == 0x05
+5836: 20 13       jr   nz,$584B			; if he's in state 5
+5838: D7          rst  $10
+	86 05 -> [0x3caa] = 0x05		; goes to the kitchen table in front of the passage
+583B: D7          rst  $10
+	9E 40 DF -> [0x3ca6] = 0xdf;	; modifies the mask of doors that can be opened
+583F: CF          rst  $08
+	80 -> c1a = [0x3038]
+	60 -> c2a = 0x60
+	3C -> c = [0x3038] < 0x60
+5843: 20 03       jr   nz,$5848			; if william is in the abbey's left wing
+5845: D7          rst  $10
+	8E 0C -> [0x3ca9] = 0x0c		; moves to state 0x0c to warn the abbot
+5848: C3 98 3E    jp   $3E98			; if he has reached the place he wanted to go, advances the state
+
+584B: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	06 -> c2a = 0x06
+	3D -> c = [0x3ca9] == 0x06
+584F: 20 06       jr   nz,$5857		; if he's in state 6
+5851: D7          rst  $10
+	86 00 -> [0x3caa] = 0x00	; goes to the church
+5854: CD 98 3E    call $3E98		; if he has reached the place he wanted to go, advances the state
+5857: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	0B -> c2a = 0x0b
+	3D -> c = [0x3ca9] == 0x0b
+585B: 20 0A       jr   nz,$5867		; if malaquias' state is 0x0b
+585D: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+5861: 20 03       jr   nz,$5866		; if no phrase is being played
+5863: D7          rst  $10
+	AC 01 -> [0x3ca2] = 0x01	; indicates that malaquias is dying
+5866: C9          ret
+
+5867: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	07 -> c2a = 0x07
+	3D -> c = [0x3ca9] == 0x07
+586B: 20 1B       jr   nz,$5888			; if he's in state 7
+586D: CF          rst  $08
+	8D -> c1a = [0x2d80]
+	05 -> c2a = 0x05
+	3D -> c = [0x2d80] == 0x05
+5871: 20 14       jr   nz,$5887			; if it's the fifth day
+5873: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	22 -> c2a = 0x22
+	3D -> ca = [0x2dbd] == 0x22
+	9A -> c1b = [0x2dbd]
+	23 -> c2b = 0x23
+	3D -> cb = [0x2dbd] == 0x23
+	2A -> c = ([0x2dbd] == 0x22) | ([0x2dbd] == 0x23)
+587B: 20 0A       jr   nz,$5887			; if he's in the church (the comparison with 0x23 isn't necessary?)
+587D: D7          rst  $10
+	87 01 -> [0x3ca8] = 0x01		; indicates that he hasn't reached the church yet
+5880: D7          rst  $10
+	8E 0B -> [0x3ca9] = 0x0b		; moves to state 0x0b
+5883: CD 1B 50    call $501B			; writes the phrase on the scoreboard
+	1F								IT WAS TRUE, HE HAD THE POWER OF A THOUSAND SCORPIONS
+5887: C9          ret
+5888: C9          ret
+
+5889: CF          rst  $08
+	88 -> c1 = [0x2d81]
+	01 -> c2 = 0x01
+	3D -> c = [0x2d81] == 0x01
+588D: 20 07       jr   nz,$5896			; if it's prime
+588F: D7          rst  $10
+	8E 09 -> [0x3ca9] = 0x09		; changes to state 9
+5892: D7          rst  $10
+	86 00 -> [0x3caa] = 0x00		; goes to mass
+5895: C9          ret
+
+5896: CF          rst  $08
+	87 -> c1 = [0x3ca8]
+	02 -> c2 = 0x02
+	3D -> c = [0x3ca8] == 0x02
+589A: 20 09       jr   nz,$58A5		; if malaquias has reached his position in the scriptorium
+589C: D7          rst  $10
+	8E 00 -> [0x3ca9] = 0x00		; changes to state 0
+589F: D7          rst  $10
+	BA 00 -> [0x2dff] = 0x00		; modifies the mask of objects that malaquias can take
+58A2: CD 22 40    call $4022		; leaves the passage key on malaquias' table
+58A5: CF          rst  $08
+	8E -> c1 = [0x3ca9]
+	00 -> c2 = 0x00
+	3D -> c = [0x3ca9] == 0x00
+58A9: C2 13 59    jp   nz,$5913		; if he's in state 0
+58AC: CD 61 3E    call $3E61		; compares the distance between william and malaquias (if very close returns 0, otherwise != 0)
+58AF: C2 0F 59    jp   nz,$590F		; if he's close to william
+58B2: CF          rst  $08
+	86 -> c1 = [0x3caa]
+	03 -> c2 = 0x03
+	3D -> c = [0x3caa] == 0x03
+58B6: 20 47       jr   nz,$58FF		; if he has gone out to block william's way
+58B8: CF          rst  $08
+	AE -> c1 = [0x3ca5]
+	40 80 -> c2 = 0x80
+	2A -> c = [0x3ca5] & 0x80
+58BD: 20 12       jr   nz,$58D1		; if berengario hasn't reached his work position
+58BF: CF          rst  $08
+	81 -> c1 = [0x3039]
+	38 -> c2 = 0x38
+	3C -> c = [0x3039] < 0x38
+58C3: 20 0A       jr   nz,$58CF		; if william's y position < 0x38
+58C5: D7          rst  $10
+	AE AE 40 80 26 -> [0x3ca5] = [0x3ca5] | 0x80
+58CB: CD 1B 50    call $501B		; says the phrase
+	33								I'M SORRY, VENERABLE BROTHER, YOU CANNOT GO UP TO THE LIBRARY
+58CF: 18 2D       jr   $58FE
+
+58D1: CF          rst  $08
+	AE -> c1 = [0x3ca5]
+	40 40 -> c2 = 0x40
+	2A -> c = [0x3ca5] & 0x40
+58D6: 20 15       jr   nz,$58ED
+58D8: CF          rst  $08
+	8D -> c1a = [0x2d80]
+	02 -> c2a = 0x02
+	3D -> ca = [0x2d80] == 0x02
+	89 -> cb = [0x2da1]
+	26 -> c = ([0x2d80] == 0x02) && ([0x2da1] == 0)
+58DE: 20 0B       jr   nz,$58EB	; if it's the second day and no phrase is being played
+58E0: D7          rst  $10
+	AE AE 40 40 26 -> [0x3ca5] = [0x3ca5] | 0x40
+58E6: CD 26 50    call $5026	; says the phrase
+	34 							IF YOU WISH, BERENGARIO WILL SHOW YOU THE SCRIPTORIUM
+58EA: C9          ret
+
+58EB: 18 11       jr   $58FE
+
+58ED: CF          rst  $08
+	AE -> c1 = [0x3ca5]
+	10 -> c2 = 0x10
+	2A -> c = [0x3ca5] & 0x10
+58F1: 20 0B       jr   nz,$58FE
+58F3: CD 61 3E    call $3E61		; compares the distance between william and malaquias (if very close returns 0, otherwise != 0)
+58F6: 20 01       jr   nz,$58F9		; if he's very close, exits
+58F8: C9          ret
+
+; arrives here if he's far away, but this can't be, since this is inside a (if william is close...) (???)
+58F9: D7          rst  $10
+	AE AE 10 26 -> [0x3ca5] = [0x3ca5] | 0x10 ; ???
+58FE: C9          ret
+
+58FF: CD BE 08    call $08BE		; discards planned movements and indicates that a new movement needs to be planned
+5902: AF          xor  a
+5903: CD 82 34    call $3482		; checks if cursor up is pressed
+5906: 20 03       jr   nz,$590B		; if cursor up has been pressed, jumps
+5908: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+590B: D7          rst  $10
+	86 03 -> [0x3caa] = 0x03	; goes out to block william's way
+590E: C9          ret
+
+590F: D7          rst  $10
+	86 02 -> [0x3caa] = 0x02	; returns to his table
+5912: C9          ret
+
+5913: CF          rst  $08
+	88 -> c1 = [0x2d81]
+	02 -> c2 = 0x02
+	3D -> c = [0x2d81] == 0x02
+5917: 20 25       jr   nz,$593E		; if it's terce
+5919: CF          rst  $08
+	8E -> c1a = [0x3ca9]
+	09 -> c2a = 0x09
+	3D -> ca = [0x3ca9] == 0x09
+	8D -> c1b = [0x2d80]
+	05 -> c2b = 0x05
+	3D -> cb = [0x2d80] == 0x05
+	26 -> ca = ([0x3ca9] == 0x09) && ([0x2d80] == 0x05)
+5921: 20 14       jr   nz,$5937		; if he's in state 0x09 on the fifth day
+5923: D7          rst  $10
+	86 08 -> [0x3caa] = 0x08	; goes to severino's cell
+5926: CF          rst  $08
+	87 -> c1a = [0x3ca8]
+	08 -> c2a = 0x08
+	3D -> ca = [0x3ca8] == 0x08
+	94 -> c1b = [0x3cff]
+	02 -> c2b = 0x02
+	3D -> cb = [0x3cff]
+	26 -> c = ([0x3ca8] == 0x08) && ([0x3cff] == 0x02)
+592E: 20 06       jr   nz,$5936		; if malaquias and severino are in severino's cell
+5930: D7          rst  $10
+	AD 01 -> [0x3ca3] = 0x01	; kills severino
+5933: D7          rst  $10
+	8E 0A -> [0x3ca9] = 0x0a	; changes to state 0x0a
+5936: C9          ret
+
+5937: D7          rst  $10
+	8E 0A -> [0x3ca9] = 0x0a	; changes to state 0x0a
+593A: D7          rst  $10
+	86 02 -> [0x3caa] = 0x02	; goes to his work table
+593D: C9          ret
+593E: C9          ret
+
+; ------------------ end of malaquias logic ----------------
+
+; ------------------ logic of berengario/jorge/bernardo ----------------
+593F: CF          rst  $08
+	AB -> c1a = [0x3ca1]
+	01 -> c2a = 0x01
+	3D -> c = [0x3ca1] == 0x01
+5943: 20 03       jr   nz,$5948		; if jorge is not doing anything, exits
+5945: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5948: CF          rst  $08
+	8D -> c1a = [0x2d80]
+	03 -> c2a = 0x03
+	3D -> c = [0x2d80] == 0x03
+594C: 20 65       jr   nz,$59B3		; if it's the third day
+594E: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	01 -> c2a = 0x01
+	3D -> c = [0x2d81] == 0x01
+5952: 20 03       jr   nz,$5957		; if it's prime
+5954: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5957: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	02 -> c2a = 0x02
+	3D -> c = [0x2d81] == 0x02
+595B: 20 36       jr   nz,$5993		; if it's terce
+595D: CF          rst  $08
+	92 -> c1a = [0x3ce8]
+	1E -> c2a = 0x1e
+	3D -> c = [0x3ce8] == 0x1e
+5961: 20 0C       jr   nz,$596F		; if he's in state 0x1e
+5963: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+5967: 20 03       jr   nz,$596C		; if no voice is being played
+5969: D7          rst  $10
+	92 1F -> [0x3ce8] = 0x1f	; moves to state 0x1f
+596C: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+596F: CF          rst  $08
+	92 -> c1a = [0x3ce8]
+	1F -> c2a = 0x1f
+	3D -> c = [0x3ce8] == 0x1f
+5973: 20 0F       jr   nz,$5984		; if he's in state 0x1f
+5975: CD 61 3E    call $3E61		; compares the distance between william and jorge (if very close returns 0, otherwise != 0)
+5978: 20 07       jr   nz,$5981		; if he's far, jumps
+597A: CD 26 50    call $5026		; puts the phrase on the scoreboard
+	32 							BE WELCOME, VENERABLE BROTHER; AND HEAR WHAT I SAY. THE WAYS OF THE ANTICHRIST ARE SLOW AND TORTUOUS. HE ARRIVES WHEN YOU LEAST EXPECT IT. DO NOT WASTE THE LAST DAYS
+597E: D7          rst  $10
+	9B 01 -> [0x3c9a] = 0x01	; indicates to advance the time of day
+5981: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5984: CD 3E 61    call $3E61		; compares the distance between william and jorge (if very close returns 0, otherwise != 0)
+5987: 20 07       jr   nz,$5990		; if he's far from jorge, jumps
+5989: CD 1B 50    call $501B		; writes the phrase on the scoreboard
+	31 							VENERABLE JORGE, THE ONE BEFORE YOU IS FRIAR WILLIAM, OUR GUEST
+598D: D7
+	92 1E -> [0x3ce8] = 0x1e		; moves to state 0x1e
+5990: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5993: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	03 -> c2a = 0x03
+	3D -> c = [0x2d81] == 0x03
+5997: 20 1A       jr   nz,$59B3		; if it's sext
+5999: D7          rst  $10
+	90 03 -> [0x3ce9] = 0x03	; goes to the monks' cell
+599C: D7          rst  $10
+	92 00 -> [0x3ce8] = 0x00	; moves to state 0
+
+599F: CF          rst  $08
+	9D -> c1a = [0x3074]
+	60 -> c2a = 0x60
+	3D -> c = [0x3074] == 0x60
+59A3: 20 04       jr   nz,$59A9		; if jorge's x position ??? this doesn't make much sense, because it's a phrase that adso says!!!
+59A5: CD 26 50    call $5026      	; puts the phrase on the scoreboard
+	27							DAWN WILL SOON BREAK, MASTER
+59A9: CF          rst  $08
+	91 -> c1a = [0x3ce7]
+	03 -> c2a = 0x03
+	3D -> c = [0x3ce7] == 0x03
+59AD: 20 03       jr   nz,$59B2		; if he has reached his cell, indicates it
+59AF: D7          rst  $10
+	AB 01 -> [0x3ca1] = 0x01	; indicates that jorge won't do anything else for now
+59B2: C9          ret
+
+
+; arrives here if it's not the third day
+59B3: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	03 -> c2a = 0x03
+	3D -> c = [0x2d81] == 0x03
+59B7: 20 04       jr   nz,$59BD		; if it's sext
+59B9: D7          rst  $10
+	90 01 -> [0x3ce9] = 0x01	; goes to the refectory
+59BC: C9          ret
+
+59BD: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	01 -> c2a = 0x01
+	3D -> c = [0x2d81] == 0x01
+59C1: 20 04       jr   nz,$59C7		; if it's prime
+59C3: D7          rst  $10
+	90 00 -> [0x3ce9] = 0x00	; goes to the church
+59C6: C9          ret
+
+59C7: CF          rst  $08
+	8D -> c1a = [0x2d80]
+	05 -> c2a = 0x05
+	3D -> c = [0x2d80] == 0x05
+59CB: 20 0F       jr   nz,$59DC		; if it's the fifth day
+59CD: CF          rst  $08
+	91 -> c1a = [0x3ce7]
+	04 -> c2a = 0x04
+	3D -> c = [0x3ce7] == 0x04
+59D1: 20 06       jr   nz,$59D9		; if he has reached the abbey exit, indicates it
+59D3: D7          rst  $10
+	AB 01 -> [0x3ca1] = 0x01
+59D6: D7
+	9D 00 -> [0x3074] = 0x00	; berengario's x position = 0
+59D9: D7          rst  $10
+	90 04 -> [0x3ce9] = 0x04	; leaves the abbey
+
+59DC: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	06 -> c2a = 0x06
+	3D -> c = [0x2d81] == 0x06
+59E0: 20 04       jr   nz,$59E6		; if it's compline
+59E2: D7          rst  $10
+	90 03 -> [0x3ce9] = 0x03	; goes to the monks' cell
+59E5: C9          ret
+
+59E6: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	00 -> c2a = 0x00
+	3D -> c = [0x2d81] == 0x00	; if it's night
+59EA: C2 34 5A    jp   nz,$5A34
+59ED: CF          rst  $08
+	8D -> c1a = [0x2d80]
+	03 -> c2a = 0x03
+	3D -> c = [0x2d80] == 0x03	; if it's the third day
+59F1: C2 30 5A    jp   nz,$5A30
+59F4: CF          rst  $08
+	92 -> c1a = [0x3ce8]
+	06 -> c2a = 0x06
+	3D -> c = [0x3ce8] == 0x06
+59F8: 20 29       jr   nz,$5A23		; if he's in state 6
+59FA: D7          rst  $10
+	B0 40 80 -> [0x2e0d] = 0x80	; modifies the mask of objects he can take
+59FE: CF          rst  $08
+	91 -> c1a = [0x3ce7]
+	03 -> c2a = 0x03
+	3D -> c = [0x3ce7] == 0x03
+5A02: 20 04       jr   nz,$5A08		; if he's in his cell
+5A04: D7          rst  $10
+	90 05 -> [0x3ce9] = 0x05	; indicates he's going towards the stairs at the foot of the scriptorium
+5A07: C9          ret
+
+5A08: D7          rst  $10
+	90 40 FD -> [0x3ce9] = 0xfd	; heads towards the book
+5A0C: CF          rst  $08
+	A8 -> c1a = [0x2e0b]
+	40 80 -> c2a = 0x80
+	2A -> ca = [0x2e0b] & 0x80
+	40 80 -> cb = 0x80
+	3D -> c = ([0x2e0b] & 0x80) == 0x80
+5A14: 20 0C       jr   nz,$5A22		; if he has the book
+5A16: CF          rst  $08
+	91 -> c1a = [0x3ce7]
+	06 -> c2a = 0x06
+	3D -> c = [0x3ce7] == 0x06
+5A1A: 20 03       jr   nz,$5A1F		; if he has reached severino's cell
+5A1C: D7          rst  $10
+	9B 01 -> [0x3c9a] = 0x01	; indicates to advance the time of day
+5A1F: D7          rst  $10
+	90 06 -> [0x3ce9] = 0x06	; heads to severino's cell
+5A22: C9          ret
+
+5A23: CF          rst  $08
+	91 -> c1a = [0x3ce7]
+	03 -> c2a = 0x03
+	3D -> c = [0x3ce7] == 0x03	; if he's in his cell
+5A27: 20 07       jr   nz,$5A30
+5A29: D7          rst  $10
+	92 06 -> [0x3ce8] = 0x06	; moves to state 6
+5A2C: CD 94 40    call $4094		; changes berengario's face to the hooded one
+5A2F: C9          ret
+
+5A30: D7          rst  $10
+	90 03 -> [0x3ce9] = 0x03	; heads to the monks' cell
+5A33: C9          ret
+
+5A34: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	05 -> c2a = 0x05
+	3D -> c = [0x2d81] == 0x05
+5A38: 20 14       jr   nz,$5A4E		; if it's vespers
+5A3A: CF          rst  $08

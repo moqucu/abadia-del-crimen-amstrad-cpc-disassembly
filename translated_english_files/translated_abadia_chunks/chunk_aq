@@ -1,0 +1,600 @@
+44A8: DD CB 00 FE set  7,(ix+$00)	; marks the initial position as explored
+44AC: 21 FF FF    ld   hl,$FFFF
+44AF: E5          push hl			; puts -1 on the stack
+44B0: 21 FE 9C    ld   hl,$9CFE		; hl points to the end of the stack
+
+44B3: 2B          dec  hl
+44B4: 56          ld   d,(hl)
+44B5: 2B          dec  hl
+44B6: 5E          ld   e,(hl)		; de = value taken from the stack
+44B7: 7B          ld   a,e
+44B8: E6 80       and  $80			; if -1 was not recovered, jumps to explore neighboring positions
+44BA: 28 14       jr   z,$44D0
+
+; arrives here if an iteration has finished
+44BC: AF          xor  a			; a indicates that the search was not successful
+44BD: 44          ld   b,h			; bc = hl
+44BE: 4D          ld   c,l
+44BF: ED 72       sbc  hl,sp		; obtains the difference between the element being processed and the last one put on the stack
+44C1: 69          ld   l,c			; hl = bc
+44C2: 60          ld   h,b
+44C3: CA 75 45    jp   z,$4575		; if all elements have been processed, exit
+44C6: D5          push de			; otherwise, puts a -1 to indicate that a level ends
+44C7: 3A 19 44    ld   a,($4419)	; increments the recursion level
+44CA: 3C          inc  a
+44CB: 32 19 44    ld   ($4419),a
+44CE: 18 E3       jr   $44B3		; continues processing elements
+
+; arrives here if -1 was not read from the stack
+44D0: E5          push hl			; saves the position being processed on the stack
+44D1: D5          push de			; saves the value obtained from the stack
+44D2: EB          ex   de,hl		; hl = value taken from the stack
+44D3: CD D4 0C    call $0CD4		; indexes in the height table with hl and returns the corresponding address in ix
+44D6: D1          pop  de			; de = value obtained from the stack
+44D7: E1          pop  hl			; hl = position being processed on the stack
+
+44D8: DD 7E 00    ld   a,(ix+$00)	; obtains the height of the position and modifies an instruction with that value
+44DB: E6 0F       and  $0F
+44DD: 32 1C 45    ld   ($451C),a
+
+; tries to explore the positions surrounding the position value taken from the stack (if there is not much height difference)
+
+44E0: 3E 02       ld   a,$02		; left orientation
+44E2: DD 23       inc  ix			; moves to position (x+1,y)
+44E4: 1C          inc  e
+44E5: CD 0E 45    call $450E		; if bit 7 of the current position was not set, checks the 4 positions related to ix
+							;  ((x,y),(x,y-1),(x-1,y)(x-1,y-1) and if there is not much height difference, sets bit 7 of (x,y)
+44E8: 3E 03       ld   a,$03		; up orientation
+44EA: 01 E7 FF    ld   bc,$FFE7		; bc = -25
+44ED: DD 09       add  ix,bc		; moves to position (x,y-1)
+44EF: 1D          dec  e
+44F0: 15          dec  d
+44F1: CD 0E 45    call $450E		; if bit 7 of the current position was not set, checks the 4 positions related to ix
+							;  ((x,y),(x,y-1),(x-1,y)(x-1,y-1) and if there is not much height difference, sets bit 7 of (x,y)
+44F4: 3E 00       ld   a,$00		; right orientation
+44F6: 01 17 00    ld   bc,$0017		; bc = 23
+44F9: DD 09       add  ix,bc		; moves to position (x-1,y)
+44FB: 14          inc  d
+44FC: 1D          dec  e
+44FD: CD 0E 45    call $450E		; if bit 7 of the current position was not set, checks the 4 positions related to ix
+							;  ((x,y),(x,y-1),(x-1,y)(x-1,y-1) and if there is not much height difference, sets bit 7 of (x,y)
+4500: 3E 01       ld   a,$01		; down orientation
+4502: 01 19 00    ld   bc,$0019		; bc = 25
+4505: DD 09       add  ix,bc		; moves to position (x,y+1)
+4507: 14          inc  d
+4508: 1C          inc  e
+4509: CD 0E 45    call $450E		; if bit 7 of the current position was not set, checks the 4 positions related to ix
+							;  ((x,y),(x,y-1),(x-1,y)(x-1,y-1) and if there is not much height difference, sets bit 7 of (x,y)
+
+450C: 18 A5       jr   $44B3		; once neighboring positions have been checked, continues taking values from the stack
+
+; if this position had not been explored, checks the 4 neighboring positions ((x,y),(x,y-1),(x-1,y)(x-1,y-1) and
+;  if there is not much height difference, sets bit 7 of (x,y). also writes the final orientation to 0x4418
+450E: DD 4E 00    ld   c,(ix+$00)	; obtains the value of the height buffer of the current position
+4511: 32 18 44    ld   ($4418),a	; saves the final orientation
+4514: CB 79       bit  7,c
+4516: C0          ret  nz			; if the position has already been explored, exit
+
+; checks 4 positions relative to ix ((x,y),(x,y-1),(x-1,y)(x-1,y-1) and if there is not much height difference, sets bit 7 of (x,y)
+; arrives here with:
+;  c = content of the height buffer (without bit 7) for a position close to where the character was
+;  ix = pointer to a position in the height buffer
+4517: 79          ld   a,c
+4518: E6 3F       and  $3F
+451A: 4F          ld   c,a			; removes bit 7 and 6
+451B: 3E 00       ld   a,$00		; instruction modified with the height of the character's main position in the height buffer
+451D: 91          sub  c			; obtains the height difference between the character and the position being considered
+451E: 3C          inc  a
+451F: FE 03       cp   $03
+4521: D0          ret  nc			; if the height difference is >= 0x02, exit
+
+4522: DD 7E FF    ld   a,(ix-$01)	; compares the height of the left position with the height of the current position
+4525: E6 3F       and  $3F
+4527: 91          sub  c
+4528: 28 17       jr   z,$4541		; if they match, jump
+
+452A: 3C          inc  a
+452B: FE 03       cp   $03
+452D: D0          ret  nc			; if the height difference is very large, exit
+
+452E: 47          ld   b,a			; saves the height difference
+452F: DD 7E E8    ld   a,(ix-$18)	; obtains the height of position (x,y-1)
+4532: E6 3F       and  $3F
+4534: 91          sub  c
+4535: C0          ret  nz			; if the height does not match that of (x,y), exit
+4536: DD 7E E7    ld   a,(ix-$19)	; obtains the height of position (x-1,y-1)
+4539: E6 3F       and  $3F
+453B: 91          sub  c
+453C: 3C          inc  a
+453D: B8          cp   b
+453E: C0          ret  nz			; if the height difference does not match that of (x-1,y), exit
+453F: 18 14       jr   $4555		; jump
+
+; arrives here if the height of pos (x,y) and pos (x-1,y) match
+4541: DD 7E E8    ld   a,(ix-$18)	; obtains the height of position (x,y-1)
+4544: E6 3F       and  $3F
+4546: 91          sub  c			; if the height difference is very large, exit
+4547: 3C          inc  a
+4548: FE 03       cp   $03
+454A: D0          ret  nc
+454B: 47          ld   b,a
+454C: DD 7E E7    ld   a,(ix-$19)	; obtains the height of position (x-1,y-1)
+454F: E6 3F       and  $3F
+4551: 91          sub  c
+4552: 3C          inc  a			; if the height difference does not match that of (x,y-1), exit
+4553: B8          cp   b
+4554: C0          ret  nz
+
+; arrives here if the height difference between the 4 positions considered is small
+4555: DD CB 00 FE set  7,(ix+$00)	; sets bit 7 of the position to 1
+4559: 00          nop				; modified from outside with a ret or a nop
+
+455A: DD CB 00 BE res  7,(ix+$00)	; sets bit 7 to 0 (not an explored position)
+455E: DD CB 00 76 bit  6,(ix+$00)
+4562: 3A 18 44    ld   a,($4418)	; reads the parameter with which it jumps to the routine
+4565: 20 08       jr   nz,$456F		; if bit 6 is 1 (found what it was looking for), jump
+
+; if it has not found what it was looking for
+4567: DD CB 00 FE set  7,(ix+$00)	; sets bit 7 to 1 (explored square), saves the current position on the stack and exits
+456B: C1          pop  bc
+456C: D5          push de
+456D: C5          push bc
+456E: C9          ret
+
+; arrives here if bit 6 is 1 (found what was being searched for)
+456F: C1          pop  bc			; removes the return address from the stack
+4570: 32 18 44    ld   ($4418),a	; saves the final orientation
+4573: 3E FF       ld   a,$FF		; 0xff indicates that the search was successful
+
+; jumps here to exit (if there are no more combinations or if it has finished)
+4575: 32 B6 2D    ld   ($2DB6),a	; writes the search result
+4578: ED 7B B0 2D ld   sp,($2DB0)	; restores the stack from before executing the search algorithm
+457C: FB          ei
+457D: C9          ret				; exits the original routine
+
+; ------------- end of code and data related to pathfinding on the same screen --------------------------
+
+; this code is never executed
+457E: C4 A9 1E    call nz,$1EA9
+4581: 63          ld   h,e
+
+; called from adso when down cursor is pressed
+; tries to advance in guillermo's orientation
+4582: CD 91 45    call $4591		; clears the height buffer positions occupied by adso and modifies a couple of instructions
+4585: 3A 37 30    ld   a,($3037)	; obtains guillermo's orientation and selects a table entry according to guillermo's orientation
+4588: 3C          inc  a			; 0 -> 1
+4589: FE 03       cp   $03			; 1 -> 2
+458B: 20 3A       jr   nz,$45C7		; 2 -> 7
+458D: 3E 07       ld   a,$07		; 3 -> 4
+458F: 18 36       jr   $45C7		; jumps to write the commands to advance in the orientation guillermo is facing
+; it's about advancing in the orientation guillermo is facing, and trying the rest of the orientations clockwise,
+; except for the opposite orientation to guillermo's orientation
+
+4591: 0E 00       ld   c,$00
+4593: CD EF 28    call $28EF		; if the sprite position is central and the height is correct, puts c in the height buffer positions it occupies
+4596: 3E C9       ld   a,$C9
+4598: 32 59 45    ld   ($4559),a	; modifies a routine by putting a ret
+459B: DD 7E 00    ld   a,(ix+$00)	; obtains the height of the character's main position in the height buffer
+459E: E6 0F       and  $0F
+45A0: 32 1C 45    ld   ($451C),a	; sets a routine parameter
+45A3: C9          ret
+
+; called from adso when he prevents guillermo from advancing
+45A4: CD 91 45    call $4591		; clears the height buffer positions occupied by adso and modifies a couple of instructions
+; arrives here with ix pointing to adso's height buffer
+45A7: ED 5B 38 30 ld   de,($3038)	; obtains guillermo's position
+45AB: 0E 00       ld   c,$00
+45AD: 3A 47 30    ld   a,($3047)	; obtains adso's x position
+45B0: 93          sub  e
+45B1: 30 04       jr   nc,$45B7		; if adso is to the right of guillermo, jump
+45B3: ED 44       neg				; otherwise, makes the distance positive
+45B5: CB D1       set  2,c			; indicates that guillermo is to the right of adso
+45B7: 5F          ld   e,a			; e = distance in x between the 2 characters
+
+45B8: 3A 48 30    ld   a,($3048)	; obtains adso's y position
+45BB: 92          sub  d
+45BC: 30 04       jr   nc,$45C2		; if adso is behind guillermo, jump
+45BE: ED 44       neg				; otherwise, makes the distance positive
+45C0: CB C9       set  1,c			;4 indicates that guillermo is behind adso
+45C2: BB          cp   e			; compares the distances in both coordinates
+45C3: 30 01       jr   nc,$45C6		; if distance in Y >= distance in X, jump
+45C5: 0C          inc  c			; modifies the entry
+
+45C6: 79          ld   a,c			; obtains the calculated value
+
+45C7: 87          add  a,a			; each entry occupies 4 bytes
+45C8: 87          add  a,a
+45C9: 21 1F 46    ld   hl,$461F		; indexes in the table of orientations to try for movement
+45CC: CD 2D 16    call $162D		; hl = hl + a
+45CF: EB          ex   de,hl		; de points to the corresponding entry
+45D0: 06 03       ld   b,$03		; repeats for 3 values (the opposite orientation to the desired movement is not tested)
+45D2: 1A          ld   a,(de)		; reads a value from the table and saves it in c
+45D3: 4F          ld   c,a			; character orientation
+45D4: C5          push bc
+45D5: DD E5       push ix
+45D7: D5          push de
+45D8: 21 17 46    ld   hl,$4617		; points to the height buffer displacement table according to orientation
+45DB: 87          add  a,a			; each entry occupies 2 bytes
+45DC: CD 2D 16    call $162D		; hl = hl + a
+45DF: 4E          ld   c,(hl)
+45E0: 23          inc  hl
+45E1: 46          ld   b,(hl)		; reads the displacement according to the orientation to test
+45E2: DD 09       add  ix,bc		; calculates the position in the height buffer
+45E4: DD CB 00 BE res  7,(ix+$00)	; clears bit 7
+45E8: DD 4E 00    ld   c,(ix+$00)	; obtains what's there
+45EB: CD 17 45    call $4517		; checks 4 positions relative to ix ((x,y),(x,y-1),(x-1,y)(x-1,y-1) and if there is not much height difference, sets bit 7 of (x,y)
+45EE: DD CB 00 7E bit  7,(ix+$00)	; if the previous routine has set bit 7 (because it can advance to that position), jump
+45F2: 20 12       jr   nz,$4606
+45F4: D1          pop  de
+45F5: DD E1       pop  ix
+45F7: C1          pop  bc
+45F8: 13          inc  de			; if not, tries with another orientation from the table
+45F9: 10 D7       djnz $45D2		; repeats for the 3 orientations available
+
+; if it gets here, the character cannot move to any of the proposed orientations
+45FB: AF          xor  a
+45FC: 32 59 45    ld   ($4559),a	; leaves the previous routine as it was
+45FF: FD 4E 0E    ld   c,(iy+$0e)
+4602: CD EF 28    call $28EF		; if the sprite position is central and the height is correct, puts c in the height buffer positions it occupies
+4605: C9          ret
+
+;jumps here, the character is going to move to the orientation it was testing
+4606: DD CB 00 BE res  7,(ix+$00)	; clears bit 7
+460A: D1          pop  de
+460B: DD E1       pop  ix
+460D: C1          pop  bc
+460E: CD 3F 46    call $463F		; writes a command to advance in the new character orientation
+4611: CD FB 45    call $45FB		; leaves the previous routine as it was and sets the character's height buffer positions
+4614: C3 7B 08    jp   $087B		; calls adso's behavior again
+
+; displacement table within the height buffer according to orientation (related to 0x461f)
+4617: 	0001 = +01 -> 0x00
+	FFE8 = -24 -> 0x01
+	FFFF = -01 -> 0x02
+	0018 = +24 -> 0x03
+
+; table of orientations to try for movement in a certain direction
+; each entry occupies 4 bytes. The orientations of each entry are tested from left to right
+; the entries are intelligently ordered.
+; 2 large groups of entries can be distinguished. The first group of entries (the first 4)
+; gives more priority to movements to the right and the second group of entries (the last 4)
+; gives more priority to movements to the left. Within each group of entries, the first 2 entries
+; give more priority to downward movements, and the other 2 entries give more priority
+; to upward movements
+461F: 	03 00 02 01	-> 0x00 -> (+y, +x, -x, -y) -> if adso is to the right and behind guillermo, with dist y >= dist x
+	00 03 01 02 -> 0x01 -> (+x, +y, -y, -x) -> if adso is to the right and behind guillermo, with dist y < dist x
+	01 00 02 03 -> 0x02 -> (-y, +x, -x, +y) -> if adso is to the right and in front of guillermo, with dist y >= dist x
+	00 01 03 02 -> 0x03 -> (+x, -y, +y, -x) -> if adso is to the right and in front of guillermo, with dist y < dist x
+
+	03 02 00 01 -> 0x04 -> (+y, -x, +x, -y) -> if adso is to the left and behind guillermo, with dist y >= dist x
+	02 03 01 00 -> 0x05 -> (-x, +y, -y, +x) -> if adso is to the left and behind guillermo, with dist y < dist x
+	01 02 00 03 -> 0x06 -> (-y, -x, +x, +y) -> if adso is to the left and in front of guillermo, with dist y >= dist x
+	02 01 03 00 -> 0x07 -> (-x, -y, +y, +x) -> if adso is to the left and in front of guillermo, with dist y < dist x
+
+; writes a command to change the character's orientation and advance in that orientation
+;  c = new character orientation
+463F: 21 4F 46    ld   hl,$464F			; points to a routine (writes a command depending on whether it goes up, down or stays)
+4642: 22 01 48    ld   ($4801),hl		; modifies a routine that calls the next routine
+4645: CD E6 47    call $47E6
+4648: 21 60 46    ld   hl,$4660			; points to another routine
+464B: 22 01 48    ld   ($4801),hl		; restores the original routine that was called by the previous routine
+464E: C9          ret
+
+; changes the character's orientation and advances in that orientation
+; iy points to a character's position data
+; c = new character orientation
+464F: FD 7E 01    ld   a,(iy+$01)		; obtains the character's orientation
+4652: FD 71 01    ld   (iy+$01),c		; sets the new character orientation
+4655: B9          cp   c				; checks if it was the orientation the character had
+4656: C4 C3 47    call nz,$47C3			; if it wasn't, writes some commands to change the character's orientation
+4659: CD B8 27    call $27B8			; checks the height of the positions the character is going to move to and returns them in a and c
+465C: CD 29 47    call $4729			; writes a command depending on whether it goes up, down or stays
+465F: C9          ret
+
+; ----------------- code related to path reconstruction from the search algorithm -------------------------
+
+; generates the commands to follow a path on the same screen
+4660: ED 73 B0 2D ld   ($2DB0),sp	; saves the current stack
+4664: F3          di
+4665: 3E FF       ld   a,$FF
+4667: 32 4B 2D    ld   ($2D4B),a	; sets the interrupt counter to maximum so nothing is waited for in the main loop
+466A: 31 00 00    ld   sp,$0000		; modified with the top of the stack that has the movements made
+466D: D1          pop  de			; obtains the movement at the top of the stack
+466E: 21 00 95    ld   hl,$9500
+4671: 36 FF       ld   (hl),$FF		; marks the end of the movements
+4673: 23          inc  hl
+4674: ED 4B B4 2D ld   bc,($2DB4)	; obtains the position the character must go to
+4678: 71          ld   (hl),c		;  and saves it at the beginning of the buffer
+4679: 23          inc  hl
+467A: 70          ld   (hl),b
+467B: 23          inc  hl
+467C: 3A 18 44    ld   a,($4418)	; reads the resulting orientation
+467F: EE 02       xor  $02			; inverts the orientation
+4681: 77          ld   (hl),a		; writes the orientation
+4682: 3A 19 44    ld   a,($4419)	; reads the number of iterations performed
+4685: FE 01       cp   $01
+4687: 28 4A       jr   z,$46D3		; if it's 1, exit
+
+4689: C1          pop  bc			; takes values from the stack until finding the iteration marker (-1)
+468A: 78          ld   a,b
+468B: E6 80       and  $80
+468D: 28 FA       jr   z,$4689
+
+; arrives here after taking FFFF from the stack
+468F: 23          inc  hl
+4690: 73          ld   (hl),e		; saves the movement from the top of the stack
+4691: 23          inc  hl
+4692: 72          ld   (hl),d
+4693: C1          pop  bc			; obtains the next value from the stack
+4694: 78          ld   a,b			; a = y coordinate of the position taken from the stack
+4695: 92          sub  d			; subtracts the y coordinate of the final position
+4696: 3C          inc  a			; increments a and jumps if it's >= 3 and < 0, so it doesn't jump if the distance was -1, 0 or 1
+4697: FE 03       cp   $03
+4699: 30 F8       jr   nc,$4693		; if the distance in y >= 2, continues taking values from the stack
+469B: 32 A8 46    ld   ($46A8),a
+469E: 79          ld   a,c			; a = x coordinate of the position taken from the stack
+469F: 93          sub  e			; subtracts the x coordinate of the final position
+46A0: 3C          inc  a
+46A1: FE 03       cp   $03
+46A3: 30 EE       jr   nc,$4693		; if the distance in x >= 2, continues taking values from the stack
+46A5: 87          add  a,a			; otherwise, combines the distances +1 in x and in y in the lower 4 bits of a
+46A6: 87          add  a,a
+46A7: C6 00       add  a,$00		; modified with the distance in y between the position taken from the stack and the final one
+46A9: ED 43 C3 46 ld   ($46C3),bc	; modifies an instruction with the value taken from the stack
+
+46AD: 06 00       ld   b,$00		; tests orientation 0
+46AF: FE 01       cp   $01			; a = 1 (00 01) when the distance in x is -1 and in y is 0 (x-1,y)
+46B1: 28 0F       jr   z,$46C2		; if equal, jump
+46B3: 04          inc  b			; tests orientation 1
+46B4: FE 06       cp   $06			; a = 6 (01 10) when the distance in x is 0 and in y is 1 (x,y+1)
+46B6: 28 0A       jr   z,$46C2		; if equal, jump
+46B8: 04          inc  b			; tests orientation 2
+46B9: FE 09       cp   $09			; a = 6 (10 01) when the distance in x is 1 and in y is 0 (x+1,y)
+46BB: 28 05       jr   z,$46C2		; if equal, jump
+46BD: 04          inc  b			; tests orientation 3
+46BE: FE 04       cp   $04			; a = 6 (01 00) when the distance in x is 0 and in y is -1 (x,y-1)
+46C0: 20 D1       jr   nz,$4693		; if it's none of the 4 cases where one unit was advanced, continues taking elements
+
+; arrives here if the value taken from the stack was a previous iteration of one of the above
+46C2: 11 00 00    ld   de,$0000		; instruction modified with the value taken from the stack
+46C5: 23          inc  hl
+46C6: 70          ld   (hl),b		; saves the movement orientation
+46C7: 3A B2 2D    ld   a,($2DB2)	; reads the x coordinate of the origin
+46CA: BB          cp   e			; if it's not the same as the one taken from the stack, continues processing one more iteration
+46CB: 20 BC       jr   nz,$4689
+46CD: 3A B3 2D    ld   a,($2DB3)	; reads the y coordinate of the origin
+46D0: BA          cp   d			; if it's not the same as the one taken from the stack, continues processing one more iteration
+46D1: 20 B6       jr   nz,$4689
+
+; if it gets here, the complete path from destination to origin has been found
+46D3: ED 7B B0 2D ld   sp,($2DB0)	; restores the stack
+46D7: FB          ei
+46D8: E5          push hl			; obtains the beginning of the movement stack in ix
+46D9: DD E1       pop  ix
+
+46DB: FD 46 01    ld   b,(iy+$01)	; obtains the character's orientation
+46DE: DD 4E 00    ld   c,(ix+$00)	; reads the orientation it should take
+46E1: FD CB 05 7E bit  7,(iy+$05)
+46E5: 28 0E       jr   z,$46F5		; if the character occupies 4 positions, skips this part
+46E7: 78          ld   a,b
+46E8: A9          xor  c			; compares the character's orientation with the one it should take
+46E9: E6 01       and  $01
+46EB: 28 08       jr   z,$46F5		; if the character is not going to rotate ninety degrees in x, jump
+46ED: FD 7E 05    ld   a,(iy+$05)	; otherwise, changes the rotated state on slope
+46F0: EE 20       xor  $20
+46F2: FD 77 05    ld   (iy+$05),a
+
+46F5: 78          ld   a,b			; a = character orientation
+46F6: FD 71 01    ld   (iy+$01),c	; modifies the character's orientation with that of the route it should follow
+46F9: B9          cp   c			; checks if its orientation has changed
+46FA: C4 C3 47    call nz,$47C3		; if its orientation has changed, writes some commands to change the character's orientation
+46FD: DD E5       push ix
+46FF: CD B8 27    call $27B8		; checks the height of the positions the character is going to move to and returns them in a and c
+4702: CD 29 47    call $4729		; writes a command depending on whether it goes up, down or stays
+4705: DD E1       pop  ix
+
+4707: DD 2B       dec  ix			; advances to the next position of the path
+4709: DD 2B       dec  ix
+470B: DD 2B       dec  ix
+470D: DD 7E 00    ld   a,(ix+$00)
+4710: FE FF       cp   $FF			; if the last position of the path has been reached, exit
+4712: C8          ret  z
+4713: FD 6E 02    ld   l,(iy+$02)	; obtains the character's position
+4716: FD 66 03    ld   h,(iy+$03)
+4719: CD 9B 27    call $279B		; adjusts the position passed in hl to the central 20x20 positions shown. If the position is outside, CF=1
+471C: DD 5E 01    ld   e,(ix+$01)	; obtains the position stored in this stack position
+471F: DD 56 02    ld   d,(ix+$02)
+4722: A7          and  a
+4723: ED 52       sbc  hl,de		; compares the character's position with that of the stack
+4725: 28 B4       jr   z,$46DB		; if they match, it's because it has reached the destination position and must take more values from the stack
+4727: 18 DE       jr   $4707		; otherwise, continues processing entries
+
+; writes a command depending on whether it goes up, down or stays
+; called with:
+;  iy = character position data
+;  a and c = height of the positions the character is going to move to
+4729: FD CB 05 A6 res  4,(iy+$05)		; indicates that the character is not descending in height
+472D: FD CB 05 7E bit  7,(iy+$05)
+4731: 28 46       jr   z,$4779			; if the character occupies 4 positions, jump
+
+; arrives here if the character occupies one position
+4733: FD CB 05 6E bit  5,(iy+$05)
+4737: 28 08       jr   z,$4741			; if the character is not rotated with respect to the slope, jump
+4739: D9          exx
+473A: 21 1A 44    ld   hl,$441A			; points to the command table if the character goes up in height
+473D: D9          exx
+473E: C3 B4 47    jp   $47B4
+
+; arrives here if the character occupies one position and bit 5 is 0
+4741: FD 34 04    inc  (iy+$04)		; increments the character's height
+4744: D9          exx
+4745: 21 1A 44    ld   hl,$441A		; points to the command table if the character goes up in height
+4748: D9          exx
+4749: FE 01       cp   $01
+474B: 28 0F       jr   z,$475C		; if the height difference is 1 (going up), jump
+
+474D: D9          exx
+474E: 21 20 44    ld   hl,$4420		; points to the command table if the character goes down in height
+4751: D9          exx
+4752: FD 35 04    dec  (iy+$04)
+4755: FD CB 05 E6 set  4,(iy+$05)	; otherwise, it's descending
+4759: FD 35 04    dec  (iy+$04)
+
+475C: B9          cp   c
+475D: 20 4F       jr   nz,$47AE		; if the height differences are not equal, jump
+
+475F: D9          exx
+4760: 23          inc  hl			; moves to another table entry
+4761: 23          inc  hl
+4762: 23          inc  hl
+4763: D9          exx
+4764: FD 7E 05    ld   a,(iy+$05)	; preserves only the bit for whether it goes up and down (and converts the character to one of 4 positions)
+4767: E6 10       and  $10
+4769: FD 77 05    ld   (iy+$05),a
+476C: E5          push hl
+476D: CD E4 29    call $29E4		; updates the character's x and y position according to the orientation it's advancing in
+4770: E1          pop  hl
+4771: CD AE 29    call $29AE		; returns 0 if the character's orientation is 0 or 3, otherwise returns 1
+4774: CC E4 29    call z,$29E4		; updates the character's x and y position according to the orientation it's advancing in
+4777: 18 3E       jr   $47B7
+
+; arrives here if the character occupies four positions
+;  a = height difference with position 1 closest to the character according to orientation
+;  c = height difference with position 2 closest to the character according to orientation
+4779: FE 01       cp   $01
+477B: 28 0B       jr   z,$4788		; if going up, jump
+477D: FE FF       cp   $FF
+477F: 28 13       jr   z,$4794		; if going down, jump
+4781: D9          exx
+4782: 21 26 44    ld   hl,$4426		; points to the table if the character doesn't change height
+4785: D9          exx
+4786: 18 26       jr   $47AE
+
+; arrives here if going up
+4788: FD 34 04    inc  (iy+$04)		; increments the height
+478B: 3E 80       ld   a,$80
+478D: D9          exx
+478E: 21 1D 44    ld   hl,$441D		; points to the table if the character goes up in height
+4791: D9          exx
+4792: 18 0A       jr   $479E
+
+; arrives here if going down
+4794: FD 35 04    dec  (iy+$04)		; decrements the height
+4797: 3E 90       ld   a,$90
+4799: D9          exx
+479A: 21 23 44    ld   hl,$4423		; points to the table if the character goes down in height
+479D: D9          exx
+
+479E: FD 77 05    ld   (iy+$05),a	; updates the state
+47A1: E5          push hl
+47A2: CD E4 29    call $29E4		; updates the character's x and y position according to the orientation it's advancing in
+47A5: E1          pop  hl
+47A6: CD AE 29    call $29AE		; returns 0 if the character's orientation is 0 or 3, otherwise returns 1
+47A9: C4 E4 29    call nz,$29E4		; updates the character's x and y position according to the orientation it's advancing in
+47AC: 18 09       jr   $47B7
+
+; arrives here if the heights are not equal or if the character occupies 4 positions and doesn't change height
+47AE: 91          sub  c
+47AF: 3C          inc  a
+47B0: FE 03       cp   $03
+47B2: 18 00       jr   $47B4		; unconditional jump ignoring the previous comparison
+
+47B4: CD E4 29    call $29E4		; updates the character's x and y position according to the orientation it's advancing in
+
+47B7: D9          exx
+47B8: 56          ld   d,(hl)		; reads in de the command to set
+47B9: 23          inc  hl
+47BA: 5E          ld   e,(hl)
+47BB: 23          inc  hl
+47BC: 46          ld   b,(hl)		; reads the command length
+47BD: EB          ex   de,hl
+47BE: CD E9 0C    call $0CE9		; writes b bits of the command passed in hl of the character passed in iy
+47C1: D9          exx
+47C2: C9          ret
+
+; writes some commands to change the character's orientation from the current orientation to the desired one
+;  a = current character orientation
+;  c = orientation the character will take
+47C3: 91          sub  c			; obtains the difference between the orientations
+47C4: 30 08       jr   nc,$47CE		; if the difference is positive, jump
+47C6: ED 44       neg				; difference = -difference
+47C8: EE 02       xor  $02			; changes the direction in x
+47CA: 20 02       jr   nz,$47CE
+47CC: 3E 02       ld   a,$02		; if it was 0, sets to 2
+
+47CE: 4F          ld   c,a			; c = final orientation
+47CF: 21 0C 44    ld   hl,$440C		; points to the command length table according to orientation
+47D2: CD 2D 16    call $162D		; hl = hl + a
+47D5: 46          ld   b,(hl)		; reads the command length
+47D6: 21 10 44    ld   hl,$4410		; points to the command table for turning
+47D9: 79          ld   a,c
+47DA: 87          add  a,a			; each entry occupies 2 bytes
+47DB: CD 2D 16    call $162D		; hl = hl + a
+47DE: 56          ld   d,(hl)		; de = value read from the table
+47DF: 23          inc  hl
+47E0: 5E          ld   e,(hl)
+47E1: EB          ex   de,hl
+47E2: CD E9 0C    call $0CE9		; writes b bits of the command passed in hl of the character passed in iy
+47E5: C9          ret
+
+; iy points to a character's position data
+; c = new character orientation
+; can call routine 0x4660 or 0x464f
+; routine 0x4660 handles generating all commands to go from origin to destination
+; routine 0x464f writes a command depending on whether it goes up, down or stays or the orientation and exits
+47E6: FD 56 03    ld   d,(iy+$03)
+47E9: FD 5E 02    ld   e,(iy+$02)
+47EC: D5          push de			; saves the character's position on the stack
+47ED: FD 56 01    ld   d,(iy+$01)
+47F0: FD 5E 04    ld   e,(iy+$04)
+47F3: D5          push de			; saves the character's orientation and height on the stack
+
+47F4: FD 36 09 00 ld   (iy+$09),$00	; resets the character's actions
+47F8: FD 36 0B 00 ld   (iy+$0b),$00
+
+47FC: FD 7E 05    ld   a,(iy+$05)
+47FF: F5          push af			; saves the value of iy+05 (indicates where the character moves and its size)
+4800: CD 60 46    call $4660		; instruction modified from outside with the routine to call (0x4660 or 0x464f)
+4803: F1          pop  af			; restores the previous value of iy+05
+4804: FD 77 05    ld   (iy+$05),a	; restores the value
+4807: 21 00 10    ld   hl,$1000
+480A: 06 0C       ld   b,$0C
+480C: CD E9 0C    call $0CE9		; writes a command to wait a bit before moving again
+480F: E1          pop  hl			; restores the character's orientation and height
+4810: FD 75 04    ld   (iy+$04),l
+4813: FD 74 01    ld   (iy+$01),h
+4816: E1          pop  hl			; restores the character's position
+4817: FD 75 02    ld   (iy+$02),l
+481A: FD 74 03    ld   (iy+$03),h
+
+481D: FD 36 09 00 ld   (iy+$09),$00	; resets the character's action pointer
+4821: FD 36 0B 00 ld   (iy+$0b),$00
+4825: C9          ret
+
+; -------------end of code related to path reconstruction from the search algorithm -------------------------
+
+; ------------- code related to pathfinding between screens ----------------------------------
+
+; searches for the screen indicated in 0x2db4 starting at the position indicated in 0x2db2
+4826: 2A B4 2D    ld   hl,($2DB4)	; obtains the screen being searched for
+4829: CD B5 48    call $48B5		; given the most significant position of a character in hl, indexes in the floor table and returns the entry in ix
+482C: DD CB 00 F6 set  6,(ix+$00)	; marks the searched screen as the destination within the floor
+
+; searches for the indicated screen that meets a mask specified in 0x48a4, starting the search at the position indicated in 0x2db2
+4830: ED 73 B0 2D ld   ($2DB0),sp	; saves the initial stack
+4834: 31 FE 9C    ld   sp,$9CFE		; sets the stack address to the end of the sprite buffer
+4837: ED 5B B2 2D ld   de,($2DB2)	; obtains the position of the character searching for another
+483B: D5          push de			; saves the initial position on the stack
+483C: EB          ex   de,hl
+483D: CD B5 48    call $48B5		; given the most significant position of a character in hl, indexes in the floor table and returns the entry in ix
+4840: DD CB 00 FE set  7,(ix+$00)	; marks the initial position as explored
+4844: 21 FF FF    ld   hl,$FFFF		; puts a -1
+4847: E5          push hl
+4848: 21 FE 9C    ld   hl,$9CFE		; points hl to the processed part of the stack
+
+484B: 2B          dec  hl
+484C: 56          ld   d,(hl)
+484D: 2B          dec  hl
+484E: 5E          ld   e,(hl)		; de = current element of the stack
+484F: 7B          ld   a,e
+4850: E6 80       and  $80

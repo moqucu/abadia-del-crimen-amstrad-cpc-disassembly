@@ -1,0 +1,58 @@
+; The file contains a memory map for the Z80 debugger used during game development, documenting the debugger's internal variables including cursor positions, operating modes, breakpoint states, and register storage locations.
+
+0x62c0 cursor x position
+0x62c1 cursor y position
+0x62c2 operating mode of the routine at 0x62c5
+	if it is 0, prints a character
+		special characters:
+			0x1f -> changes state and waits to receive the cursor position
+			0x0d -> carriage return
+			0x0a -> line feed
+			0x08 -> moves cursor x position backward
+			0x18 -> invert text color
+			0x12 -> clear to end of line
+
+	if it is 1, sets cursor x position and moves to state 2
+	if it is 2, sets cursor y position and moves to state 0
+0x62c3-0x62c4 here a copy of the stack is saved before jumping to process the routine associated with a key
+
+0x6522-0x6523 initial memory address that is displayed or disassembled
+
+0x6524-0x6525 pointer to mnemonic strings
+0x6526-0x6527 string 1
+0x6528-0x6529 string 2
+0x652a-0x652b pointer to mnemonic string
+
+0x652c indicates if the instruction can be of type ix+ or iy+
+0x652d number of bytes read after processing the first byte of the instruction
+
+0x652e contains the currently selected register
+
+0x652f-0x6530 condition value
+0x6531-0x6532 condition mask
+
+0x6533 breakpoint state
+	= 0 if there is no breakpoint
+	= 1 if breakpoint 1 is set
+	= 2 if breakpoint 2 is set
+
+0x6534 screen mode that was active before calling the debugger
+
+0x6535 if it is 0 indicates that the disassembly should be displayed, otherwise it shows the memory value
+
+0x6536-0x6537 address of active breakpoint
+
+0x6554-0x6555 saves PC (hl is saved at initialization)
+0x6556-0x6557 saves SP
+0x6558-0x6559 saves IY
+0x655a-0x655b saves IX
+0x655c-0x655d saves HL (saved at 0x0079)
+0x655e-0x655f saves HL'
+0x6560-0x6561 saves DE (initialized to 0x00fc when starting the debugger)
+0x6562-0x6563 saves DE'
+0x6564-0x6565 saves BC (initialized to 0x0000 at start)
+0x6566-0x6567 saves BC'
+0x6568-0x6569 saves AF (saved at 0x0075)
+0x656a-0x656b saves AF'
+
+0x6949-0x6984 buffer to store the characters that are read

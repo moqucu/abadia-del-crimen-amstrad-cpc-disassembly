@@ -1,0 +1,600 @@
+	8D -> c1a = [0x2d80]
+	02 -> c2a = 0x02
+	3D -> ca = [0x2d80] == 0x02
+	8E -> c1b = [0x3ca9]
+	04 -> c2b = 0x04
+	3C -> cb = [0x3ca9] < 0x04
+	26 -> c = ([0x2d80] == 0x02) && ([0x3ca9] < 0x04)
+5A42: 20 03       jr   nz,$5A47	; if it's the second day and malaquias hasn't left the scriptorium
+5A44: C3 5B 3E    jp   $3E5B			; indicates that the character doesn't want to search for any route
+
+5A47: D7          rst  $10
+	92 01 -> [0x3ce8] = 0x01	; goes to state 1
+5A4A: D7
+	90 00 -> [0x3ce9] = 0x00	; goes to the church
+5A4D: C9          ret
+
+5A4E: CF          rst  $08
+	8D -> c1 = [0x2d80]
+	03 -> c2 = 0x03
+	3C -> c = [0x2d80] < 3
+5A52: C2 2C 5B    jp   nz,$5B2C		; if it's the first or second day
+5A55: CF          rst  $08
+	92 -> c1 = [0x3ce8]
+	04 -> c2 = 0x04
+	3D -> c = [0x3ce8] == 0x04
+5A59: 20 21       jr   nz,$5A7C		; if he's in state 4
+5A5B: D7          rst  $10
+	99 99 01 -> [0x3c98] = [0x3c98] + 1
+5A60: CF          rst  $08
+	99 -> c1a = [0x3c98]
+	41 -> c2a = 0x41
+	3C -> ca = [0x3c98] < 0x41
+	9A -> c1b = [0x2dbd]
+	40 40 -> c2b = 0x40
+	3D -> cb = [0x2dbd] == 0x40
+	26 -> c = ([0x3c98] < 0x41) && ([0x2dbd] == 0x40)
+5A69: 20 0A       jr   nz,$5A75	; if the parchment hasn't been there long and hasn't changed screen
+5A6B: CF          rst  $08
+	A4 -> c1 = [0x2def]
+	10 -> c2 = 0x10
+	2A -> c = [0x2def] & 0x10
+5A6F: 20 03       jr   nz,$5A74		; if guillermo doesn't have the parchment
+5A71: D7          rst  $10
+	92 00 -> [0x3ce8] = 0		; changes berengario's state
+5A74: C9          ret
+
+5A75: D7          rst  $10
+	92 05 -> [0x3ce8] = 5		; changes berengario's state
+5A78: CD 7D 43    call $437D		; disables the counter so the time of day advances automatically
+5A7B: C9          ret
+
+5A7C: CF          rst  $08
+	92 -> c1 = [0x3ce8]
+	05 -> c2 = 0x05
+	3D -> c = [0x3ce8] == 0x05
+5A80: 20 1B       jr   nz,$5A9D		; if he's in state 5
+5A82: D7          rst  $10
+	90 40 FE -> [0x3ce9] = 0xfe	; goes towards the abbot's position
+5A86: CF          rst  $08
+	91 -> c1 = [0x3ce7]
+	40 FE -> c2 = 0xfe
+	3D -> c1 = [0x3ce7] == 0xfe
+5A8B: 20 0F       jr   nz,$5A9C		; if berengario has reached the abbot's position
+5A8D:	D7          rst  $10
+	99 40 C9 -> [0x3c98] = 0xc9
+5A91: D7          rst  $10
+	92 00 -> [0x3ce8] = 0		; changes berengario's state
+5A94: D7          rst  $10
+	A5 01 -> [0x3c94] = 1		; indicates that guillermo has taken the parchment
+5A97: D7
+	AE AE 01 26 -> [0x3ca5] = [0x3ca5] | 0x01
+5A9C: C9          ret
+
+5A9D: CF          rst  $08
+	91 -> c1 = [0x3ce7]
+	02 -> c2 = 0x02
+	3D -> c = [0x3ce7] == 0x02
+5AA1: 20 1D       jr   nz,$5AC0		; if he has arrived at his desk in the scriptorium
+5AA3: CD ED 43    call $43ED		; checks something related to the parchment
+5AA6: 20 18       jr   nz,$5AC0		; if guillermo has taken the parchment
+5AA8: D7          rst  $10
+	99 00 -> [0x3c98] = 0x00	; resets the counter
+5AAB: D7          rst  $10
+	92 04 -> [0x3ce8] = 0x04	; goes to state 4
+5AAE: CD 61 3E    call $3E61		; compares the distance between guillermo and berengario (if very close returns 0, otherwise != 0)
+5AB1: 20 06       jr   nz,$5AB9		; if he's close to guillermo
+5AB3: CD 26 50    call $5026		; puts the phrase in the display
+5AB6: 04          					LEAVE THE MANUSCRIPT OF VENANTIUS OR I WILL WARN THE ABBOT
+5AB7: 18 06       jr   $5ABF
+5AB9: D7          rst  $10
+	92 05 -> [0x3ce8] = 0x05	; goes to state 5
+5ABC: CD 7D 43    call $437D		; disables the counter so the time of day advances automatically
+5ABF: C9          ret
+
+5AC0: CF          rst  $08
+	AE -> c1a = [0x3ca5]
+	40 40 -> c2a = 0x40
+	2A -> ca = [0x3ca5] & 0x40
+	40 40 -> cb = 0x40
+	3D -> cc = ([0x3ca5] & 0x40) == 0x40
+	82 -> c1d = [0x303a]
+	0D -> c2d = 0x0d
+	3E -> cd = [0x303a] >= 0x0d
+	26 -> c = (([0x3ca5] & 0x40) == 0x40) && ([0x303a] >= 0x0d)
+5ACC: 20 57       jr   nz,$5B25		; if malaquias has told him that berengario can show him the scriptorium and guillermo's height >= 0x0d
+5ACE: CF          rst  $08
+	AE -> c1 = [0x3ca5]
+	10 -> c2 = 0x10
+	2A -> c = [0x3ca5] & 0x10
+5AD2: 20 25       jr   nz,$5AF9		; if he hadn't told him about the best copyists in the west
+5AD4: D7          rst  $10
+	90 40 FF -> [0x3ce9] = 0xff	; berengario goes after guillermo
+5AD8: CD 61 3E    call $3E61		; compares the distance between guillermo and berengario (if very close returns 0, otherwise != 0)
+5ADB: 20 19       jr   nz,$5AF6		; if he's close to guillermo
+5ADD: CF          rst  $08
+	89 -> c1 = [0x2da1]
+	00 -> c2 = 0x00
+	3D -> c = [0x2da1] == 0x00
+5AE1: 20 10       jr   nz,$5AF3		; if no phrase is being played
+5AE3: D7          rst  $10
+	91 40 FF -> [0x3ce7] = 0xff	; indicates that berengario has arrived where guillermo is
+5AE7: CD BE 08    call $08BE		; discards planned movements and indicates a new movement must be planned
+5AEA: D7          rst  $10
+	AE AE 10 26 -> [0x3ca5] = [0x3ca5] | 0x10	; indicates that he has already told him about the best copyists
+5AEF: CD 26 50    call $5026		; puts the phrase in the display
+5AF2: 35          					HERE WORK THE BEST COPYISTS IN THE WEST
+5AF3: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5AF6: C9          ret
+
+5AF7: 18 2C       jr   $5B25		; this is never reached???
+
+5AF9: CF          rst  $08
+	AE -> c1 = [0x3ca5]
+	08 -> c2 = 0x08
+	2A -> c = [0x3ca5] & 0x08
+5AFD: 20 26       jr   nz,$5B25		; if he hasn't told him about venantius
+5AFF: D7          rst  $10
+	90 02 -> [0x3ce9] = 0x02	; goes to his desk in the scriptorium
+5B02: CD 61 3E    call $3E61		; compares the distance between guillermo and berengario (if very close returns 0, otherwise != 0)
+5B05: 20 12       jr   nz,$5B19		; if he's close to guillermo
+5B07: CF          rst  $08
+	91 -> c1a = [0x3ce7]
+	02 -> c2a = 0x02
+	3D -> ca = [0x3ce7] == 0x02
+	89 -> cb = [0x2da1]
+	26 -> c = ([0x3ce7] == 0x02) && [0x2da1]
+5B0D: 20 09       jr   nz,$5B18		; if berengario has arrived at the scriptorium and no phrase was being played
+5B0F: D7          rst  $10
+	AE AE 08 26 -> [0x3ca5] = [0x3ca5] | 0x08	; indicates he has already shown where venantius works
+5B13: CD 26 50    call $5026		; puts the phrase in the display
+	36 							HERE WORKED VENANTIUS
+5B18: C9          ret
+
+5B19: CF          rst  $08
+	91 -> c1 = [0x3ce7]
+	02 -> c2 = 0x02
+	3D -> c = [0x3ce7] == 0x02
+5B1D: 20 06       jr   nz,$5B25		; if he has arrived at his place in the scriptorium and guillermo hasn't followed him
+5B1F: D7          rst  $10
+	AE AE 40 80 26 -> [0x3ca5] = [0x3ca5] | 0x80	; ??? is this a game bug??? I think it should be 0x08 instead of 0x80
+5B25: D7          rst  $10
+	92 00 -> [0x3ce8] = 0x00	; changes berengario's state
+5B28: D7          rst  $10
+	90 02 -> [0x3ce9] = 0x02	; doesn't move from his work place
+5B2B: C9          ret
+
+5B2C: CF          rst  $08
+	92 -> c1 = [0x3ce8]
+	14 -> c2 = 0x14
+	3D -> c = [0x3ce8] == 0x14
+5B30: 20 0C       jr   nz,$5B3E		; if he's in state 0x14
+5B32: CF          rst  $08
+	90 -> c1 = [0x3ce9]
+	91 -> c2 = [0x3ce7]
+	3D -> c = [0x3ce9] == [0x3ce7]
+5B36: 20 05       jr   nz,$5B3D		; if he has arrived at the place he wanted to go
+5B38: D7          rst  $10
+	90 B2 03 2A -> [0x3ce9] = [0x3c9d] & 0x03 ; moves randomly through the abbey
+5B3D: C9          ret
+
+5B3E: CF          rst  $08
+	8D -> c1 = [0x2d80]
+	04 -> c2 = 0x04
+	3D -> c = [0x2d80] == 0x04
+5B42: C2 C5 5B    jp   nz,$5BC5		; if it's the fourth day
+5B45: CF          rst  $08
+	90 -> c1a = [0x3ce9]
+	40 FE -> c2a = 0xfe
+	3D -> ca = [0x3ce9] == 0xfe
+	A6 -> c1b = [0x2e04]
+	10 -> c2b = 0x10
+	2A -> cb = [0x2e04] & 0x10
+	10 -> cc = 0x10
+	3D -> cd = ([0x2e04] & 0x10) == 0x10
+	26 -> ([0x3ce9] == 0xfe) && (([0x2e04] & 0x10) == 0x10)
+5B50: 20 0A       jr   nz,$5B5C	; if bernardo is going after the abbot and the abbot has the parchment
+5B52: D7          rst  $10
+	92 14 -> [0x3ce8] = 0x14	; changes berengario's state
+5B55: D7          rst  $10
+	90 01 -> [0x3ce9] = 0x01	; goes to the refectory
+5B58: D7          rst  $10
+	8C 15 -> [0x3cc7] = 0x15	; changes the abbot's state
+5B5B: C9          ret
+
+5B5C: CF          rst  $08
+	A8 -> c1a = [0x2e0b]
+	10 -> c2a = 0x10
+	2A -> ca = [0x2e0b] & 0x10
+	10 -> cb = 0x10
+	3D -> c = ([0x2e0b] & 0x10) == 0x10
+5B62: 20 0B       jr   nz,$5B6F		; if bernardo has the parchment
+5B64: D7          rst  $10
+	90 40 FE -> [0x3ce9] = 0xfe	; goes after the abbot
+5B67: CD 43 7D    call $437D		; disables the counter so the time of day advances automatically
+5B6B: D7          rst  $10
+	B0 00 -> [0x2e0d] = 0		; changes the mask of objects that bernardo can take
+5B6E: C9          ret
+
+5B6F: CF          rst  $08
+	B3 -> c1a = [0x3c90]
+	01 -> c2a = 0x01
+	3D -> ca = [0x3c90] == 0x01
+	A6 -> c1b = [0x2e04]
+	10 -> c2b = 0x10
+	2A -> cb = [0x2e04] & 0x10
+	10 -> cc = 0x10
+	3D -> cd = ([0x2e04] & 0x10) == 0x10
+	2A -> ce = ([0x3c90] == 0x01) || (([0x2e04] & 0x10) == 0x10)
+	8C -> c1f = [0x3cc7]
+	0B -> c2f = 0x0b
+	3D -> cf = [0x3cc7] == 0x0b
+	2A -> c = ([0x3c90] == 0x01) || (([0x2e04] & 0x10) == 0x10) || ([0x3cc7] == 0x0b)
+5B7D: 20 07       jr  nz,$5B86		; if the parchment is safe or the abbot is going to kick out guillermo
+5B7F: D7          rst  $10
+	90 02 -> [0x3ce9] = 0x02	; goes to his place in the scriptorium
+5B82: D7          rst  $10
+	92 14 -> [0x3ce8] = 0x14	; changes bernardo's state
+5B85: C9          ret
+
+5B86: D7          rst  $10
+	B3 00 -> [0x3c90] = 0x00	; indicates the parchment hasn't been taken from guillermo
+5B89: CD 7D 43    call $437D		; disables the counter so the time of day advances automatically
+5B8C: CF          rst  $08
+	A4 -> c1a = [0x2def]
+	10 -> c2a = 0x10
+	2A -> ca = [0x2def] & 0x10
+	10 -> cb = 0x10
+	3D -> c = ([0x2def] & 0x10) == 0x10
+5B92: 20 2D       jr   nz,$5BC1		; if guillermo has the parchment
+5B94: CF          rst  $08
+	92 -> c1 = [0x3ce8]
+	07 -> c2 = 0x07
+	3D -> c = [0x3ce8] == 0x07
+5B98: 20 18       jr   nz,$5BB2		; if he's in state 7
+5B9A: D7          rst  $10
+	90 40 FF -> [0x3ce9] = 0xff	; goes after guillermo
+5B9E: CD 61 3E    call $3E61		; compares the distance between guillermo and bernardo gui (if very close returns 0, otherwise != 0)
+5BA1: 20 0D       jr   nz,$5BB0		; if he's close to guillermo
+5BA3: CF          rst  $08
+	89 -> c1 = [0x2da1]
+	00 -> c2 = 0x00
+	3D -> c = [0x2da1] == 0x00
+5BA7: 20 07       jr   nz,$5BB0		; if not showing a phrase
+5BA9: CD 26 50    call $5026		; puts the phrase in the display
+	05          				GIVE ME THE MANUSCRIPT, BROTHER WILLIAM
+5BAD: CD CE 55    call $55CE		; decreases guillermo's life by 2 units
+5BB0: 18 0D       jr   $5BBF
+
+5BB2: CD 61 3E    call $3E61		; compares the distance between guillermo and bernardo gui (if very close returns 0, otherwise != 0)
+5BB5: 20 04       jr   nz,$5BBB		; if he's close to guillermo
+5BB7: D7          rst  $10
+	90 03 -> [0x3ce9] = 0x03	; goes to the monks' cell
+5BBA: C9          ret
+
+5BBB: D7          rst  $10
+	92 07 -> [0x3ce8] = 0x07	; changes berengario's state
+5BBE: C9          ret
+5BBF: 18 04       jr   $5BC5
+
+5BC1: D7          rst  $10
+	90 40 FC -> [0x3ce9] = 0xfc	; goes after the parchment
+5BC5: C9          ret
+
+; ------------------ end of berengario/jorge/bernardo gui logic ----------------
+
+; ------------------ severino/jorge logic ----------------
+
+5BC6: CF          rst  $08
+	AD -> c1a = [0x3ca3]
+	01 -> c2a = 0x01
+	3D -> c = [0x3ca3] == 0x01
+5BCA: 20 03       jr   nz,$5BCF
+5BCC: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5BCF: CF          rst  $08
+	8D -> c1a = [0x2d80]
+	06 -> c2a = 0x06
+	3E -> c = [0x2d80] >= 0x06
+5BD3: C2 B0 5C    jp   nz,$5CB0		; if it's day 6 or 7, the character is jorge and not severino
+5BD6: CF          rst  $08
+	95 -> c1a = [0x3d00]
+	0B -> c2a = 0x0b
+	3D -> c = [0x3d00] == 0x0b
+5BDA: 20 0F       jr   nz,$5BEB		; if he's in state 0x0b
+5BDC: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+5BE0: 20 06       jr   nz,$5BE8		; if not playing a voice
+5BE2: CD AF 40    call $40AF		; drops the book
+5BE5: D7          rst  $10
+	95 0C -> [0x3d00] = 0x0c
+5BE8: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5BEB: CF          rst  $08
+	95 -> c1a = [0x3d00]
+	0C -> c2a = 0x0c
+	3D -> c = [0x3d00] == 0x0c
+5BEF: 20 14       jr   nz,$5C05		; if he's in state 0x0c
+5BF1: CF          rst  $08
+	A4 -> c1a = [0x2def]
+	40 80 -> c2a = 0x80
+	2A -> c = ([0x2def] & 0x80) == 0
+5BF6: 20 03       jr   nz,$5BFB		; if guillermo doesn't have the book
+5BF8: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5BFB: CD 26 50    call $5026		; puts the phrase in the display
+	2E 							IT IS THE COENA CIPRIANI BY ARISTOTLE. NOW YOU WILL UNDERSTAND WHY I HAD TO PROTECT IT. EVERY WORD WRITTEN BY THE PHILOSOPHER HAS DESTROYED A PART OF CHRISTIAN KNOWLEDGE. I KNOW I HAVE ACTED FOLLOWING THE LORD'S WILL... READ IT THEN, BROTHER WILLIAM. AFTERWARDS I WILL SHOW IT TO YOU BOY
+5BFF: D7       ld   l,$D7
+	95 0D -> [0x3d00] = 0x0d
+5C02: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5C05: CF          rst  $08
+	95 -> c1a = [0x3d00]
+	0D -> c2a = 0x0d
+	3D -> c = [0x3d00] = 0x0d	; if he's in state 0x0d
+5C09: 20 31       jr   nz,$5C3C
+5C0B: CF          rst  $08
+	A4 -> c1a = [0x2def]
+	40 40 -> c2a = 0x40
+	2A -> c = ([0x2def] & 0x40) == 0
+5C10: 20 1A       jr   nz,$5C2C		; if guillermo doesn't have the gloves
+5C12: CF          rst  $08
+	9C -> c1a = [0x3c97]
+	00 -> c2a = 0x00
+	3D -> c = [0x3c97] == 0x00
+5C16: 20 11       jr   nz,$5C29		; if guillermo is still alive
+5C18: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	72 -> c2a = 0x72
+	3D -> ca = [0x2dbd] == 0x72
+	89 -> cb = [0x2da1]
+	2A -> c = ([0x2dbd] == 0x72) || ([0x2da1] == 0x00)
+5C1E: 20 06       jr   nz,$5C26		; if he has exited to the mirror room or has finished playing the phrase
+5C20: D7          rst  $10
+	BD 40 FF -> [0x3c85] = 0xff ; sets the counter to kill guillermo in the next logic execution for reading the book without gloves
+5C24: 18 03       jr   $5C29		; indicates that the logic execution has finished
+
+5C26: D7          rst  $10
+	BD 01 -> [0x3c85] = 0x01 	; starts the counter to kill guillermo for reading the book without gloves
+5C29: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5C2C: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+5C30: 20 07       jr   nz,$5C39		; if no phrase is being played
+5C32: CD 26 50    call $5026		; puts the phrase in the display
+	23							VENERABLE JORGE, YOU CANNOT SEE IT, BUT MY MASTER IS WEARING GLOVES. TO SEPARATE THE PAGES HE WOULD HAVE TO WET HIS FINGERS ON HIS TONGUE, UNTIL HE HAD RECEIVED ENOUGH POISON
+5C36: D7          rst  $10
+	95 0E -> [0x3d00] = 0x0e
+5C39: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5C3C: CF          rst  $08
+	95 -> c1a = [0x3d00]
+	0E -> c2a = 0x0e
+	3D -> c = [0x3d00] == 0x0e
+5C40: 20 13       jr   nz,$5C55		; if he's in state 0x0e
+5C42: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+5C46: 20 0A       jr   nz,$5C52		; if no phrase is being played
+5C48: D7          rst  $10
+	99 00 -> [0x3c98] = 0x00
+5C4B: D7          rst  $10
+	95 0F -> [0x3d00] = 0x0f
+5C4E: CD 26 50    call $5026		; puts the phrase in the display
+	2F 							IT WAS A GOOD IDEA, WASN'T IT?; BUT IT IS TOO LATE
+5C52: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5C55: CF          rst  $08
+	95 -> c1a = [0x3d00]
+	0F -> c2a = 0x0f
+	3D -> c = [0x3d00] == 0x0f
+5C59: 20 1E       jr   nz,$5C79
+5C5B: D7          rst  $10
+	99 99 01 2B -> [0x3c98] = [0x3c98] + 1
+5C60: CF          rst  $08
+	99 -> c1a = [0x3c98]
+	28 -> c2a = 0x28
+	3D -> c = [0x3c98] == 0x28
+5C64: 20 10       jr   nz,$5C76		; if the counter has reached the limit
+5C66: CD 6C 1A    call $1A6C		; hides the game area
+5C69: D7          rst  $10
+	93 04 -> [0x3d01] = 0x04
+5C6C: CD 48 42    call $4248		; turns off the screen light and takes the book from guillermo
+5C6F: D7          rst  $10
+	BC 00 -> [0x416e] = 0x00	; ???
+5C72: D7          rst  $10
+	95 10 -> [0x3d00] = 0x10
+5C75: C9          ret
+
+5C76: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+5C79: CF          rst  $08
+	95 -> c1a = [0x3d00]
+	10 -> c2a = 0x10
+	3D -> c = [0x3d00] == 0x10
+5C7D: 20 1C       jr   nz,$5C9B
+5C7F: CF          rst  $08
+	94 -> c1a = [0x3cff]
+	04 -> c2a = 0x04
+	2D -> ca = [0x3cff] - 0x04
+	9A -> c1b = [0x2dbd]
+	67 -> c2b = 0x67
+	3D -> cb = [0x2dbd] == 0x67
+	26 -> cc = (([0x3cff] - 0x04) == 0) && ([0x2dbd] == 0x67)
+	82 -> c1d = [0x303a]
+	1E -> c2d = 0x1e
+	3C -> cd = [0x303a] < 0x1e
+	26 -> c = (([0x3cff] - 0x04) == 0) && ([0x2dbd] == 0x67) && ([0x303a] < 0x1e)
+5C8B: 20 0D       jr   nz,$5C9A		; if jorge has reached his destination and guillermo is in the room where jorge goes with the book and approaches him
+5C8D: D7          rst  $10
+	B9 00 -> [0x3ca7] = 0x00	; indicates that the investigation has been completed
+5C90: D7          rst  $10
+	AD 01 -> [0x3ca3] = 0x01	; indicates that jorge has died
+5C93: CD 1B 50    call $501B		; writes the phrase in the display
+	24							HE IS EATING THE BOOK, MASTER
+5C97: D7          rst  $10
+	9C 01 -> [0x3c97] = 0x01	; indicates that the investigation has concluded
+5C9A: C9          ret
+
+5C9B: CF          rst  $08
+	9A -> c1a = [0x2dbd]
+	73 -> c2a = 0x73
+	3D -> c = [0x2dbd] == 0x73
+5C9F: 20 0C       jr   nz,$5CAD		; if he's in the room behind the mirror, gives him a bonus
+5CA1: D7          rst  $10
+	C0 C0 08 26 -> [0x2dbf] = [0x2dbf] | 0x08
+5CA6: CD 1B 50	  call $501B		; writes the phrase in the display
+	21 							IT IS YOU, WILLIAM... COME IN, I WAS WAITING FOR YOU. TAKE IT, HERE IS YOUR REWARD
+5CAA: D7
+	95 0B -> [0x3d00] = 0x0b	; starts the state of the final sequence
+5CAD: C3 5B 3E    jp   $3E5B		; indicates that the character doesn't want to search for any route
+
+
+; arrives here day < 6 (if it's severino)
+5CB0: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	00 -> c2a = 0x00
+	3D -> ca = [0x2d81] == 0x00
+	88 -> c1b = [0x2d81]
+	06 -> c2b = 0x06
+	3D -> cb = [0x2d81] == 0x06
+	2A -> c = ([0x2d81] == 0x00) || ([0x2d81] == 0x06)
+5CB8: 20 07       jr   nz,$5CC1		; if it's night or compline
+5CBA: D7          rst  $10
+	94 02 -> [0x3cff] = 0x02	; goes to his cell
+5CBD: D7          rst  $10
+	93 02 -> [0x3d01] = 0x02
+5CC0: C9          ret
+
+5CC1: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	01 -> c2a = 0x01
+	3D -> c = [0x2d81] == 0x01
+5CC5: 20 36       jr   nz,$5CFD		; if it's prime
+5CC7: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	01 -> c2a = 0x01
+	3E -> c = [0x2da1] >= 0x01
+	93 -> c1b = [0x3d01]
+	40 FF -> c2b = 0xff
+	3D -> c = [0x3d01] == 0xff
+	26 -> c = ([0x2da1] >= 0x01) && ([0x3d01] == 0xff)
+5CD0: 20 01       jr  nz,$5CD3		; if playing a voice and going after guillermo, exit
+5CD2: C9          ret
+
+5CD3: D7          rst  $10
+	93 00 -> [0x3d01] = 0x00	; goes to the church
+5CD6: CF          rst  $08
+	8D -> c1a = [0x2d80]
+	05 -> c2a = 0x05
+	3D -> ca = [0x2d80] == 0x05
+	B1 -> c1b = [0x3ca4]
+	00 -> c2b = 0x00
+	3D -> cb = [0x3ca4] == 0x00
+	26 -> c = ([0x2d80] == 0x05) && ([0x3ca4] == 0x00)
+5CDE: 20 1C       jr   nz,$5CFC		; if it's the fifth day and guillermo is not in the left wing of the abbey
+5CE0: CF          rst  $08
+	80 -> c1a = [0x3038]
+	60 -> c2a = 0x60
+	3C -> c = [0x3038] < 0x60
+5CE4: 20 04       jr   nz,$5CEA		; if guillermo is in the left wing of the abbey
+5CE6: D7          rst  $10
+	B1 01 -> [0x3ca4] = 0x01	; indicates that guillermo is in the left wing of the abbey
+5CE9: C9          ret
+
+5CEA: D7          rst  $10
+	93 40 FF -> [0x3d01] = 0xff	; goes after guillermo
+5CEE: CF          rst  $08
+	94 -> c1a = [0x3cff]
+	40 FF -> c2a = 0xff
+	3D -> c = [0x3cff] == 0xff
+5CF3: 20 07       jr   nz,$5CFC			; if he has reached where guillermo is
+5CF5: CD 1B 50    call $501B			; writes the phrase in the display
+	0F								LISTEN BROTHER, I HAVE FOUND A STRANGE BOOK IN MY CELL
+5CF9: D7          rst  $10
+	B1 01 -> [0x3ca4] = 0x01	; indicates he has already given the message
+5CFB: 01
+5CFC: C9          ret
+
+5CFD: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	03 -> c2a = 0x03
+	3D -> c = [0x2d81] == 0x03
+5D01: 20 04       jr   nz,$5D07			; if it's sext
+5D03: D7          rst  $10
+	93 01 -> [0x3d01] = 0x01
+5D06: C9          ret
+
+5D07: CF          rst  $08
+	88 -> c1a = [0x2d81]
+	05 -> c2a = 0x05
+	3C -> c = [0x2d81] < 0x05
+5D0B: C2 9D 5D    jp   nz,$5D9D		; if it's not yet vespers
+5D0E: CF          rst  $08
+	AE -> c1a = [0x3ca5]
+	02 -> c1b = 0x02
+	2A -> ca = [0x3ca5] & 0x02
+	94 -> c1b = [0x3cff]
+	02 -> c2b = 0x02
+	3E -> cb = [0x3cff] >= 0x02
+	26 -> cc = (([0x3ca5] & 0x02) == 0) && ([0x3cff] >= 0x02)
+	8D -> c1d = [0x2d80]
+	02 -> c2d = 0x02
+	3E -> cd = [0x2d80] >= 0x02
+	26 -> ce = ((([0x3ca5] & 0x02) == 0) && ([0x3cff] >= 0x02)) && ([0x2d80] >= 0x02)
+	8B -> c1f = [0x3cc8]
+	40 FF -> c2f = 0xff
+	3C -> cf = [0x3cc8] < 0xff
+	26 -> c = (((([0x3ca5] & 0x02) == 0) && ([0x3cff] >= 0x02)) && ([0x2d80] >= 0x02)) && ([0x3cc8] < 0xff)
+5D1F: 20 37       jp   nz,$5D58		; if not going to his cell, if walking around, if the day is >= 2 and if the abbot is not going after guillermo
+5D21: CF          rst  $08
+	AE -> c1a = [0x3ca5]
+	04 -> c2a = 0x04
+	2A -> ca = [0x3ca5] & 0x04
+	89 -> cb = [0x2da1]
+	26 -> c = (([0x3ca5] & 0x04) == 0) && ([0x2da1] == 0)
+5D27: 20 11       jr   nz,$5D3A		; if severino hasn't introduced himself and no voice is being played
+5D29: CD 61 3E    call $3E61		; compares the distance between guillermo and severino (if very close returns 0, otherwise != 0)
+5D2C: 20 0C       jr   nz,$5D3A		; if severino is close to guillermo
+5D2E: D7          rst  $10
+	AE 04 -> [0x3ca5] = 0x04
+5D31: D7          rst  $10
+	93 40 FF -> [0x3d01] = 0xff	; goes after guillermo
+5D35: CD 26 50    call $5026		; puts the phrase in the display
+	37							VENERABLE BROTHER, I AM SEVERINUS, THE PERSON IN CHARGE OF THE HOSPITAL. I WANT TO WARN YOU THAT IN THIS ABBEY VERY STRANGE THINGS HAPPEN. SOMEONE DOES NOT WANT THE MONKS TO DECIDE FOR THEMSELVES WHAT THEY SHOULD KNOW
+5D39: C9          ret
+
+5D3A: CF          rst  $08
+	AE -> c1a = [0x3ca5]
+	04 -> c2a = 0x04
+	2A -> ca = [0x3ca5] & 0x04
+	04 -> cb = 0x04
+	3D -> c = ([0x3ca5] & 0x04) == 0x04
+5D40: 20 16       jr   nz,$5D58		; if severino has introduced himself, continue
+5D42: D7          rst  $10
+	93 40 FF -> [0x3d01] = 0xff	; follows guillermo
+5D46: CF          rst  $08
+	89 -> c1a = [0x2da1]
+	00 -> c2a = 0x00
+	3D -> c = [0x2da1] == 0x00
+5D4A: 20 0B       jr   nz,$5D57		; if he has finished speaking
+5D4C: D7          rst  $10
+	93 02 -> [0x3d01] = 0x02	; goes to his cell
+5D4F: D7          rst  $10
+	94 03 -> [0x3cff] = 0x03
+5D52: D7          rst  $10
+	AE AE 02 26 -> [0x3ca5] = [0x3ca5] | 0x02	; indicates that he's going to his cell
+5D57: C9          ret
+
+5D58: CF          rst  $08
+	94 -> c1a = [0x3cff]
+	40 FF -> c2a = 0xff
+	3D -> c = [0x3cff] == 0xff
+5D5D: 20 0E       jr   nz,$5D6D		; if he has reached guillermo's position
+5D5F: CF          rst  $08

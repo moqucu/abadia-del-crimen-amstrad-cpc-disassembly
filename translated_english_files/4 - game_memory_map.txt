@@ -1,0 +1,830 @@
+This file is a detailed memory map for the game "La abadía del crimen." It serves as a crucial reference document, breaking down how the game
+  utilizes the Amstrad CPC's memory. Here’s a summary of its key sections and overall function:
+
+  1. Memory Banks:
+  This section outlines which game data files (abadia1.bin, abadia2.bin, etc.) are loaded into which memory banks. It also notes when memory is
+  overwritten, such as when graphics for the abbey and game objects are loaded into bank 1.
+
+  2. Memory Map:
+  This is the core of the document, providing a detailed breakdown of memory addresses and their purposes:
+   - Graphics and Buffers: It describes various buffers for tiles, sprites, and the construction of on-screen blocks. This includes tile and
+     sprite buffers, color combination tables (ands and ors), and a flipx table for horizontally flipping graphics.
+   - Game State and Variables: Numerous addresses are dedicated to tracking the game's state, including:
+       - Character positions (William, Adso, and other monks).
+       - Game progress, such as the current day, time of day, and collected items.
+       - Event flags, like whether the mirror has been opened or if William has failed the investigation.
+   - Sound and Music: A significant portion is dedicated to the sound system, with details on the PSG (Programmable Sound Generator) channels,
+     music tempo, note data, and envelope generation. It even includes the raw data for the "melody of the parchment."
+   - Character and Object Data: There are detailed structures for characters and objects, including their positions, orientations, animations,
+     and the items they possess.
+   - Pathfinding and AI: Variables and buffers related to character movement, pathfinding, and AI behavior are documented, such as command
+     buffer for the movements of the monks and adso and auxiliary variables for pathfinding and others.
+   - Game Mechanics: It includes information on game mechanics like door permissions for each character, object interactions, and conditions
+     for character death.
+
+  Function:
+
+  This file acts as a comprehensive "cheat sheet" or technical bible for the game's memory usage. It is invaluable for understanding the inner
+  workings of "La abadía del crimen" and would have been essential for the original developers for debugging and for anyone now trying to
+  reverse-engineer, modify, or translate the game. It provides a low-level view of how the game manages its data, from graphics and sound to
+  game logic and player progress.
+
+==================
+memory banks:
+==================
+
+0 -> abadia1 (from 0x0100, with data copied from many parts in 0x0103-0x01a9)
+1 -> abadia2 (overwritten from 0x6d00, where the graphics of the abbey and the game objects were copied)
+2 -> abadia3
+	0x8000-0x8cff overwritten graphics (from 0x6d00 to 0x8cff)
+	0x8d80-0x94ff tile buffer
+	0x9500-0x9cff general buffer for sprites and search routines
+	0x9d00-0xa0ff table of ands and ors
+	0xa100-0xa1ff flipx table
+	0xa200-0xa2ff command buffer for the movements of the monks and adso
+	0xa300-0xab58 graphics of william, adso and the doors
+	0xab59-0xae2d graphics of the monks (what was in abadia3.bin)
+	0xae2e-0xb102 graphics of the monks with flipx
+	0xb103-0xb3ff faces and clothes of the monks (what was in abadia3.bin)
+	0xb400-0xbeff tables of characters, words and strings (what was in abadia3.bin)
+	0xbf00-0xbfff (what was in abadia3.bin)
+3 -> abadia3
+4 -> abadia5
+5 -> abadia6
+6 -> abadia7
+7 -> abadia8
+
+Memory Map:
+===============
+
+0x8d80-0x94ff tile buffer (16x20 tiles, each tile is 16x8) with information on what to draw on the screen
+	byte 0: depth in x (grid coordinate system) associated with the tile (lower priority)
+	byte 1: depth in y (grid coordinate system) associated with the tile (lower priority)
+	byte 2: graphic number to use for the background (lower priority)
+	byte 3: depth in x (grid coordinate system) associated with the tile (higher priority)
+	byte 4: depth in y (grid coordinate system) associated with the tile (higher priority)
+	byte 5: graphic number to use for the foreground (higher priority)
+
+0x9500-0x9cff sprite buffer
+
+0x9d00-0x9dff ors table (color combination 1)
+0x9e00-0x9eff ands table (color combination 1)
+0x9f00-0x9fff ors table (color combination 2)
+0xa000-0xa0ff ands table (color combination 2)
+
+0x103-0x107		??? data from 0x3ca6-0x3caa
+0x108-0x10a		??? data from 0x3cc6-0x3cc8
+0x10b-0x10d		??? data from 0x3ce7-0x3ce9
+0x10e-0x110		??? data from 0x3cff-0x3d01
+0x111-0x113		??? data from 0x3d11-0x3d13
+
+0x114-0x121		??? data from 0x2d7f-0x2d8c
+0x122-0x131		??? data from 0x2dd9-0x2de8
+0x132-0x154		??? data from 0x2dec-0x2e0e
+155-0x174		??? data from 0x2fe4-0x3003
+0x175-0x197		position of the objects
+
+0x198-0x19a		position of william
+0x19b-0x19d		position of adso
+0x19e-0x1a0		position of malachi
+0x1a1-0x1a3		position of the abbot
+0x1a4-0x1a6		position of berengario
+0x1a7-0x1a9		position of severino
+
+0x0593-0x05a2 buffer of alternative positions to reach
+0x05a3-0x05a4 pointer to a position in the alternative positions buffer
+
+0x0f96 mask that indicates in which channels the tones and the noise generator are active
+0x0f97 copy of the mask that indicates in which channels the tones and the noise generator are active
+
+0x0f98 counter that is decremented and when it reaches 0 it updates the notes
+
+0x0f99 envelope period (low byte) related to what was read in 0x0a-0x0b + 0x0c
+0x0f9a envelope period (high byte) related to what was read in 0x0a-0x0b + 0x0c
+0x0f9b envelope type related to what was read in 0x0a-0x0b + 0x0c (only saves 4 lsb)
+
+0x0f9c period of the noise generator (only the last 5 bits are used)
+
+0x0f9d-0x0fe4 table with the generation data of each sound channel (PSG registers + channel input). structure of an entry:
+	0x00-0x01: address of the current musical note
+		first byte:
+			bits 0-3: note (if it is 0x0f it is a special case)
+			bits 4-6: octave
+			bit 7: indicates if the noise generator is activated
+		second byte: duration of the note
+	0x02: duration of the note
+	0x03-0x04: tone of the note
+	0x05-0x06: address with the data of the base tone of the notes
+		if it finds 0x7f: counters to maximum and does not change the tone of the notes (1 byte entry)
+		if it finds 0x80: restarts the index in the table and continues processing (1 byte entry)
+		if the most significant bit is active: updates the envelope type, its period and the new counter (4 byte entry)
+		otherwise: updates the counters and the base tone (3 byte entry)
+	0x07: volume of the current note
+	0x08: second counter that is decremented only when 0x11 is 0, and when it reaches 0, changes in the base frequency of the generated notes can occur
+	0x09: index in table 0x05-0x06
+	0x0a-0x0b: address with the data that produces changes in the volume and the envelope generator
+		if it finds 0x7f: counters to maximum and does not change the volume of the notes (1 byte entry)
+		if it finds 0x80: restarts the index in the table and continues processing (1 byte entry)
+		otherwise: updates the counters and the base volume (3 byte entry)
+	0x0c: index in table 0x0a-0x0b
+	0x0d: second counter that is decremented only when 0x12 is 0, and when it reaches 0, changes in the volume and the envelope generator can occur
+	0x0e: main control register
+				bit 0 = if it is 1 it indicates that the music channel is active and must be processed
+				bit 1 = if it is 0 the noise generator is not activated
+				bit 2 = if it is 1 it does not enter the section for updating envelopes and modifying the tone of the notes
+				bit 3 = if it is 1, the period of the noise generator must be updated
+				bit 4 = if it is 0, the volume of 0x07 is used, otherwise it is left in the hands of the envelope generator
+				bit 5 = when it is 1, the volume or the envelopes must be set
+				bit 6 = if it is 1 it indicates if the frequency of the note in the PSG is updated
+				bit 7 = if it is 1 it indicates that 0x0f was read and not a note?
+	0x0f: value to set the counter 0x11 to when it reaches 0
+	0x10: value to set the counter 0x12 to when it reaches 0
+	0x11: counter that is decremented and when it reaches 0, changes in the base frequency of the generated notes can occur
+	0x12: counter that is decremented and when it reaches 0, changes in the volume and the envelope generator can occur
+	0x13: value for the change of the tone of the notes
+	0x14: volume increment
+	0x15: register
+	0x16: not used???
+	0x17: not used???
+
+0x1086 value related to the music tempo
+
+0x156a-0x156b address of the current screen data
+0x156c indicates if the screen is illuminated or not
+0x156d-0x162c table of materials with which the screens are formed. Each entry contains a pointer to the material information
+
+0x1fce if it is 1, it indicates that in the operations that work with x coordinates in the tiles, they will be changed from incx to decx
+0x1fcf-0x1fdf buffer for the construction of the current block
+	0x1fcf-0x1fda here it copies the tiles that form the block
+	0x1fdb-0x1fdc saves the length of the block in x and y (0x1fdb = Y, 0x1fdc = X)
+	0x1fdd initiated to the height of the block at 0xff if the entry was 3 bytes (if it is initiated, it is because the block can cover the character)
+	0x1fde local depth in x of the block in the grid (local grid coordinate system) (if the block does not cover anything, it is set to 0)
+	0x1fdf local depth in y of the block in the grid (local grid coordinate system) (if the block does not cover anything, it is set to 0)
+
+0x2481 orientation of the current screen
+
+0x279d minimum visible y position on screen
+0x27a9 minimum visible x position on screen
+0x27ba minimum visible height on screen
+
+0x288f ??? initiated to 0 at the beginning
+		if william dies in the mirror, it is set to 0x14
+		if william has the book but not the gloves and dies, it saves here the y position of the william sprite/2
+
+0x2d4b interrupt counter that serves to control the game speed
+
+0x2d72 counter of the number of repetitions of a key state in the keypress buffer (used when pressing shift+f9)
+
+0x2d75 in the 4 upper bits the most significant part of the x position of the character shown on the screen is stored
+0x2d76 in the 4 upper bits the most significant part of the y position of the character shown on the screen is stored
+0x2d77 base height of the floor where the character shown on the screen is
+
+0x2d78 indicates if the graphics of the doors were flipped
+
+0x2d7f energy (obsequium)
+
+0x2d80 day number (from 1 to 7)
+0x2d81 time of day
+	0 = night
+	1 = prime
+	2 = terce
+	3 = sext
+	4 = none
+	5 = vespers
+	6 = compline
+0x2d82-0x2d83: pointer to the next hour of the day
+0x2d84-0x2d85 address of the table for the calculation of the displacement according to the animation of a game entity for the orientation of the current screen
+0x2d86-0x2d87 amount of time to wait for the time of day to advance (as long as it is not zero)
+0x2d88-0x2d89 pointer to the data of the current character that the camera follows
+0x2d8a-0x2d8b pointer to the height buffer of the current screen (576 (24*24) byte buffer)
+0x2d8c if it is 1 it indicates that the mirror has not been opened. If it is 0, it indicates that the mirror has been opened
+
+0x2d8d-0x2dd7	space used as auxiliary variables in some routines
+	0x2d8d-0x2d91 auxiliary buffer for the mirror effect
+	0x2d92-0x2d96 auxiliary buffer for the mirror effect
+	0x2d97-0x2d98 variable used as the address in which to put characters on the screen (msb = y in pixels, lsb = x in bytes)
+	0x2d99 saves a copy of the objects that the character that is currently being processed has
+	0x2d9a counter between 0 and 44 to control the speed of the voices
+	0x2d9b blank characters that are left to exit for the phrase to have completely exited the screen
+	0x2d9c-0x2d9d address of the word that is being put on the scoreboard
+	0x2d9e-0x2d9f address of the data of the current phrase (from 0xbb00 to 0xbeff)
+
+0x2da0 set to 1 when a word is finished
+0x2da1 copy of 0x2da2. If it is 1, it indicates that a voice is being played
+0x2da2 if it is 1, it indicates that a voice is being played
+
+0x2da9 indicates if a path has been found in this iteration
+
+0x2daa counter incremented when adso cannot move where he wanted
+
+0x2daf indicates if the current door requires the graphics to be flipped or not
+
+; auxiliary variables for pathfinding and others
+0x2db0-0x2db1 saves the stack after setting to 1 the bit 7 of the border of the height buffer
+0x2db2-0x2db3 position of william relative to the current camera and adjusted to the 24x24 central positions
+0x2db4-0x2db5 position of adso relative to the current camera and adjusted to the 24x24 central positions
+
+0x2db6 result of the search
+		set to 0xff in the search routine if what was searched for is found
+		set to 0xfe when entering the search routine
+		set to 0x00 if a path starts to be searched or if all combinations have been tried and no path has been found
+		set to 0xfd if it is in the destination site
+
+0x2db8 if there is something != 0, the screen is redrawn
+
+0x2dba 	base height of the floor where the character is
+
+0x2dbc contains the roman numeral of the stairs where you have to press QR in front of the mirror
+
+0x2dbd number of the screen that the camera shows
+
+0x2dbe-0x2dbf each bit set to one, indicates a game bonus that we have achieved (only 14 of the 16 bits are used)
+	0x2dbe
+		bit 7: if he has the glasses while in the library
+		bit 6: to 1 if he has taken the gloves
+		bit 5: that adso has the lamp in the library
+		bit 4: that they have gone up to the library
+		bit 3: to 1 if he has taken key 1
+		bit 2: to 1 if he has taken key 2
+		bit 1: to 1 if he has taken key 3
+		bit 0: reach the left wing of the abbey at night
+
+	0x2dbf
+		bit 7: not used
+		bit 6: not used
+		bit 5: enter the abbot's room with the parchment
+		bit 4: have the parchment on the third day at night
+		bit 3: enter the mirror room when jorge is waiting for us
+		bit 2: to 1 if the mirror has been opened
+		bit 1: enter the room behind the mirror
+		bit 0: if william has the parchment and the glasses
+
+0x2dc1 auxiliary variable that indicates if a character can move where he wanted
+0x2dc2-0x2dc3 stack value with which the game was started
+0x2dc5-0x2dd4 auxiliary 4x4 buffer to move the character
+0x2dd5-0x2dd6 variable used for drawing the sprites
+0x2dd7-0x2dd8 variable used for drawing the sprites
+
+0x2dd9-0x2dea table with the permissions of the doors for each character
+	Each entry is 3 bytes and has the structure
+		byte 0: doors that the character can open
+		byte 1-2: address of the character's position data
+
+0x2dd9-0x2ddb permissions of william's doors
+0x2ddc-0x2dde permissions of adso's doors
+0x2ddf-0x2de1 permissions of malachi's doors
+0x2de2-0x2de4 permissions of the abbot's doors
+0x2de5-0x2de7 permissions of berengario's doors
+0x2de8-0x2dea permissions of severino's doors
+
+0x2def indicates the objects that william has
+			bit 7: book
+			bit 6: gloves
+			bit 5: glasses
+			bit 4: parchment
+			bit 3: key 1 (key to the abbot's room)
+			bit 2: key 2 (key to severino's room)
+			bit 1: key 3 (key to the passage behind the kitchen)
+			bit 0: ???
+
+0x2df6 indicates the objects that adso has
+
+0x2dec-0x2e15 table that indicates the objects that the characters have and copied to 0x132-0x154
+	Each entry in the table has 7 bytes
+	0x00:
+		bit 0: indicates if the character can remove objects (if it is 0) or not
+		bit 7: indicates if the character has the lamp
+	0x01-02: address of the character's position
+	0x03: objects that the character has
+	0x04: mask with the objects that we can take (related to 0x00)
+	0x05: mask with the objects that we can take (related to 0x03)
+	0x06: counter to not take/leave objects several times
+
+0x2dec-0x2df2 tables with the data of william's objects
+0x2df3-0x2df9 tables with the data of adso's objects
+0x2dfa-0x2e00 tables with the data of the objects related to malachi
+0x2e01-0x2e07 tables with the data of the objects related to the abbot
+0x2e08-0x2e0e tables with the data of the objects related to berengario
+0x2e0f-0x2e15 tables with the data of the objects related to severino
+
+0x2e17-0x2fe3 sprites. Each entry is 20 bytes
+	0x00: indicates if the entry is active
+		bit 7: if it is 1, it indicates that the sprite must be drawn
+		bit 6: if it is 1, it indicates that the sprite had a place in the sprite buffer and that it has been processed
+		bits 5-0: depth (calculated as the y position in screen coordinates of the sprite)
+		if it is 0xff, it indicates end of sprites
+		if it is 0xfe, the sprite is ignored (sprite not visible)
+
+	0x01: x position of the sprite (in bytes)
+	0x02: y position of the sprite (in pixels)
+
+	0x03: previous x position of the sprite (in bytes)
+	0x04: previous y position of the sprite (in pixels)
+
+	0x05: width of the sprite (in bytes)
+		bit 7: if it is 1 it indicates that the sprite is going to disappear and become inactive, and what you want to do is restore the background of the area that the sprite occupies
+	0x06: height of the sprite (in pixels)
+	0x07-0x08: address of the graphics
+
+	0x09: previous width of the sprite (in bytes)
+	0x0a: previous height of the sprite (in pixels)
+
+	0x0b: if bit 7 is 0, here the suit to use for the monk is saved
+		bits 0-3: animation of the monk's suit
+
+	0x0c: x position of the tile where the sprite starts (in bytes)
+	0x0d: y position of the tile where the sprite starts (in pixels)
+	0x0e: final width of the sprite (in bytes)
+	0x0f: final height of the sprite (in pixels)
+	0x10-0x11: address of the sprite buffer assigned to this sprite
+
+	0x12: x position in the grid depending on the screen camera (from 0 to 39)
+	0x13: y position in the grid depending on the screen camera (from 0 to 39)
+
+0x2f1b-0x2fe3 sprites of the objects
+
+0x2fe4	data of the game doors
+	5-byte entries
+		0x00 orientation of the door
+			bits 7-2: not used
+			bits 1-0: orientation of the door
+		0x01 number and state of the door
+			bit 7: if it is 1 it indicates that the door remains fixed
+			bit 6: if it is 1 it indicates that the door is open
+			bit 5: indicates if the door opens inwards or outwards
+			bits 4-0: identifier of the door (each door has only one of these bits set to 1)
+		0x02 global x coordinates of the door
+		0x03 global y coordinates of the door
+		0x04 global height of the door
+
+0x2fe4-0x2fe8 data of the door of the abbot's room
+0x2fe9-0x2fed data of the door of the monks' room
+0x2fee-0x2ff2 data of the door of severino's room
+0x2ff3-0x2ff7 data of the door of the exit from the rooms to the church
+0x2ff8-0x2ffc data of the door of the passage behind the kitchen
+0x2ffd-0x3001 data of door 1 that closes the passage to the wing
+0x3002-0x3006 data of door 2 that closes the passage to the wing
+
+data of the objects
+structure of the entry:
+	0x00
+		bit 7: if it is 1, it indicates that the object is taken
+		bit 6: if it is 1 it is not checked if the object can be taken (not used???)
+		bit 0: indicates if it is being taken/left
+	0x01 orientation of the object (from 0 to 3)
+	0x02 x position of the object (in tiles)
+	0x03 y position of the object (in tiles)
+	0x04 height of the object
+
+; position of the objects
+0x3008-0x300c book
+0x300d-0x3011 gloves
+0x3012-0x3016 glasses
+0x3017-0x301b parchment
+0x301c-0x3020 key 1
+0x3021-0x3025 key 2
+0x3026-0x302a key 3
+0x302b-0x302f ???
+0x3030-0x3034 lamp
+
+0x3036-0x308f	character features
+	structure of the entry
+		0x00
+			bits 0-1: circular counter from 0 to 3 that is incremented when advancing to indicate the animation of the character
+			if the orientation is changed it is set to 0
+		0x01 orientation of the character (0 to 3) (0 = facing +x, 1 = facing -y, 2 = facing -x, 3 = facing +y)
+		0x02 x position (in tiles)
+		0x03 y position (in tiles)
+		0x04 height in the stage (in steps)
+		0x05 indicates where the character moves and its size
+			bits 0 and 1: not used
+			bit 4: it is set to 1 if the character is going down in height (only if it is of one pos)
+			bit 5: if it is 1, it indicates that the character has turned and is not advancing in the direction of the stairs (to go up and down) (only if it is of one position)
+					if the character is of 4 positions, it is set to 0
+			bit 6: not used
+			bit 7: if it is 1, it indicates that the character only occupies one position in the height buffer ((x,y))
+					if it is 0, the character occupies 4 positions ((x,y)(x-1,y)(x,y-1)(x-1,y-1))
+					normally the character occupies four positions, but on the stairs it occupies only one
+		0x06 if it is 1, the graphic data is rotated in x
+		0x07 displacement in x to draw the sprite (in bytes)
+		0x08 displacement in y to draw the sprite (in pixels)
+		0x09 indicates if there are pending commands and has the counter of the number of bits of the current command byte
+			bits 0-2: counter from 0 to 7 (counter of the number of bits of the current command)
+			bit 7: if it is 0, it indicates that the character has a planned movement. If it is 1, it indicates that he has to think of a new movement
+		0x0a command of actions to be executed
+		0x0b index of the commands in the address of 0x0c-0x0d
+		0x0c-0x0d data address of the commands being processed
+		0x0e value to put in the positions that the character occupies in the height buffer
+
+	0x3036-0x3044	features of william
+	0x3045-0x3053	features of adso
+	0x3054-0x3062	features of malachi
+	0x3063-0x3071	features of the abbot
+	0x3072-0x3080	features of berengario/bernardo gui/hooded/jorge
+	0x3081-0x308f	features of severino/jorge
+
+0x33d1-0x33d2 pointer to the buffer where the demo keystrokes are saved
+0x33d3-0x33dc here the last keystroke of the keyboard for each line is saved
+0x33dd-0x33e6 here the changes of keystroke of the keyboard for each line are saved
+0x33e7-0x33f0 here the keys that are read in the demo are saved
+
+0x34d9-0x34da saves the address of the height data of the mirror from abadia7.bin
+0x34e0-0x34e1 displacement to the block that forms the mirror in the mirror screen of abadia8.bin
+
+0x3c85 counter used to kill william if he reads the book without the gloves
+0x3c87-0x3c88 lamp usage time
+0x3c8b indicates that the lamp is being used
+0xuc8c if the night is ending, it is set to 1. Otherwise, it is set to 0
+0x3c8d indicates changes in the state of the lamp. if it is 1 it says THE LAMP IS RUNNING OUT. if it is 2 it says THE LAMP HAS RUN OUT.	set to 0 when the state change is processed
+0x3c8e time counter that they can go dark in the library
+0x3c8f character that the camera follows
+		0x00 william
+		0x01 adso
+		0x02 malachi
+		0x03 abbot
+		0x04 berengario
+		0x05 severino
+0x3c90 if william has the parchment, it is set to 0
+0x3c91 if it is 0, it indicates that the lamp has disappeared
+0x3c92 character that the camera follows if you are not pressing the keys for a while
+0x3c93 counter that is incremented if we do not press the left, right or up cursors (from 0 to 0x31)
+0x3c94 set to 1 after berengario warns the abbot that william has taken the parchment and set to 0 when the abbot has taken the parchment from william
+0x3c95 indicates the time of day of the last actions executed
+0x3c96 the result of the check of the monks that should be in mass/the refectory at a certain time of day and a certain day is saved
+0x3c97 if it is 1, it indicates that william has failed in the investigation
+0x3c98 variable used as a counter for some task by multiple characters
+0x3c99 counter of william's response time to adso's question to sleep
+0x3c9a 	if it is != 0, it indicates that the time of day has to be advanced
+0x3c9b indicates if william is in his place in the refectory or in mass
+0x3c9c if it is 1 it indicates that the character does not want to search for any route
+0x3c9d copies what it reads from 0xa2c0 (adso's movement data). It is used to select a random path for bernardo gui and the abbot
+0x3c9e counter used to see how long william is in the scriptorium without obeying
+0x3ca1	indicates that jorge or bernardo gui are active for berengario's thinking routine
+0x3ca2 indicates if malachi is dead or dying
+		it is 0x01 when he is dying
+		it is set to 0x02 when malachi dies
+0x3ca3 indicates that jorge is active for severino's thinking routine
+0x3ca4 set to 0x01 if william is in the left wing of the abbey or if severino tells him about the book
+		set to 0x04 if severino introduces himself to william
+0x3ca5 bits 1 and 2 are used for severino to introduce himself
+		bit 0 is used by berengario when he warns the abbot
+		bit 3 is used to indicate that berengario has said where venacio works
+		bit 4 is used to indicate that berengario has said about the best copyists
+		bit 6 is used to indicate that malachi has said that berengario can show him the scriptorium
+		bit 7 is used to indicate that malachi has told william that he cannot go up to the library and
+			also to indicate that berengario has arrived at his workplace
+0x3ca6 mask for the doors where each bit indicates which door is checked if it opens (except for the passage one, which is always checked)
+0x3ca7 if it is 0, it indicates that the investigation has been completed
+
+0x3f0e saves the phrase to be shown depending on the state
+0x4384 set to 1 when malachi is going up when he dies
+0x4385 not used (maybe it was used for something before???)
+
+0x440a-0x440b address of the connection table of the floor where the character is
+
+0x4418 orientation result of the search process
+0x4419 recursion level of the search routine
+
+0x4fa6 ??? was going to put an address to jump to, but in the end it doesn't put it
+
+; -------------- start of the data of the melody of the parchment -------------------------
+8000: F9 8046 -> changes pointer to the address
+
+8003: 01 01 04 02 FF-04 01 01 04 80
+
+; channel 1 tone change data
+800D: 	01 00 01
+
+8010: 	7F
+
+; envelope 1 and channel 1 volume data
+8011:	01 0F 01
+		01 00 28
+		0A FF 14
+		7F
+
+; channel 2 envelope data and channel 1 envelope 3 data, plus volume
+801B: 	01 0F 01
+		02 00 28
+		0A FF 1E
+		7F
+
+; envelope 2 and channel 1 volume data
+8025: 	01 0F 01
+		01 00 1E
+		0A FF 0F
+		7F
+
+802F: 05
+8030: 01 02 05 02 01 05 FF 0F-01 00 3C 0A FF 14 7F 01 ..........<.....
+8040: 0C 14 02 FF 14 7F
+
+; pointer with the data of the melody of the parchment
+8046: 	FA 8011	-> sets the address of the envelopes and the volume
+		FB 800D -> sets the address of the tone changes
+		FE 81D8 -> activates channel 2
+
+; channel 1 music data
+804F: 	5A10 5910 5710 5910	5210 5210 5710
+		A5#  A5   G5   A5   D5   D5   G5
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		4708 4908 4A08 5008
+		G4   A4   A#4  C5
+
+		FA 801B
+
+		5230 	D5
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5310 	D#5
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		5508 5308 5208 5008
+		F5   D#5  D5   C5
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5210 	D5
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		5308 5208 5008 4B08
+		D#5  D5   C5   B4
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5010	C5
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		5208 5008 4A08 5008 4908 4A08
+		D5   C5   A#4  C5   A4   A#4
+
+		FA 801B -> sets the address of the envelopes and volume
+
+		4920 	A4
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5A10 	A#5
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		5904
+		5A04
+		5908
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5710
+		5910
+		5210
+		5210
+		5710
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		4708
+		4908
+		4A08
+		5008
+
+		FA 801B -> sets the address of the envelopes and volume
+
+		5230
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		5504
+		5304
+		5508
+		5708
+		5508
+		5308
+		5208
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5310
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		5508
+		5308
+		5208
+		5008
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5210
+		5710
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		5004
+		5204
+		5008
+
+		FA 801B -> sets the address of the envelopes and volume
+		FD 82F4 -> activates channel 3
+
+		4230
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5210
+
+		FA 8025 -> sets the address of the envelopes and volume
+
+		4A08
+		5008
+		5208
+		5408
+
+		FA 8011 -> sets the address of the envelopes and volume
+
+		5510
+		5710
+		5910
+		5A 10
+
+		FA 25 80
+
+		57 08
+		59 08
+		5A 08
+		57 08
+
+		FA 11 80
+
+		59 10
+
+		FA 25 80-
+
+		57 08
+		59 08
+
+		FA 11 80
+
+		55 10
+
+		FA 25 80
+
+		45 08
+		47 08
+		49 08
+		4A 08
+		50 08
+		52 08
+
+		FA 11 80
+
+		53 10
+
+		FA 25 80
+
+		52 04
+		53 04
+		52 08
+
+		FA 11 80
+
+		50 10
+		55 10
+		4A 10
+		49 10
+
+		FA 1B 80
+
+		4A 30
+
+		FA 1180
+
+		47 10
+
+		FA 25 80
+
+		52 08
+		50 08
+
+		FA 11 80
+
+		52 10
+		47 10
+
+		FA 25 80
+
+		53 08
+		52 08
+
+		FA 11 80
+
+		53 10
+
+		FA 25 80
+
+		47 08
+		52 08
+		46 08
+		50 08
+		47 08
+		4A 08
+
+		FA 1B 80
+
+		4930
+
+		FA 25 80
+
+		42 08
+		44 08
+		46 08
+		47 08
+		49 08
+		4A 08
+
+		FA 11 80
+
+		50 10
+		4A 10
+		49 10
+
+		FA 25 80
+
+		4A 02
+		49 02
+		4A 04
+		50 04
+		52 04
+
+		FA 11 80
+
+		47 10
+		46 10
+
+		FA 1B 80
+
+		FD EB 82 -> records new notes for channel 3
+
+		4A 30
+
+		F9 46 80 -> returns to the beginning of the music table
+
+; data to start channel 2
+81D8: 	FA 801B -> sets the address of the envelopes ??? 0x0a-0x0b
+		FB 800D -> sets the address of the noise data??? 0x05-0x06
+; data used to start channel 2
+81DE: 	3730
+81E0: 35 30 36 30 FA 11 80 32-10 FA 25 80 42 08 40 08 5060...2..%.B.@.
+81F0: 3A 08 39 08 FA 1B 80 FD-D9 82 37 20 39 10 3A 20 :.9.......7 9.:
+
+8200: FA 11 80 37 10 39 10 36-10 37 10 32 10 FA 25 80 ...7.9.6.7.2..%.
+8210: 42 08 40 08 3A 08 39 08-FA 1B 80 37 30 35 30 33 B.@.:.9....70503
+8220: 30 FA 11 80 32 10 FA 25-80 42 08 40 08 3B 08 39 0...2..%.B.@.;.9
+8230: 08 FA 1B 80 FE D0 82 3B-20 FA 11 80 37 10 40 10 .......; ...7.@.
+8240: 39 10 35 10 3A 10 34 10-FE E2 82 35 10 3A 10 FA 9.5.:.4....5.:..
+8250: 1B 80 2A 20 4A 30 FA 11-80 49 10 47 10 45 10 47 ..* J0...I.G.E.G
+8260: 10 44 10 40 10 FA 1B 80-45 30 FA 11 80 49 10 47 .D.@....E0...I.G
+8270: 10 45 10 FA 1B 80 47 20-FA 11 80 45 10 43 10 42 .E....G ...E.C.B
+8280: 10 43 10 45 10 3A 10 42-10 40 10 FD C7 82 FA 1B .C.E.:.B.@......
+8290: 80 3B 30 40 30 FA 11 80-3A 10 39 10 37 10 42 10 .;0@0...:.9.7.B.
+82A0: FA 25 80 39 08 37 08 36-08 34 08 FA 1B 80 32 30 .%.9.7.6.4....20
+82B0: FA 11 80 33 10 32 10 30-10 2A 10 30 10 32 10 37 ...3.2.0.*.0.2.7
+82C0: 10 FA 1B 80 27 20 FF FA-1B 80 FB 0D 80 32 30 FF ....' .......20.
+82D0: FA 1B 80 FB 0D 80 42 20-FF FA 1B 80 FB 0D 80 3A ......B .......:
+82E0: 20 FF FA 11 80 FB 0D 80-39 10 FF
+
+82EB: FA 1B 80 FB 0D 80 47 30 FF
+
+82F4: FA 1B 80 FB-0D 80 4A 30 FF 00 00 00
+; -------------- end of the data of the melody of the parchment -------------------------
+
+; --------------- start of the graphics
+8300: 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00 ................
+...
+--- End of content ---
+
+This file is a detailed memory map for the game "La abadía del crimen." It serves as a crucial reference document, breaking down how the game utilizes the Amstrad CPC's memory. Here’s a summary of its key sections and overall function:
+
+**1. Memory Banks:**
+This section outlines which game data files (`abadia1.bin`, `abadia2.bin`, etc.) are loaded into which memory banks. It also notes when memory is overwritten, such as when graphics for the abbey and game objects are loaded into bank 1.
+
+**2. Memory Map:**
+This is the core of the document, providing a detailed breakdown of memory addresses and their purposes:
+- **Graphics and Buffers:** It describes various buffers for tiles, sprites, and the construction of on-screen blocks. This includes tile and sprite buffers, color combination tables (`ands` and `ors`), and a `flipx` table for horizontally flipping graphics.
+- **Game State and Variables:** Numerous addresses are dedicated to tracking the game's state, including:
+    - Character positions (William, Adso, and other monks).
+    - Game progress, such as the current day, time of day, and collected items.
+    - Event flags, like whether the mirror has been opened or if William has failed the investigation.
+- **Sound and Music:** A significant portion is dedicated to the sound system, with details on the PSG (Programmable Sound Generator) channels, music tempo, note data, and envelope generation. It even includes the raw data for the "melody of the parchment."
+- **Character and Object Data:** There are detailed structures for characters and objects, including their positions, orientations, animations, and the items they possess.
+- **Pathfinding and AI:** Variables and buffers related to character movement, pathfinding, and AI behavior are documented, such as `command buffer for the movements of the monks and adso` and `auxiliary variables for pathfinding and others`.
+- **Game Mechanics:** It includes information on game mechanics like door permissions for each character, object interactions, and conditions for character death.
+
+**Function:**
+
+This file acts as a comprehensive "cheat sheet" or technical bible for the game's memory usage. It is invaluable for understanding the inner workings of "La abadía del crimen" and would have been essential for the original developers for debugging and for anyone now trying to reverse-engineer, modify, or translate the game. It provides a low-level view of how the game manages its data, from graphics and sound to game logic and player progress.

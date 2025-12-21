@@ -1,0 +1,600 @@
+2746: E1          pop  hl
+2747: 01 00 08    ld   bc,$0800		; move to the next line
+274A: 09          add  hl,bc
+274B: C1          pop  bc
+274C: 10 EF       djnz $273D		; repeat for the 8 lines
+274E: E1          pop  hl
+274F: 01 50 00    ld   bc,$0050		; point to the next line
+2752: 09          add  hl,bc
+2753: C1          pop  bc
+2754: 10 E3       djnz $2739		; repeat for the rest of the marker (total 32 lines)
+
+2756: 01 C0 7F    ld   bc,$7FC0		; set configuration 0 (0, 1, 2, 3)
+2759: ED 49       out  (c),c
+275B: C9          ret
+
+; draws a rectangle 256 wide in the top 160 screen lines
+275C: 06 A0       ld   b,$A0		; 160 lines
+275E: 21 00 C0    ld   hl,$C000
+2761: C5          push bc
+2762: E5          push hl
+2763: 5D          ld   e,l			; de = hl + 1
+2764: 54          ld   d,h
+2765: 13          inc  de
+2766: 36 FF       ld   (hl),$FF
+2768: 01 08 00    ld   bc,$0008		; fill 8 bytes with 0xff (32 pixels)
+276B: ED B0       ldir
+276D: 36 00       ld   (hl),$00
+276F: 01 40 00    ld   bc,$0040		; fill 64 bytes with 0x00 (256 pixels)
+2772: ED B0       ldir
+2774: 36 FF       ld   (hl),$FF
+2776: 01 08 00    ld   bc,$0008		; fill 8 bytes with 0xff (32 pixels)
+2779: ED B0       ldir
+277B: E1          pop  hl
+277C: CD 4D 3A    call $3A4D		; move to the next line
+277F: C1          pop  bc
+2780: 10 DF       djnz $2761
+2782: C9          ret
+
+; ------------------------ auxiliary code for character movement --------------------------------------
+
+; returns the address of the table to calculate the height of neighboring positions according to the size of the character's position and orientation
+2783: 21 4D 28    ld   hl,$284D		; point to the table if the character occupies 4 tiles
+2786: FD CB 05 7E bit  7,(iy+$05)
+278A: 28 03       jr   z,$278F		; if bit 7 is not set (if the character occupies 4 tiles), jump
+278C: 21 6D 28    ld   hl,$286D		; point to the table if the character occupies only 1 tile
+278F: FD 7E 01    ld   a,(iy+$01)	; get the character's orientation
+
+; hl = hl + 8*a
+2792: 87          add  a,a
+2793: 87          add  a,a
+2794: 87          add  a,a
+2795: 85          add  a,l
+2796: 6F          ld   l,a
+2797: 8C          adc  a,h
+2798: 95          sub  l
+2799: 67          ld   h,a
+279A: C9          ret
+
+; adjust the position passed in hl to the central 20x20 positions shown. If the position is outside, CF=1
+279B: 7C          ld   a,h
+279C: D6 00       sub  $00		; instruction modified from outside with the lower limit in y
+279E: D8          ret  c		; if the position in y is < the lower limit in y on this screen, exit
+279F: FE 02       cp   $02
+27A1: D8          ret  c
+27A2: FE 16       cp   $16		; if the position in y is > the upper limit in y on this screen, exit
+27A4: 3F          ccf			; complement the carry flag
+27A5: D8          ret  c
+
+27A6: 67          ld   h,a
+27A7: 7D          ld   a,l
+27A8: D6 00       sub  $00		; instruction modified from outside with the lower limit in x
+27AA: D8          ret  c		; if the position in x is < the lower limit in x on this screen, exit
+27AB: FE 02       cp   $02
+27AD: D8          ret  c
+27AE: FE 16       cp   $16		; if the position in x is > the upper limit in x on this screen, exit
+27B0: 3F          ccf           ; complement the carry flag
+27B1: D8          ret  c
+27B2: 6F          ld   l,a
+27B3: C9          ret
+
+; check the height of the positions the character is going to move to and return them in a and c
+; if the character is not visible, return the same value as passed in a
+; iy is passed the characteristics of the character moving forward
+27B4: 47          ld   b,a		; save a
+27B5: AF          xor  a		; set the relative height of the floor to 0
+27B6: 18 13       jr   $27CB
+
+; check the height of the positions the character is going to move to and return them in a and c
+; if the character is not on the current screen, return the same value as passed in a (assuming the height difference has already been calculated outside)
+; iy is passed the characteristics of the character moving forward
+; called when pressing up cursor
+27B8: 5F          ld   e,a
+27B9: FD 7E 04    ld   a,(iy+$04)	; get the character's height
+27BC: CD 73 24    call $2473		; depending on the height, return the base height of the floor in b
+27BF: 3A BA 2D    ld   a,($2DBA)	; get the base height of the floor where the character is
+27C2: B8          cp   b
+27C3: 37          scf
+27C4: 7B          ld   a,e
+27C5: C0          ret  nz			; if the floor the character is on doesn't match the one being shown, exit
+
+27C6: FD 7E 04    ld   a,(iy+$04)	; get the character's height
+27C9: 90          sub  b			; subtract the base height of the floor
+27CA: 43          ld   b,e
+
+; arrives here with a = relative height within the floor
+27CB: 32 1F 28    ld   ($281F),a	; modify an instruction
+27CE: EB          ex   de,hl
+27CF: FD 66 03    ld   h,(iy+$03)	; get the global position of the character
+27D2: FD 6E 02    ld   l,(iy+$02)
+27D5: CD 9B 27    call $279B		; adjust the position passed in hl to the central 20x20 positions shown. If the position is outside, CF=1
+27D8: 78          ld   a,b
+27D9: EB          ex   de,hl		; de = position adjusted to the central 20x20 positions
+27DA: D8          ret  c			; if the position is not visible, exit
+
+; arrives here if the position is visible. in a and b is the parameter passed, but it's no longer used
+27DB: EB          ex   de,hl		; hl = position adjusted to the central 20x20 positions
+27DC: 7D          ld   a,l			; a = adjusted x position
+27DD: 6C          ld   l,h
+27DE: 26 00       ld   h,$00
+27E0: 29          add  hl,hl
+27E1: 29          add  hl,hl
+27E2: 29          add  hl,hl		; hl = adjusted y pos*8
+27E3: 54          ld   d,h
+27E4: 85          add  a,l
+27E5: 5F          ld   e,a			; de = adjusted x pos + adjusted y pos*8
+27E6: 29          add  hl,hl		; hl = adjusted y pos*16
+27E7: 19          add  hl,de		; hl = adjusted y pos*24 + adjusted x pos
+27E8: ED 5B 8A 2D ld   de,($2D8A)	; point de to the height buffer
+27EC: 19          add  hl,de		; index into the height buffer
+27ED: EB          ex   de,hl		; de <-> hl
+27EE: CD 83 27    call $2783		; return the address to calculate the height of neighboring positions according to the size of the character's position and orientation
+27F1: 7E          ld   a,(hl)		; modify some instructions according to the first 4 values read from the table
+27F2: 32 23 28    ld   ($2823),a
+27F5: 23          inc  hl
+27F6: 7E          ld   a,(hl)
+27F7: 32 24 28    ld   ($2824),a
+27FA: 23          inc  hl
+27FB: 7E          ld   a,(hl)
+27FC: 32 2A 28    ld   ($282A),a
+27FF: 23          inc  hl
+2800: 7E          ld   a,(hl)
+2801: 32 2B 28    ld   ($282B),a
+2804: 23          inc  hl
+
+2805: 7E          ld   a,(hl)		; read an offset from the table and save it in hl
+2806: 23          inc  hl
+2807: E5          push hl
+2808: 66          ld   h,(hl)
+2809: 6F          ld   l,a
+280A: 19          add  hl,de		; add to the current position in the height buffer the offset read
+280B: 11 C5 2D    ld   de,$2DC5		; de points to an auxiliary buffer
+280E: 06 04       ld   b,$04		; the outer loop performs 4 iterations
+2810: C5          push bc
+2811: E5          push hl
+2812: 06 04       ld   b,$04		; the inner loop performs 4 iterations
+2814: C5          push bc
+2815: 7E          ld   a,(hl)		; read the value from the current position of the height buffer
+2816: FE 10       cp   $10			; check if there is any character at that position
+2818: 38 04       jr   c,$281E		; if there is no one at that position, jump
+281A: E6 30       and  $30			; keep only the characters at the position
+281C: 18 02       jr   $2820		; skip the next instruction
+
+281E: D6 00       sub  $00			; instruction modified from outside with the character's height relative to the current floor
+2820: 12          ld   (de),a		; save the character or the height difference in the buffer
+2821: 13          inc  de
+2822: 01 00 00    ld   bc,$0000		; instruction modified from outside with the offset in the tile buffer for the inner loop
+2825: 09          add  hl,bc		; change the position of the tile buffer
+2826: C1          pop  bc
+2827: 10 EB       djnz $2814
+2829: 01 00 00    ld   bc,$0000		; instruction modified from outside with the offset in the tile buffer for the outer loop
+282C: E1          pop  hl
+282D: 09          add  hl,bc		; change the position of the tile buffer
+282E: C1          pop  bc
+282F: 10 DF       djnz $2810		; repeat until completing 16 positions
+
+2831: E1          pop  hl
+2832: 23          inc  hl
+2833: FD CB 05 7E bit  7,(iy+$05)
+2837: 28 08       jr   z,$2841		; if the character occupies 4 positions in the height buffer, jump. Otherwise (only occupies 1 position)
+
+2839: 3A C6 2D    ld   a,($2DC6)	; save in a and c the content of the 2 positions the character is advancing towards
+283C: 4F          ld   c,a
+283D: 3A CA 2D    ld   a,($2DCA)
+2840: C9          ret
+
+; arrives here if the character occupies 4 positions in the height buffer
+2841: 3A C6 2D    ld   a,($2DC6)	; if the 2 positions being advanced to don't have the same value, exit with equal values for a and c
+2844: 4F          ld   c,a
+2845: 3A C7 2D    ld   a,($2DC7)
+2848: B9          cp   c
+2849: C8          ret  z
+284A: 3E 02       ld   a,$02		; indicate that there is a difference between heights > 1
+284C: C9          ret
+
+; table for calculating character advancement according to orientation (for characters occupying 4 tiles)
+; bytes 0-1: offset in the inner loop of the tile buffer
+; bytes 2-3: offset in the outer loop of the tile buffer
+; bytes 4-5: initial offset in the height buffer for the loop
+: byte 6: value to add to the character's x position if advancing in this direction
+: byte 7: value to add to the character's y position if advancing in this direction
+284D: 	0018 FFFF FFD1 01 00 -> +24 -1  -47 [+1 00]
+	0001 0018 FFCE 00 FF -> +1  +24 -50 [00 -1]
+	FFE8 0001 0016 FF 00 -> -24 +1  +22 [-1 00]
+	FFFF FFE8 0019 00 01 -> -1  -24 +25 [00 +1]
+
+; table for calculating character advancement according to orientation (for characters occupying 1 tile)
+286D: 	0018 FFFF FFEA 01 00 -> +24  -1 -22 [+1 00]
+	0001 0018 FFCF 00 FF -> +1  +24 -49 [00 -1]
+	FFE8 0001 0016 FF 00 -> -24  +1 +22 [-1 00]
+	FFFF FFE8 0031 00 01 -> -1  -24 +49 [00 +1]
+
+; ---------------------- end of auxiliary code for character movement --------------------------------------
+
+; guillermo's behavior routine
+; ix pointing to guillermo's sprite
+; iy points to guillermo's position data
+288D: 00          nop
+288E: 3E 00       ld   a,$00		; instruction modified from outside and related to 0x2e19
+2890: A7          and  a
+2891: 28 37       jr   z,$28CA		; if a is 0, jump
+2893: 3D          dec  a
+2894: C8          ret  z			; if a was 1, exit
+2895: 32 8F 28    ld   ($288F),a	; guillermo's state = guillermo's state - 1
+2898: FE 13       cp   $13
+289A: 20 0D       jr   nz,$28A9		; if it's not 0x13, jump
+
+; arrives here if guillermo's state is 0x13
+289C: 3A B1 28    ld   a,($28B1)
+289F: FE 02       cp   $02
+28A1: 20 06       jr   nz,$28A9		; if the sprite is not modified with +2, jump to modify y
+28A3: FD 35 02    dec  (iy+$02)		; decrement guillermo's x position
+28A6: C3 27 2A    jp   $2A27		; advance sprite animation and redraw it
+
+28A9: FE 01       cp   $01			; if the sprite's y is modified with 1, jump and mark the sprite as inactive
+28AB: 28 18       jr   z,$28C5
+
+28AD: DD 7E 02    ld   a,(ix+$02)
+28B0: C6 02       add  a,$02		; modify the sprite's y position (this instruction is written from outside)
+28B2: DD 77 02    ld   (ix+$02),a
+28B5: DD 7E 00    ld   a,(ix+$00)
+28B8: E6 3F       and  $3F
+28BA: F6 80       or   $80
+28BC: DD 77 00    ld   (ix+$00),a	; mark the sprite for drawing
+28BF: 3E FF       ld   a,$FF
+28C1: 32 C1 2D    ld   ($2DC1),a	; indicate that there has been movement
+28C4: C9          ret
+
+; arrives here if the sprite's y is modified with 1 and guillermo's state is 0x13
+28C5: DD 36 00 FE ld   (ix+$00),$FE	; mark the sprite as inactive
+28C9: C9          ret
+
+; arrives here if guillermo's state is 0, which is the normal state
+28CA: 3A 8F 3C    ld   a,($3C8F)	; if the camera doesn't follow guillermo, exit
+28CD: A7          and  a
+28CE: C0          ret  nz
+
+28CF: 3E 08       ld   a,$08
+28D1: CD 72 34    call $3472		; check if left cursor state has changed
+28D4: 0E 01       ld   c,$01
+28D6: C2 0C 2A    jp   nz,$2A0C		; if left cursor is pressed, rotate and redraw the sprite
+28D9: 3E 01       ld   a,$01
+28DB: CD 72 34    call $3472        ; check if right cursor state has changed
+28DE: 0E FF       ld   c,$FF
+28E0: C2 0C 2A    jp   nz,$2A0C		; if right cursor is pressed, rotate and redraw the sprite
+
+28E3: 3E 00       ld   a,$00
+28E5: CD 82 34    call $3482		; if up cursor hasn't been pressed, exit
+28E8: C8          ret  z
+28E9: CD B8 27    call $27B8		; check the height of the positions the character is going to move to and return them in a and c
+28EC: C3 54 29    jp   $2954		; if it can move forward, update the character's sprite
+
+; if the sprite position is central and the height is correct, put c in the positions occupied by the height buffer
+;  iy = address of the position data associated with the character
+;  c = value to put in the positions the character occupies in the height buffer
+28EF: CD BE 0C    call $0CBE		; if the position is not one of the center of the screen or the character's height doesn't match
+28F2: D8          ret  c			; the base height of the floor, CF=1, otherwise ix points to the height of the current pos
+
+28F3: DD 7E 00    ld   a,(ix+$00)	; get the entry from the height buffer
+28F6: E6 0F       and  $0F			; save the height
+28F8: B1          or   c			; indicate that the character is at position (x, y)
+28F9: DD 77 00    ld   (ix+$00),a	; update the height buffer
+28FC: FD CB 05 7E bit  7,(iy+$05)	; if bit 7 of byte 5 is set, exit
+2900: C0          ret  nz
+
+2901: DD 7E FF    ld   a,(ix-$01)	; indicate that the character also occupies position (x - 1, y)
+2904: E6 0F       and  $0F
+2906: B1          or   c
+2907: DD 77 FF    ld   (ix-$01),a
+290A: DD 7E E8    ld   a,(ix-$18)	; indicate that the character also occupies position (x, y - 1)
+290D: E6 0F       and  $0F
+290F: B1          or   c
+2910: DD 77 E8    ld   (ix-$18),a
+2913: DD 7E E7    ld   a,(ix-$19)	; indicate that the character also occupies position (x - 1, y - 1)
+2916: E6 0F       and  $0F
+2918: B1          or   c
+2919: DD 77 E7    ld   (ix-$19),a
+291C: C9          ret
+
+; check if the character can move where it wants and update its sprite and height buffer
+; hl points to the character table to move
+291D: CD F6 2B    call $2BF6		; place the parameters of this routine according to the character from table hl
+2920: DD 21 17 2E ld   ix,$2E17		; point to the character sprites (instruction modified from outside)
+2924: CD B0 2A    call $2AB0		; put the current position and dimensions of the sprite as old position and dimensions
+2927: FD 21 36 30 ld   iy,$3036		; point to the position data of the characters (instruction modified from outside)
+292B: 0E 00       ld   c,$00
+292D: DD E5       push ix
+292F: CD EF 28    call $28EF		; if the sprite position is central and the height is correct, clear the positions the sprite occupied in the height buffer
+2932: DD E1       pop  ix
+2934: 3A 84 43    ld   a,($4384)	; if malaquias is ascending when dying
+2937: A7          and  a
+2938: 3E 00       ld   a,$00
+293A: 32 84 43    ld   ($4384),a	; set the variable to 0
+293D: CD 45 29    call $2945
+2940: FD 4E 0E    ld   c,(iy+$0e)	; read the value to put in the height buffer to indicate the character is there
+2943: 18 AA       jr   $28EF		; if the sprite position is central and the height is correct, put c in the positions the height buffer occupies
+
+2945: C2 27 2A    jp   nz,$2A27		; if malaquias is ascending when dying
+2948: FD 7E 00    ld   a,(iy+$00)
+294B: E6 01       and  $01
+294D: C2 01 2A    jp   nz,$2A01		; if it's in the middle of a movement, increment the counter of bits 0 and 1 of byte 0, advance sprite animation and redraw it
+2950: 21 8D 28    ld   hl,$288D		; address of the routine to execute for the character's behavior (instruction modified from outside)
+2953: E9          jp   (hl)			; execute the character's behavior
+
+
+; routine called to see if the character advances
+; in a and c the height differences to the position it wants to advance to are passed
+2954: FD CB 05 A6 res  4,(iy+$05)	; set to 0 the bit indicating if the character is going down or up
+2958: FD CB 05 7E bit  7,(iy+$05)
+295C: FD 5E 04    ld   e,(iy+$04)	; e = character's height
+295F: 28 56       jr   z,$29B7		; if the character occupies 4 positions, jump
+
+; arrives here if the character occupies a single position
+;  a = height difference with the position closest to the character according to orientation
+;  c = height difference with the character's position + 2 (according to its orientation)
+2961: 57          ld   d,a			; d = height difference with the position closest to the character according to orientation
+2962: 79          ld   a,c			; if at the character's position + 2 (according to its orientation) there is a character, exit
+2963: FE 10       cp   $10			; if trying to advance to a position where there is a character, exit
+2965: C8          ret  z
+2966: FE 20       cp   $20
+2968: C8          ret  z
+
+2969: 7A          ld   a,d			; a = height difference with the position closest to the character according to orientation
+296A: FD CB 05 6E bit  5,(iy+$05)	; if the character is not turned in the direction of going up or down the slope, jump
+296E: 28 0D       jr   z,$297D
+
+2970: 47          ld   b,a
+2971: CD AE 29    call $29AE		; return 0 if the character's orientation is 0 or 3, otherwise return 1
+2974: 78          ld   a,b			; when going right or down, converting the position to 4, there is only a difference of 1
+2975: 28 01       jr   z,$2978		;  however, if going in the other directions when converting the position to 4 there is a diff of 2
+2977: 79          ld   a,c			; a = height difference with the character's position + 2 (according to its orientation)
+2978: A7          and  a
+2979: C0          ret  nz			; if not at ground level, exit?
+297A: C3 FE 29    jp   $29FE
+
+; jumps here if bit 5 is 0. Arrives with:
+;  a = height difference with the position closest to the character according to orientation
+;  c = height difference with the character's position + 2 (according to its orientation)
+297D: FD 34 04    inc  (iy+$04)		; increment the character's height
+2980: FE 01       cp   $01
+2982: 28 0D       jr   z,$2991		; if going up one unit, jump
+2984: FD 35 04    dec  (iy+$04)		; undo the increment
+2987: FE FF       cp   $FF			; if not going down one unit, exit
+2989: C0          ret  nz
+298A: FD CB 05 E6 set  4,(iy+$05)	; indicate that it's going down
+298E: FD 35 04    dec  (iy+$04)		; decrement the character's height
+
+2991: B9          cp   c			; compare the height of the position closest to the character with the next one
+2992: 20 60       jr   nz,$29F4		;  if the heights are not equal, advance the position
+
+; arrives here if advancing and the 2 following positions have the same height
+2994: FD 7E 05    ld   a,(iy+$05)	; only keep bit 4 active, so the character goes from occupying one position in the buffer
+2997: E6 10       and  $10			;  of heights to occupying 4
+2999: FD 77 05    ld   (iy+$05),a
+299C: E5          push hl
+299D: CD E4 29    call $29E4		; update the character's x and y position according to the orientation it's advancing towards
+29A0: E1          pop  hl
+29A1: CD AE 29    call $29AE		; return 0 if the character's orientation is 0 or 3, otherwise return 1
+29A4: CC E4 29    call z,$29E4		; update the character's x and y position according to the orientation it's advancing towards
+29A7: 3E FF       ld   a,$FF
+29A9: 32 C1 2D    ld   ($2DC1),a	; indicate that there has been movement
+29AC: 18 53       jr   $2A01		; increment the counter of bits 0 and 1 of byte 0, advance sprite animation and redraw it
+
+; return 0 if the character's orientation is 0 or 3, otherwise return 1
+29AE: FD 7E 01    ld   a,(iy+$01)
+29B1: E6 03       and  $03
+29B3: C8          ret  z
+29B4: EE 03       xor  $03
+29B6: C9          ret
+
+; jumps here if the character occupies 4 positions. Arrives with:
+;  a = height difference with position 1 closest to the character according to orientation
+;  c = height difference with position 2 closest to the character according to orientation
+29B7: FE 01       cp   $01
+29B9: 28 08       jr   z,$29C3		; if going upward, jump
+29BB: FE FF       cp   $FF
+29BD: 28 0B       jr   z,$29CA		; if going downward, jump
+29BF: A7          and  a
+29C0: C0          ret  nz			; otherwise, exit if wanting to go up or down more than one unit
+29C1: 18 31       jr   $29F4		; if not changing height, update position according to advance direction, increment the counter of bits 0 and 1 of byte 0, advance sprite animation and redraw it
+
+; arrives here if going up
+29C3: FD 34 04    inc  (iy+$04)		; increment the character's height
+29C6: 3E 80       ld   a,$80		; change the size occupied in the height buffer from 4 to 1
+29C8: 18 05       jr   $29CF
+
+; arrives here if going down
+29CA: FD 35 04    dec  (iy+$04)		; decrement the character's height
+29CD: 3E 90       ld   a,$90		; change the size occupied in the height buffer from 4 to 1 and indicate going down
+
+29CF: FD 77 05    ld   (iy+$05),a
+29D2: E5          push hl
+29D3: CD E4 29    call $29E4		; update the character's x and y position according to the orientation it's advancing towards
+29D6: E1          pop  hl
+29D7: CD AE 29    call $29AE		; return 0 if the character's orientation is 0 or 3, otherwise return 1
+29DA: C4 E4 29    call nz,$29E4		; update the character's x and y position according to the orientation it's advancing towards
+29DD: 3E FF       ld   a,$FF
+29DF: 32 C1 2D    ld   ($2DC1),a	; indicate that there has been movement
+29E2: 18 1D       jr   $2A01		; increment the counter of bits 0 and 1 of byte 0, advance sprite animation and redraw it
+
+; update the character's x and y position according to the orientation it's advancing towards
+29E4: 7E          ld   a,(hl)		; read the increment in x for the current orientation
+29E5: FD 86 02    add  a,(iy+$02)
+29E8: FD 77 02    ld   (iy+$02),a	; modify the character's x position
+29EB: 23          inc  hl
+29EC: 7E          ld   a,(hl)		; read the increment in y for the current orientation
+29ED: FD 86 03    add  a,(iy+$03)
+29F0: FD 77 03    ld   (iy+$03),a	; modify the character's y position
+29F3: C9          ret
+
+; update position according to advance direction, increment the counter of bits 0 and 1 of byte 0, advance sprite animation and redraw it
+; jumps here if the heights of the 2 positions are not equal. Arrives with:
+;  a = height difference with the position closest to the character according to orientation
+;  c = height difference with the character's position + 2 (according to its orientation)
+29F4: 91          sub  c			; calculate the height difference
+29F5: 3C          inc  a
+29F6: FE 03       cp   $03			; if the height difference is -1,0 or 1, CF = 0
+; ??? why is the comparison done if there is an unconditional jump???
+29F8: 18 04       jr   $29FE		; update position according to advance direction, increment the counter of bits 0 and 1 of byte 0, advance sprite animation and redraw it
+
+29FA: FD 73 04    ld   (iy+$04),e	; ??? this is never reached
+29FD: C9          ret
+
+; update position according to advance direction, increment the counter of bits 0 and 1 of byte 0, advance sprite animation and redraw it
+29FE: CD E4 29    call $29E4		; update the character's x and y position according to the orientation it's advancing towards
+
+; increment the counter of bits 0 and 1 of byte 0, advance sprite animation and redraw it
+2A01: FD 7E 00    ld   a,(iy+$00)	; increment the counter of bits 0 and 1
+2A04: 3C          inc  a
+2A05: E6 03       and  $03
+2A07: FD 77 00    ld   (iy+$00),a
+2A0A: 18 1B       jr   $2A27		; advance sprite animation and redraw it
+
+; arrives here if right or left cursor has been pressed
+; c = 1 if left cursor was pressed or -1 if right cursor was pressed
+; iy points to the character's position data
+2A0C: FD 36 00 00 ld   (iy+$00),$00	; reset the animation counter
+2A10: FD CB 05 7E bit  7,(iy+$05)
+2A14: 28 08       jr   z,$2A1E		; if the character occupies more than one cell in the height buffer, jump
+2A16: FD 7E 05    ld   a,(iy+$05)
+2A19: EE 20       xor  $20
+2A1B: FD 77 05    ld   (iy+$05),a
+2A1E: FD 7E 01    ld   a,(iy+$01)	; change the character's orientation
+2A21: 81          add  a,c
+2A22: E6 03       and  $03
+2A24: FD 77 01    ld   (iy+$01),a
+
+; advance sprite animation and redraw it
+2A27: CD 61 2A    call $2A61		; change monk robe animation according to position and animation counter and get the address of the
+								;  animation data to put in hl
+2A2A: 3E FF       ld   a,$FF
+2A2C: 32 C1 2D    ld   ($2DC1),a	; indicate that there has been movement
+2A2F: E5          push hl
+2A30: CD C9 2A    call $2AC9		; check if the sprite is visible and if so, update its position
+
+; only arrives here if the sprite is visible
+2A33: E1          pop  hl
+
+; arrives here from outside if a sprite is visible, after having updated its position.
+;  hl points to the corresponding animation
+;  ix = address of the corresponding sprite
+;  iy = position data of the corresponding character
+;  c = sprite's y position on screen
+2A34: 7E          ld   a,(hl)
+2A35: DD 77 07    ld   (ix+$07),a	; update the sprite graphics address with the current animation
+2A38: 23          inc  hl
+2A39: 7E          ld   a,(hl)
+2A3A: DD 77 08    ld   (ix+$08),a
+2A3D: 23          inc  hl
+2A3E: 7E          ld   a,(hl)
+2A3F: DD 77 05    ld   (ix+$05),a	; update the sprite width and height according to the current animation
+2A42: 23          inc  hl
+2A43: 7E          ld   a,(hl)
+2A44: DD 77 06    ld   (ix+$06),a
+2A47: 3E 80       ld   a,$80		; indicate that the sprite needs to be redrawn
+2A49: B1          or   c			; combine the value with the sprite's y position on screen
+2A4A: DD 77 00    ld   (ix+$00),a
+2A4D: FD 7E 01    ld   a,(iy+$01)	; read the character's orientation
+2A50: CD 80 24    call $2480		; modify the orientation passed in a with the current screen's orientation
+2A53: CB 3F       srl  a
+2A55: FD AE 06    xor  (iy+$06)		; check if the character's orientation has changed
+2A58: C4 3B 35    call nz,$353B		; if so, jump to the corresponding method (this call is modified from outside) in case graphics need to be flipped
+2A5B: 3E FF       ld   a,$FF
+2A5D: 32 C1 2D    ld   ($2DC1),a	; indicate that there has been movement
+2A60: C9          ret
+
+; change monk robe animation according to position and animation counter and get the address of the
+;  animation data to put in hl
+;  ix = address of the corresponding sprite
+;  iy = position data of the corresponding character
+; on exit hl saves the index in the animation table
+2A61: FD 5E 00    ld   e,(iy+$00)	; get the character's animation
+2A64: FD 7E 01    ld   a,(iy+$01)	; get the character's orientation
+2A67: CD 80 24    call $2480		; modify the orientation passed in a with the current screen's orientation
+2A6A: 57          ld   d,a			; save the character's orientation on the current screen
+2A6B: 87          add  a,a
+2A6C: 87          add  a,a			; shift the orientation 2 to the left and combine it with the animation
+2A6D: B3          or   e			;  to get the monk robe animation
+2A6E: 6F          ld   l,a			; save the animation in l
+2A6F: DD 7E 0B    ld   a,(ix+$0b)	; read the old value and keep only the bits that are not from the animation
+2A72: E6 F0       and  $F0
+2A74: B5          or   l
+2A75: DD 77 0B    ld   (ix+$0b),a	; combine the previous value with the robe animation
+2A78: 7A          ld   a,d			; recover the character's orientation on the current screen
+2A79: 3C          inc  a
+2A7A: E6 02       and  $02			; a indicates if the character is facing right or left
+2A7C: 87          add  a,a			; shift 1 bit to the left
+2A7D: B3          or   e			; combine with the current animation number
+2A7E: 87          add  a,a			; shift 2 bits to the left (x and y animations are separated by 8 entries)
+2A7F: 87          add  a,a
+2A80: 6F          ld   l,a			; a = 0 0 0 (if moving in x, 0, if moving in y, 1) (animation sequence number (2 bits)) 0 0
+2A81: 26 00       ld   h,$00		; hl = index in the animation table
+2A83: 11 9F 31    ld   de,$319F		; instruction modified from outside (with the address of the animation table for the character)
+2A86: 7A          ld   a,d
+2A87: E6 C0       and  $C0
+2A89: FE C0       cp   $C0
+2A8B: 28 02       jr   z,$2A8F		; if the address put in the modified instruction starts with 0xc0, jump
+2A8D: 19          add  hl,de		; index into the table
+2A8E: C9          ret
+
+; arrives here if the address put in the modified instruction starts with 0xc0
+; hl = index in the animation table
+; e has the monk number
+2A8F: 7B          ld   a,e			; a = monk number (0, 2, 4 or 6)
+2A90: EB          ex   de,hl		; de = index in the animation table
+2A91: 21 DF 31    ld   hl,$31DF		; point to the monks' animation table
+2A94: 19          add  hl,de		; index into the animation table
+2A95: E5          push hl			; save the animation table address
+2A96: 21 97 30    ld   hl,$3097		; point to the table with the monks' faces (each entry occupies 2 bytes)
+2A99: CD 2D 16    call $162D		; hl = hl + a
+2A9C: 7E          ld   a,(hl)
+2A9D: 23          inc  hl
+2A9E: 66          ld   h,(hl)
+2A9F: 6F          ld   l,a			; hl = [hl] (pointer to the face data of the monk passed in a)
+2AA0: 7B          ld   a,e
+2AA1: E6 10       and  $10
+2AA3: 28 04       jr   z,$2AA9		; depending on whether moving in x or y, put one head
+2AA5: 11 32 00    ld   de,$0032		;  if bit 4 is 1 (moving in y), get the second face
+2AA8: 19          add  hl,de
+2AA9: EB          ex   de,hl		; de points to the face data
+2AAA: E1          pop  hl			; recover the animation table address
+2AAB: 73          ld   (hl),e
+2AAC: 23          inc  hl
+2AAD: 72          ld   (hl),d		; overwrite the first 2 bytes of the animation table entry with the face address
+2AAE: 2B          dec  hl
+2AAF: C9          ret
+
+; put the current position and dimensions as old position and dimensions
+2AB0: DD 7E 01    ld   a,(ix+$01)	; copy the current position in x and y as the old position
+2AB3: DD 77 03    ld   (ix+$03),a
+2AB6: DD 7E 02    ld   a,(ix+$02)
+2AB9: DD 77 04    ld   (ix+$04),a
+2ABC: DD 7E 05    ld   a,(ix+$05)	; copy the current sprite width and height as the old width and height
+2ABF: DD 77 09    ld   (ix+$09),a
+2AC2: DD 7E 06    ld   a,(ix+$06)
+2AC5: DD 77 0A    ld   (ix+$0a),a
+2AC8: C9          ret
+
+2AC9: CD DD 2A    call $2ADD			; check if it's visible and if so, update its position if necessary. If it's visible it doesn't return, but exits to the calling routine
+
+; arrives here if the sprite is not visible
+2ACC: E1          pop  hl				; remove from stack the return address and the animation table address and exit
+2ACD: E1          pop  hl
+
+2ACE: DD 7E 00    ld   a,(ix+$00)		; if the sprite was not visible, exit
+2AD1: FE FE       cp   $FE
+2AD3: C8          ret  z
+2AD4: DD 36 00 80 ld   (ix+$00),$80		; otherwise, indicate that the sprite needs to be redrawn
+2AD8: DD CB 05 FE set  7,(ix+$05)		; indicate that the sprite is going to become inactive, and only want to redraw the area it occupied
+2ADC: C9          ret
+
+; check if the sprite is within the visible screen area. If not, exit. If it's within the visible area transform it
+; to another coordinate system. Depending on a parameter it continues or not. If it continues update the position according to orientation
+; if not visible, exit. If visible, exit twice (2 stack pops)
+; iy points to the associated character's position data
+; ix points to the associated sprite
+2ADD: FD 7E 02    ld   a,(iy+$02)	; get the character's X coordinate
+2AE0: D6 00       sub  $00			; modified from outside (4 most significant bits of the current screen's X position - 12)
+2AE2: D8          ret  c			; if the object in X is < visible lower limit of X, exit
+2AE3: FE 28       cp   $28
+2AE5: D0          ret  nc			; if the object in X is >= visible upper limit of X, exit

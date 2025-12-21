@@ -1,0 +1,600 @@
+    1→4C1A: AF          xor  a
+    2→4C1B: 32 A0 4C    ld   ($4CA0),a
+    3→4C1E: DD 66 0D    ld   h,(ix+$0d)		; h = y position of the tile where the sprite starts
+    4→4C21: DD 46 0F    ld   b,(ix+$0f)		; b = final height of the sprite (in pixels)
+    5→4C24: D9          exx
+    6→4C25: 11 00 00    ld   de,$0000
+    7→4C28: D9          exx
+    8→4C29: 7C          ld   a,h
+    9→4C2A: FE C8       cp   $C8				; if y coordinate >= 200 (not visible on screen), exit
+   10→4C2C: D0          ret  nc
+   11→4C2D: D6 28       sub  $28
+   12→4C2F: 67          ld   h,a				; adjust y coordinate
+   13→4C30: 30 13       jr   nc,$4C45			; if y coordinate > 40 (visible on screen), jump
+   14→4C32: ED 44       neg
+   15→4C34: B8          cp   b				; if distance from the point where sprite begins to first visible point >= sprite height, exit (not visible)
+   16→4C35: D0          ret  nc
+   17→4C36: D9          exx
+   18→4C37: 26 00       ld   h,$00
+   19→4C39: DD 6E 0E    ld   l,(ix+$0e)		; l = final width of the sprite (in bytes)
+   20→4C3C: CD 24 4D    call $4D24			; de = a*hl (skip the non-visible sprite lines)
+   21→4C3F: D9          exx
+   22→4C40: 78          ld   a,b
+   23→4C41: 84          add  a,h				; modify sprite height due to clipping
+   24→4C42: 47          ld   b,a
+   25→4C43: 26 00       ld   h,$00			; sprite starts at y = 0
+
+   27→4C45: D9          exx
+   28→4C46: DD 6E 10    ld   l,(ix+$10)		; hl = address of sprite buffer assigned to this sprite
+   29→4C49: DD 66 11    ld   h,(ix+$11)
+   30→4C4C: 19          add  hl,de			; skip the bytes not visible in y
+   31→4C4D: D9          exx
+   32→4C4E: DD 6E 0C    ld   l,(ix+$0c)		; l = x position of the tile where the sprite starts (in bytes)
+   33→4C51: DD 4E 0E    ld   c,(ix+$0e)		; c = final width of the sprite (in bytes)
+   34→4C54: 7D          ld   a,l
+   35→4C55: FE 48       cp   $48				; if x position >= (32 + 256 pixels)
+   36→4C57: D0          ret  nc
+   37→4C58: D6 08       sub  $08				; adjust x coordinate
+   38→4C5A: 6F          ld   l,a
+   39→4C5B: 30 15       jr   nc,$4C72			; if x position >= 32 pixels, jump
+   40→4C5D: ED 44       neg
+   41→4C5F: DD BE 0E    cp   (ix+$0e)			; if distance from the point where sprite begins to first visible point >= sprite width, exit (not visible)
+   42→4C62: D0          ret  nc
+   43→4C63: 32 A0 4C    ld   ($4CA0),a		; modify an instruction with the x distance
+   44→4C66: D9          exx
+   45→4C67: 85          add  a,l				; hl = hl + a (skip the clipped pixels)
+   46→4C68: 6F          ld   l,a
+   47→4C69: 8C          adc  a,h
+   48→4C6A: 95          sub  l
+   49→4C6B: 67          ld   h,a
+   50→4C6C: D9          exx
+   51→4C6D: 79          ld   a,c				; modify width to draw
+   52→4C6E: 85          add  a,l
+   53→4C6F: 4F          ld   c,a
+   54→4C70: 2E 00       ld   l,$00			; sprite starts at x = 0
+
+   56→4C72: 79          ld   a,c				; a = sprite width to draw
+   57→4C73: 85          add  a,l				; l = initial x coordinate
+   58→4C74: D6 40       sub  $40				; check if sprite is wider than screen (64*4 = 256)
+   59→4C76: 38 07       jr   c,$4C7F
+   60→4C78: 32 A0 4C    ld   ($4CA0),a		; modify an instruction
+   61→4C7B: ED 44       neg
+   62→4C7D: 81          add  a,c
+   63→4C7E: 4F          ld   c,a				; set new width for sprite
+
+   65→4C7F: 79          ld   a,c
+   66→4C80: 32 9B 4C    ld   ($4C9B),a		; modify an instruction
+
+   68→4C83: 78          ld   a,b				; a = sprite height to draw
+   69→4C84: 4F          ld   c,a
+   70→4C85: 84          add  a,h				; h = initial y coordinate
+   71→4C86: D6 A0       sub  $A0				; check if sprite is taller than screen (160)
+   72→4C88: 38 04       jr   c,$4C8E
+   73→4C8A: ED 44       neg
+   74→4C8C: 81          add  a,c
+   75→4C8D: 4F          ld   c,a				; update height to draw
+
+   77→4C8E: 79          ld   a,c
+   78→4C8F: 32 96 4C    ld   ($4C96),a	; modify an instruction
+   79→4C92: CD 42 3C    call $3C42		; given hl (Y,X coordinates), calculate corresponding screen offset
+   80→									; 32 pixels to the right are added to the calculated value
+   81→4C95: 06 00       ld   b,$00		; instruction modified from outside (with height to draw)
+   82→4C97: E5          push hl			;
+   83→4C98: D9          exx
+   84→4C99: D1          pop  de			; de = screen position to copy bytes to
+   85→4C9A: 01 00 00    ld   bc,$0000		; instruction modified from outside (with width to draw)
+   86→4C9D: ED B0       ldir				; copy width bytes from sprite buffer to screen
+   87→4C9F: 3E 00       ld   a,$00		; instruction modified from outside (with x distance of non-visible part)
+   88→4CA1: 85          add  a,l			; hl = hl + a
+   89→4CA2: 6F          ld   l,a
+   90→4CA3: 8C          adc  a,h
+   91→4CA4: 95          sub  l
+   92→4CA5: 67          ld   h,a
+   93→4CA6: D9          exx
+
+   95→; returns in hl the address of the next screen line
+   96→4CA7: 7C          ld   a,h
+   97→4CA8: C6 08       add  a,$08
+   98→4CAA: 67          ld   h,a			; move to next bank
+   99→4CAB: E6 38       and  $38
+  100→4CAD: 20 0D       jr   nz,$4CBC
+  101→4CAF: 7C          ld   a,h
+  102→4CB0: D6 08       sub  $08			; return to previous bank
+  103→4CB2: E6 C7       and  $C7
+  104→4CB4: 67          ld   h,a
+  105→4CB5: 3E 50       ld   a,$50		; each line occupies 0x50 bytes
+  106→4CB7: 85          add  a,l			; hl = hl + a
+  107→4CB8: 6F          ld   l,a
+  108→4CB9: 8C          adc  a,h
+  109→4CBA: 95          sub  l
+  110→4CBB: 67          ld   h,a
+
+  112→4CBC: 10 D9       djnz $4C97		; repeat until finished
+  113→4CBE: C9          ret
+
+  115→; check minimum sprite dimensions (to erase old sprite) and update 0x2dd5 and 0x2dd7
+  116→4CBF: 3A D5 2D    ld   a,($2DD5)	; get initial x position of the tile where sprite starts (Xtile)
+  117→4CC2: 95          sub  l
+  118→4CC3: 38 1E       jr   c,$4CE3		; if Xtile < X2, jump
+  119→4CC5: 4F          ld   c,a			; c = Xtile - X2
+  120→4CC6: 3A D7 2D    ld   a,($2DD7)	; get expanded sprite width
+  121→4CC9: 81          add  a,c			; add the difference
+  122→4CCA: BB          cp   e			; compare with minimum sprite width
+  123→4CCB: 38 01       jr   c,$4CCE		; if expanded width is less than minimum, jump
+  124→4CCD: 5F          ld   e,a			; otherwise, e = expanded width + Xtile - Xspr (take largest sprite width)
+
+  126→4CCE: 7D          ld   a,l
+  127→4CCF: E6 03       and  $03
+  128→4CD1: 4F          ld   c,a			; c = x position within current tile
+  129→4CD2: 7D          ld   a,l
+  130→4CD3: E6 FC       and  $FC
+  131→4CD5: 32 D5 2D    ld   ($2DD5),a	; update initial x position of the tile where sprite starts
+  132→4CD8: 7B          ld   a,e			; get sprite width
+  133→4CD9: 81          add  a,c
+  134→4CDA: C6 03       add  a,$03
+  135→4CDC: E6 FC       and  $FC			; round width to upper tile
+  136→4CDE: 32 D7 2D    ld   ($2DD7),a	; update sprite width
+  137→4CE1: 18 12       jr   $4CF5
+
+  139→; arrives here if sprite x position > tile start x position
+  140→4CE3: ED 44       neg				; a = difference in x position from tile to x2
+  141→4CE5: 83          add  a,e			; add to sprite width the difference in x between sprite start and tile associated with sprite
+  142→4CE6: 4F          ld   c,a
+  143→4CE7: 3A D7 2D    ld   a,($2DD7)	; a = expanded sprite width
+  144→4CEA: B9          cp   c
+  145→4CEB: 30 08       jr   nc,$4CF5		; if expanded sprite width >= minimum sprite width, check y values
+  146→4CED: 79          ld   a,c			; otherwise, expand minimum sprite width
+  147→4CEE: C6 03       add  a,$03
+  148→4CF0: E6 FC       and  $FC			; round width to upper tile
+  149→4CF2: 32 D7 2D    ld   ($2DD7),a	; save sprite width
+
+  151→; now do the same for y
+  152→4CF5: 3A D6 2D    ld   a,($2DD6)	; get initial y position of the tile where sprite starts (Ytile)
+  153→4CF8: 94          sub  h
+  154→4CF9: 38 1D       jr   c,$4D18		; if Ytile < Y2, jump
+  155→4CFB: 4F          ld   c,a			; c = Ytile - Y2
+  156→4CFC: 3A D8 2D    ld   a,($2DD8)	; get expanded sprite height
+  157→4CFF: 81          add  a,c
+  158→4D00: BA          cp   d			; check with minimum height
+  159→4D01: 38 01       jr   c,$4D04		; if expanded height is less than minimum, jump
+  160→4D03: 57          ld   d,a
+
+  162→4D04: 7C          ld   a,h
+  163→4D05: E6 07       and  $07
+  164→4D07: 4F          ld   c,a			; c = y position within current tile
+  165→4D08: 7C          ld   a,h
+  166→4D09: E6 F8       and  $F8
+  167→4D0B: 32 D6 2D    ld   ($2DD6),a	; update initial y position of the tile where sprite starts
+  168→4D0E: 7A          ld   a,d			; get sprite height
+  169→4D0F: 81          add  a,c
+  170→4D10: C6 07       add  a,$07
+  171→4D12: E6 F8       and  $F8			; round height to upper tile
+  172→4D14: 32 D8 2D    ld   ($2DD8),a	; update sprite height
+  173→4D17: C9          ret
+
+  175→4D18: ED 44       neg				; a = |Ytile - Y2|
+  176→4D1A: 82          add  a,d			; subtract from sprite height what protrudes from tile start in y
+  177→4D1B: 4F          ld   c,a
+  178→4D1C: 3A D8 2D    ld   a,($2DD8)	; a = sprite height
+  179→4D1F: B9          cp   c
+  180→4D20: D0          ret  nc			; if sprite height >= minimum height, exit
+  181→4D21: 79          ld   a,c
+  182→4D22: 18 EC       jr   $4D10		; round height to upper tile and update sprite height
+
+  184→; multiply a by hl and return result in de
+  185→4D24: 06 08       ld   b,$08		; 8 bits at most
+  186→4D26: 11 00 00    ld   de,$0000		; result = 0
+  187→4D29: CB 3F       srl  a
+  188→4D2B: 30 04       jr   nc,$4D31		; if least significant bit of number is 0, jump
+  189→4D2D: E5          push hl
+  190→4D2E: 19          add  hl,de		; if bit was 1, add
+  191→4D2F: EB          ex   de,hl
+  192→4D30: E1          pop  hl
+  193→4D31: 29          add  hl,hl		; hl = hl*2
+  194→4D32: 10 F5       djnz $4D29		; repeat for remaining bits
+  195→4D34: C9          ret
+
+  197→; returns in hl the initial position of the tile where sprite starts (h = initial Y pos in pixels, l = initial X pos in bytes)
+  198→; returns in de the sprite dimensions expanded to cover all tiles where sprite will be drawn
+  199→;  in hl the initial position is passed (h = Y pos in pixels, l = X pos in bytes)
+  200→;  in de the sprite dimensions are passed (d = height in pixels, e = width in bytes)
+  201→4D35: 7C          ld   a,h
+  202→4D36: E6 07       and  $07
+  203→4D38: 4F          ld   c,a		; c = h & 0x07 (Y pos within current tile (in pixels))
+  204→4D39: 7C          ld   a,h
+  205→4D3A: E6 F8       and  $F8
+  206→4D3C: 67          ld   h,a		; h = h & 0xf8 (current tile position in Y (in pixels))
+  207→4D3D: 7D          ld   a,l
+  208→4D3E: E6 03       and  $03
+  209→4D40: 47          ld   b,a		; b = l & 0x03 (X pos within current tile (in bytes))
+  210→4D41: 7D          ld   a,l
+  211→4D42: E6 FC       and  $FC
+  212→4D44: 6F          ld   l,a		; l = l & 0xfc (current tile position in X (in bytes))
+  213→4D45: 7A          ld   a,d
+  214→4D46: 81          add  a,c
+  215→4D47: C6 07       add  a,$07
+  216→4D49: E6 F8       and  $F8
+  217→4D4B: 57          ld   d,a		; calculate object height to cover all tiles where it will be drawn (d = (d + (h & 0x07) + 7) & 0xf8)
+  218→4D4C: 7B          ld   a,e
+  219→4D4D: 80          add  a,b
+  220→4D4E: C6 03       add  a,$03
+  221→4D50: E6 FC       and  $FC
+  222→4D52: 5F          ld   e,a		; calculate object width to cover all tiles where it will be drawn (e = (d + (l & 0x03) + 3) & 0xfc)
+  223→4D53: C9          ret
+
+
+  226→; given l and e, and h and d, which are initial positions and lengths of original and current sprites, check if current sprite can
+  227→;  be seen in original sprite area. If it can be seen, clip it. Otherwise, jump to next current sprite
+  228→; in a returns the length to draw of current sprite for the passed coordinate
+  229→; in h returns the distance from current sprite start to original sprite start
+  230→; in l returns the distance from original sprite start to current sprite start
+  231→4D54: 7D          ld   a,l		; a = initial position of original sprite
+  232→4D55: 94          sub  h		; a = distance from original sprite to current sprite
+  233→4D56: 28 11       jr   z,$4D69	; if original sprite starts at same point as current sprite, jump
+  234→4D58: 38 17       jr   c,$4D71	; if original sprite starts before current sprite, jump
+
+  236→; if it arrives here, current sprite starts before original sprite
+  237→4D5A: BA          cp   d		; if distance between sprites is >= current sprite width, current sprite is not visible
+  238→4D5B: 30 24       jr   nc,$4D81	;  in original sprite area, so jump to process next sprite
+
+  240→4D5D: 67          ld   h,a		; h = distance from current sprite start to original sprite start
+  241→4D5E: 2E 00       ld   l,$00
+  242→4D60: 83          add  a,e		; if distance between sprites + original sprite length >= d, jump
+  243→4D61: BA          cp   d
+  244→4D62: 30 02       jr   nc,$4D66
+  245→4D64: 7B          ld   a,e		; otherwise, original sprite is inside current sprite, so draw only original sprite length
+  246→4D65: C9          ret
+  247→4D66: 7A          ld   a,d		; since original sprite is not completely inside current sprite, draw only the part of
+  248→4D67: 94          sub  h		;  current sprite that overlaps with original sprite
+  249→4D68: C9          ret
+
+  251→; arrives here if current sprite starts at same point as original
+  252→4D69: 21 00 00    ld   hl,$0000
+  253→4D6C: 7B          ld   a,e		; a = expanded sprite width (in bytes)
+  254→4D6D: BA          cp   d		; compare expanded width with original width
+  255→4D6E: D8          ret  c		; if expanded original sprite width is < current sprite width, exit returning original width
+  256→4D6F: 7A          ld   a,d		; otherwise, return current sprite width
+  257→4D70: C9          ret
+
+  259→4D71: 26 00       ld   h,$00
+  260→4D73: ED 44       neg			; a = distance between initial position of original and current sprite
+  261→4D75: 6F          ld   l,a
+  262→4D76: BB          cp   e		; if distance between origin of 2 sprites is >= expanded original sprite width, jump to next sprite
+  263→4D77: 30 08       jr   nc,$4D81
+  264→4D79: ED 44       neg
+  265→4D7B: 83          add  a,e		; otherwise, save in a the length of visible part of current sprite in original sprite
+  266→4D7C: BA          cp   d		; if that length is <= current sprite length, exit
+  267→4D7D: D8          ret  c
+  268→4D7E: C8          ret  z
+  269→4D7F: 7A          ld   a,d		; otherwise, modify length to draw of current sprite
+  270→4D80: C9          ret
+
+  272→4D81: E1          pop  hl		; remove sprite from stack
+  273→4D82: C3 2E 4A    jp   $4A2E	; continue processing remaining sprites from stack
+
+  275→4D85: C9          ret				; this instruction is changed from outside and can be changed to nop
+  276→4D86: CD A5 37    call $37A5		; returns associated tile buffer address in hl
+  277→4D89: D8          ret  c
+  278→4D8A: DD CB 00 BE res  7,(ix+$00)	; clear most significant bit of tile buffer
+  279→4D8E: C9          ret
+
+  281→4D8F: E1          pop  hl
+  282→4D90: 11 80 8D    ld   de,$8D80
+  283→4D93: A7          and  a
+  284→4D94: ED 52       sbc  hl,de
+  285→4D96: D8          ret  c
+  286→4D97: 11 80 07    ld   de,$0780
+  287→4D9A: ED 52       sbc  hl,de
+  288→4D9C: 3F          ccf				; complement carry flag
+  289→4D9D: C9          ret
+
+  291→; copy to sprite buffer the tiles that are between initial and final depth
+  292→4D9E: 2A D9 4D    ld   hl,($4DD9)	; get upper depth limit from previous iteration and place it as lower depth
+  293→4DA1: 22 DC 4D    ld   ($4DDC),hl	;  limit for this iteration
+  294→4DA4: 0C          inc  c
+  295→4DA5: 04          inc  b
+  296→4DA6: ED 43 D9 4D ld   ($4DD9),bc	; place upper depth limit for this iteration
+  297→4DAA: D9          exx
+  298→4DAB: ED 5B FA 4A ld   de,($4AFA)	; de = assigned sprite buffer address
+  299→4DAF: D9          exx
+
+  301→4DB0: DD 2A 95 30 ld   ix,($3095)	; ix = tile buffer position
+  302→4DB4: ED 4B D7 2D ld   bc,($2DD7)	; get sprite width and height
+  303→4DB8: CB 38       srl  b			; b = b/8 (number of tiles sprite occupies in y)
+  304→4DBA: CB 38       srl  b
+  305→4DBC: CB 38       srl  b
+  306→4DBE: CB 39       srl  c			; c = c/4 (number of tiles sprite occupies in x)
+  307→4DC0: CB 39       srl  c
+
+  309→4DC2: C5          push bc			; save loop counters
+  310→4DC3: DD E5       push ix			; save current position in tile buffer
+  311→4DC5: D9          exx
+  312→4DC6: D5          push de			; save current position in sprite buffer
+  313→4DC7: D9          exx
+  314→4DC8: 41          ld   b,c			; b = number of sprite tiles in x
+  315→4DC9: 0E 02       ld   c,$02		; each tile has 2 priorities
+  316→4DCB: 21 E6 4D    ld   hl,$4DE6
+  317→4DCE: 22 E4 4D    ld   ($4DE4),hl	; change a jump
+
+  319→4DD1: DD 7E 02    ld   a,(ix+$02)	; read tile number from current tile buffer entry
+  320→4DD4: A7          and  a
+  321→4DD5: 28 44       jr   z,$4E1B		; if there's no tile, advance to next tile or next priority
+  322→4DD7: D9          exx
+  323→4DD8: 01 00 00    ld   bc,$0000		; instruction modified from outside with upper depth limit
+  324→4DDB: 21 00 00    ld   hl,$0000		; instruction modified from outside with lower depth limit
+  325→4DDE: DD 7E 00    ld   a,(ix+$00)	; read x depth of current tile
+  326→4DE1: CB 7F       bit  7,a			; if in this call hasn't drawn in this tile buffer position, check if tile in this
+  327→									; depth layer needs to be drawn. If it has been drawn and tile in this layer was drawn
+  328→									; in another previous iteration, combine it without checking depth
+  329→4DE3: C2 E6 4D    jp   nz,$4DE6		; instruction modified from outside (jump changed from outside)
+  330→4DE6: BD          cp   l			; compare tile x depth with minimum x depth
+  331→4DE7: DD 7E 01    ld   a,(ix+$01)	; read y depth of current tile
+  332→4DEA: 30 05       jr   nc,$4DF1		; if tile x depth >= minimum x depth, jump
+  333→4DEC: BC          cp   h
+  334→4DED: 30 02       jr   nc,$4DF1		; if tile y depth >= minimum y depth, jump
+  335→4DEF: 18 29       jr   $4E1A		; advance to next tile or next priority (tile has less depth than minimum)
+
+  337→4DF1: B8          cp   b			; if tile y depth >= sprite y position
+  338→4DF2: 30 26       jr   nc,$4E1A		;  if sprite is hidden by tile, advance to next tile or next priority
+  339→4DF4: DD 7E 00    ld   a,(ix+$00)	; read x depth of current tile
+  340→4DF7: B9          cp   c			; if tile x depth >= sprite x position
+  341→4DF8: 30 20       jr   nc,$4E1A		;  if sprite is hidden by tile, advance to next tile or next priority
+
+  343→; arrives here if tile has greater depth than minimum and less depth than sprite
+  344→4DFA: DD CB 00 7E bit  7,(ix+$00)
+  345→4DFE: 20 1A       jr   nz,$4E1A		; if current tile has already been drawn, advance to next tile or next priority
+  346→4E00: 21 11 4E    ld   hl,$4E11
+  347→4E03: 22 E4 4D    ld   ($4DE4),hl	; modify a jump to indicate that in this call has drawn some tile for this tile buffer position
+  348→4E06: D5          push de
+  349→4E07: CD A5 37    call $37A5		; if ix is inside tile buffer, cf = 0
+  350→4E0A: D1          pop  de
+  351→4E0B: 38 04       jr   c,$4E11		; if current tile is not inside tile buffer, jump
+  352→4E0D: DD CB 00 FE set  7,(ix+$00)	; indicate this tile has been processed
+
+  354→4E11: D5          push de
+  355→4E12: D9          exx
+  356→4E13: C5          push bc
+  357→4E14: CD 49 4E    call $4E49		; combine tile from ix+2 with what's in current sprite buffer position
+  358→4E17: C1          pop  bc
+  359→4E18: D9          exx
+  360→4E19: D1          pop  de
+
+  362→4E1A: D9          exx
+  363→4E1B: CD 85 4D    call $4D85		; ret (if hasn't finished processing sprites from stack) or clear bit 7 of (ix+0) from tile buffer (if it's a valid tile buffer position)
+  364→4E1E: DD 23       inc  ix			; move to higher priority tile in tile buffer
+  365→4E20: DD 23       inc  ix
+  366→4E22: DD 23       inc  ix
+  367→4E24: 0D          dec  c
+  368→4E25: 20 AA       jr   nz,$4DD1		; repeat until tile buffer entry priorities are completed
+
+  370→4E27: D9          exx
+  371→4E28: 13          inc  de			; move to next tile x position in sprite buffer
+  372→4E2A: 13          inc  de
+  373→4E2B: 13          inc  de
+  374→4E2C: 13          inc  de
+  375→4E2D: D9          exx
+  376→4E2E: 10 9A       djnz $4DC9		; repeat while not finished in x
+  377→4E2F: D9          exx
+
+  379→4E30: D1          pop  de
+  380→4E31: 2A D7 2D    ld   hl,($2DD7)
+  381→4E32: 26 00       ld   h,$00		; hl = sprite width
+  382→4E36: 29          add  hl,hl
+  383→4E37: 29          add  hl,hl
+  384→4E38: 29          add  hl,hl		; hl = sprite width*8
+  385→4E39: 19          add  hl,de		; move to next tile y position in sprite buffer
+  386→4E3A: EB          ex   de,hl
+  387→4E3B: D9          exx
+  388→4E3C: DD E1       pop  ix			; recover tile buffer position
+  389→4E3E: 01 60 00    ld   bc,$0060
+  390→4E41: DD 09       add  ix,bc		; move to next tile buffer line
+  391→4E43: C1          pop  bc
+  392→4E44: 05          dec  b			; repeat until tiles in y are finished
+  393→4E45: C2 C2 4D    jp   nz,$4DC2
+  394→4E48: C9          ret
+
+  396→; enters here with ix pointing to some tile buffer entry and de pointing to some sprite buffer position
+  397→; combine tile from current ix entry into current sprite buffer position
+  398→4E49: 26 00       ld   h,$00
+  399→4E4B: DD 6E 02    ld   l,(ix+$02)	; hl = tile number of current entry
+  400→4E4E: 4D          ld   c,l			; c = tile number of current entry
+  401→4E4F: 29          add  hl,hl
+  402→4E50: 29          add  hl,hl
+  403→4E51: 29          add  hl,hl
+  404→4E52: 29          add  hl,hl
+  405→4E53: 29          add  hl,hl		; hl = hl*32 (each tile occupies 32 bytes)
+  406→4E54: 3E 6D       ld   a,$6D		; tiles graphics that form screens start at 0x6d00
+  407→4E56: 84          add  a,h
+  408→4E57: 67          ld   h,a			; hl = pointer to corresponding tile graphic data
+
+  410→4E58: 79          ld   a,c
+  411→4E59: FE 0B       cp   $0B			; if graphic is less than 0x0b (graphics without transparency), jump (simpler case)
+  412→4E5B: 3A D7 2D    ld   a,($2DD7)	; a = sprite x width
+  413→4E5E: 38 32       jr   c,$4E92
+  414→4E60: D6 04       sub  $04			; x width = x width - 4
+  415→4E62: 32 87 4E    ld   ($4E87),a	: modify an instruction
+  416→4E65: DD CB 02 7E bit  7,(ix+$02)	; check which table to use according to tile number
+  417→4E69: D9          exx
+  418→4E6A: 26 9D       ld   h,$9D		; tables 0 and 1
+  419→4E6C: 28 02       jr   z,$4E70
+  420→4E6E: 26 9F       ld   h,$9F		; tables 2 and 3
+  421→4E70: D9          exx
+  422→4E71: 0E 08       ld   c,$08		; c = 8 pixels high
+  423→4E73: 06 04       ld   b,$04		; b = 4 bytes wide (16 pixels)
+  424→4E75: 7E          ld   a,(hl)		; get a byte from graphic
+  425→4E76: D9          exx
+  426→4E77: 6F          ld   l,a			; index into ands and ors tables with graphic byte
+  427→4E78: 4E          ld   c,(hl)		; get or value
+  428→4E79: 24          inc  h
+  429→4E7A: 46          ld   b,(hl)		; get and value
+  430→4E7B: 25          dec  h
+  431→4E7C: 1A          ld   a,(de)		; get a value from sprite buffer
+  432→4E7D: A0          and  b			; apply value to masks
+  433→4E7E: B1          or   c
+  434→4E7F: 12          ld   (de),a		; write value obtained combining background with sprite
+  435→4E80: 13          inc  de			; advance to next buffer position
+  436→4E81: D9          exx
+  437→4E82: 23          inc  hl			; advance to next graphic byte
+  438→4E83: 10 F0       djnz $4E75
+  439→4E85: D9          exx
+  440→4E86: 3E 00       ld   a,$00		; instruction modified from outside with width - 4
+  441→4E88: 83          add  a,e			; de = de + a (move to next sprite line)
+  442→4E89: 5F          ld   e,a
+  443→4E8A: 8A          adc  a,d
+  444→4E8B: 93          sub  e
+  445→4E8C: 57          ld   d,a
+  446→4E8D: D9          exx
+  447→4E8E: 0D          dec  c
+  448→4E8F: 20 E2       jr   nz,$4E73		; repeat until tile height is completed
+  449→4E91: C9          ret
+
+  451→; arrives here if tile number was < 0x0b (graphics without transparency)
+  452→4E92: D6 04       sub  $04			; x width = x width - 4
+  453→4E94: 32 A8 4E    ld   ($4EA8),a	; modify an instruction
+  454→4E97: E5          push hl
+  455→4E98: D9          exx
+  456→4E99: E1          pop  hl			; hl = graphic address
+  457→4E9A: 01 04 08    ld   bc,$0804		; 8 pixels high, 4 bytes wide (16 pixels)
+  458→4E9D: 0E 08       ld   c,$08		; this instruction has no purpose here (???)
+  459→4E9F: ED A0       ldi				; copy 16 pixels from tile line to sprite buffer
+  460→4EA1: ED A0       ldi
+  461→4EA3: ED A0       ldi
+  462→4EA5: ED A0       ldi
+  463→4EA7: 3E 00       ld   a,$00		; instruction modified from outside (with width - 4)
+  464→4EA9: 83          add  a,e			; de = de + a (move to next sprite line)
+  465→4EAA: 5F          ld   e,a
+  466→4EAB: 8A          adc  a,d
+  467→4EAC: 93          sub  e
+  468→4EAD: 57          ld   d,a
+  469→4EAE: 10 ED       djnz $4E9D		; repeat for remaining tile lines
+  470→4EB0: D9          exx
+  471→4EB1: C9          ret
+  472→; ----------------------------- end of sprite drawing ------------------------------
+
+  474→; ------------------- tile buffer drawing code -----------------------------------
+
+  476→; draw grid contents on screen from center outwards
+  477→4EB2: 11 A4 C2    ld   de,$C2A4			; de = (144, 64)
+  478→4EB5: DD 21 AA 90 ld   ix,$90AA			; ix = (7, 8)
+
+  480→; modify some instructions
+  481→4EB9: 3E 04       ld   a,$04			; initially draw 4 vertical positions downwards
+  482→4EBB: 32 CC 4E    ld   ($4ECC),a
+  483→4EBE: 3C          inc  a
+  484→4EBF: 32 F3 4E    ld   ($4EF3),a		; initially draw 5 vertical positions upwards
+  485→4EC2: 3E 01       ld   a,$01
+  486→4EC4: 32 E1 4E    ld   ($4EE1),a		; initially draw 1 horizontal position to the right
+  487→4EC7: 3C          inc  a
+  488→4EC8: 32 05 4F    ld   ($4F05),a		; initially draw 2 horizontal positions to the left
+
+  490→4ECB: 3E 14       ld   a,$14			; instruction modified from outside
+  491→4ECD: FE 14       cp   $14				; if draws more than 20 vertical positions, exit
+  492→4ECF: D0          ret  nc
+  493→4ED0: 47          ld   b,a				; b = number of vertical positions to draw (downwards)
+  494→4ED1: 3C          inc  a
+  495→4ED2: 3C          inc  a
+  496→4ED3: 32 CC 4E    ld   ($4ECC),a		; in next iteration will draw 2 more vertical positions downwards
+  497→4ED6: 78          ld   a,b				; a = number of positions to draw
+  498→4ED7: 01 60 00    ld   bc,$0060			; bc = size between grid lines
+  499→4EDD: CD 18 4F    call $4F18			; draw a vertical grid positions in video memory
+  500→4EE0: 3E 0F       ld   a,$0F			; instruction modified from outside
+
+  502→4EE2: 47          ld   b,a
+  503→4EE3: 3C          inc  a
+  504→4EE4: 3C          inc  a
+  505→4EE5: 32 E1 4E    ld   ($4EE1),a		; in next iteration will draw 2 more horizontal positions to the right
+  506→4EE8: 78          ld   a,b				; a = number of horizontal positions to draw
+  507→4EE9: 01 06 00    ld   bc,$0006			; bc = size between grid x positions
+  508→4EEC: 21 04 00    ld   hl,$0004			; hl = size between each 16 pixels in video memory
+  509→4EEF: CD 18 4F    call $4F18			; draw a horizontal grid positions in video memory
+
+  511→4EF2: 3E 0F       ld   a,$0F			; instruction modified from outside
+  512→4EF4: 47          ld   b,a
+  513→4EF5: 3C          inc  a
+  514→4EF6: 3C          inc  a
+  515→4EF7: 32 F3 4E    ld   ($4EF3),a		; in next iteration will draw 2 more vertical positions upwards
+  516→4EFA: 78          ld   a,b
+  517→4EFB: 01 A0 FF    ld   bc,$FFA0			; bc = value to return to previous grid line
+  518→4EFE: 21 B0 FF    ld   hl,$FFB0			; hl = value to return to previous screen line
+  519→4F01: CD 18 4F    call $4F18			; draw a vertical grid positions in video memory
+  520→4F04: 3E 0F       ld   a,$0F			; instruction modified from outside
+  521→4F06: 47          ld   b,a
+  522→4F07: 3C          inc  a
+  523→4F08: 3C          inc  a
+  524→4F09: 32 05 4F    ld   ($4F05),a		; in next iteration will draw 2 more horizontal positions to the left
+  525→4F0C: 78          ld   a,b
+  526→4F0D: 01 FA FF    ld   bc,$FFFA			; bc = value to return to previous grid x position
+  527→4F10: 21 FC FF    ld   hl,$FFFC			; bc = value to return to previous screen x position
+  528→4F13: CD 18 4F    call $4F18			; draw a horizontal grid positions in video memory
+  529→4F16: 18 B3       jr   $4ECB			; repeat until finished
+
+  531→; draw a horizontal or vertical grid positions in video memory
+  532→; a = number of positions to draw
+  533→; bc = size between grid positions
+  534→; hl = size between positions in video memory
+  535→; ix = position in buffer
+  536→; de = position in video memory
+  537→4F18: 22 35 4F    ld   ($4F35),hl		; fill some parameters
+  538→4F1B: ED 43 30 4F ld   ($4F30),bc
+
+  540→4F1F: 47          ld   b,a				; b = number of positions to draw
+
+  542→4F20: C5          push bc
+  543→4F21: DD 7E 02    ld   a,(ix+$02)		; read graphic number to draw (background)
+  544→4F24: A7          and  a
+  545→4F25: C4 3D 4F    call nz,$4F3D			; copy a 16x8 graphic to video memory (de), combining it with what was there
+  546→4F28: DD 7E 05    ld   a,(ix+$05)		; read graphic number to draw (foreground)
+  547→4F2B: A7          and  a
+  548→4F2C: C4 3D 4F    call nz,$4F3D			; copy a 16x8 graphic to video memory (de), combining it with what was there
+
+  550→4F2F: 01 00 00    ld   bc,$0000			; instruction modified from outside
+  551→4F32: DD 09       add  ix,bc			; move to next screen position
+  552→4F34: 21 00 00    ld   hl,$0000			; instruction modified from outside
+  553→4F37: 19          add  hl,de			; move to next grid position
+  554→4F38: EB          ex   de,hl
+  555→4F39: C1          pop  bc
+  556→4F3A: 10 E4       djnz $4F20			; repeat for remaining positions
+  557→4F3C: C9          ret
+
+  559→; copy graphic a (16x8) to video memory (de), combining it with what was there
+  560→; a = bits 7-0: graphic number. Bit 7 = indicates which color serves as mask (2 or 1)
+  561→; de = position in video memory
+  562→4F3D: D5          push de
+  563→4F3E: D9          exx				; exchange all registers
+  564→4F3F: 26 00       ld   h,$00
+  565→4F41: 6F          ld   l,a
+  566→4F42: 29          add  hl,hl
+  567→4F43: 29          add  hl,hl
+  568→4F44: 29          add  hl,hl
+  569→4F45: 29          add  hl,hl
+  570→4F46: 29          add  hl,hl		; hl = graphic address (32*a)
+  571→4F47: 4F          ld   c,a			; c = graphic number
+  572→4F48: 3E 6D       ld   a,$6D		; abbey graphics start at 0x6d00
+  573→4F4A: 84          add  a,h
+  574→4F4B: 67          ld   h,a			; hl points to corresponding graphic
+  575→4F4C: CB 79       bit  7,c
+  576→4F4E: D9          exx				; exchange all registers
+  577→4F4F: 26 9D       ld   h,$9D		; depending on bit 7 choose an AND and OR table
+  578→4F51: 28 02       jr   z,$4F55		; if bit 7 is not set, jump
+  579→4F53: 26 9F       ld   h,$9F
+  580→4F55: D9          exx				; exchange all registers
+  581→4F56: 0E 08       ld   c,$08		; 8 pixels high
+  582→4F58: 06 04       ld   b,$04		; 4 bytes wide (16 pixels)
+
+  584→4F5A: 7E          ld   a,(hl)		; read a byte from graphic
+  585→4F5B: D9          exx				; exchange all registers
+  586→4F5C: 6F          ld   l,a			; index into tables
+  587→4F5D: 4E          ld   c,(hl)		; c = OR table value
+  588→4F5E: 24          inc  h
+  589→4F5F: 46          ld   b,(hl)		; b = AND table value
+  590→4F60: 1A          ld   a,(de)		; a = read what's on screen
+  591→4F61: A0          and  b			; combine graphic with what's on screen
+  592→4F62: B1          or   c
+  593→4F63: 12          ld   (de),a		; update screen
+  594→4F64: 25          dec  h
+  595→4F65: 13          inc  de			; advance to next x position (screen)
+  596→4F66: D9          exx
+  597→4F67: 23          inc  hl			; advance to next graphic byte
+  598→4F68: 10 F0       djnz $4F5A		; finish line
+  599→4F6A: D9          exx
+

@@ -1,0 +1,600 @@
+2AE6: 6F          ld   l,a			; l = X coordinate of the object on the screen
+2AE7: FD 7E 03    ld   a,(iy+$03)	; gets the Y coordinate of the character
+2AEA: D6 00       sub  $00			; modified from outside (4 most significant bits of the Y position of the current screen - 12)
+2AEC: D8          ret  c			; if the object in Y is < visible lower limit of Y, exits
+2AED: FE 28       cp   $28
+2AEF: D0          ret  nc			; if the object in Y is >= visible upper limit of Y, exits
+2AF0: 67          ld   h,a			; h = Y coordinate of the object on the screen
+2AF1: FD 7E 04    ld   a,(iy+$04)	; gets the height of the character
+2AF4: CD 73 24    call $2473		; depending on the height, returns the base height of the floor in b
+2AF7: 78          ld   a,b
+2AF8: FE 00       cp   $00			; modified from outside (base height of the current screen)
+2AFA: C0          ret  nz			; if the object is not on the same floor, exits
+2AFB: FD 7E 04    ld   a,(iy+$04)
+2AFE: 90          sub  b
+2AFF: 47          ld   b,a			; b = object height adjusted for this screen
+
+; upon arriving here the parameters are:
+; l = X coordinate of the object on the grid
+; h = Y coordinate of the object on the grid
+; b = object height on the grid adjusted for this floor
+2B00: CD 8A 24    call $248A		; routine that changes the coordinate system depending on screen orientation (this call is modified from outside)
+2B03: DD 75 12    ld   (ix+$12),l	; saves the new x and y coordinates in the sprite
+2B06: DD 74 13    ld   (ix+$13),h
+
+; converts grid coordinates to screen coordinates
+2B09: 7C          ld   a,h
+2B0A: 85          add  a,l
+2B0B: 4F          ld   c,a			; c = pos x + pos y = y coordinate on screen
+2B0C: 90          sub  b			; subtracts the height (the taller the object, the lower y it has on screen)
+2B0D: D8          ret  c			; if calculated y < 0, exits
+2B0E: D6 06       sub  $06			; y calc = y calc - 6 (shifts 6 units up)
+2B10: D8          ret  c			; if y calc < 0, exits
+2B11: FE 08       cp   $08
+2B13: D8          ret  c			; if y calc < 8, exits
+2B14: FE 3A       cp   $3A
+2B16: D0          ret  nc			; if y calc  >= 58, exits
+
+; arrives here if y calc is between 8 and 57
+2B17: 3C          inc  a			; a = y calc + 1
+2B18: 87          add  a,a
+2B19: 87          add  a,a			; a = 4*(y calc + 1)
+2B1A: 47          ld   b,a			; b = 4*(y calc + 1)
+2B1B: 7D          ld   a,l			; a = pos x
+2B1C: 94          sub  h			; a = pos x - pos y = x coordinate on screen
+2B1D: 87          add  a,a			; a = 2*(pos x - pos y)
+2B1E: C6 50       add  a,$50		; a = 2*(pos x - pos y) + 80
+2B20: D6 28       sub  $28			; 0x28 = 40
+2B22: D8          ret  c
+2B23: FE 50       cp   $50			; 0x50 = 80
+2B25: D0          ret  nc
+
+2B26: 6F          ld   l,a			; l = pos x with new coordinate system
+2B27: 60          ld   h,b			; h = pos y with new coordinate system
+
+2B28: D1          pop  de			; gets the return address
+2B29: 79          ld   a,c			; a = pos x + pos y = y coordinate on screen
+2B2A: D6 10       sub  $10			; a = y coordinate on screen - 16
+2B2C: 30 01       jr   nc,$2B2F		; if position in y < 16, pos y = 0
+2B2E: AF          xor  a
+2B2F: 00          nop				; modified from outside (either ret or nop)
+
+; if it reaches here it modifies the sprite position on screen
+2B30: 4F          ld   c,a
+2B31: 06 00       ld   b,$00		; b = first entry
+2B33: FD 7E 05    ld   a,(iy+$05)
+2B36: CB 7F       bit  7,a
+2B38: 20 3E       jr   nz,$2B78		; if the character occupies one position, jumps
+
+2B3A: FD CB 00 46 bit  0,(iy+$00)	; reads bit 0 of the animation counter
+2B3E: 28 01       jr   z,$2B41		; if it's 1, advances to the next entry
+2B40: 04          inc  b
+
+2B41: ED 5B 84 2D ld   de,($2D84)	; gets an address related to screen orientation and table 0x309f
+2B45: FD 7E 01    ld   a,(iy+$01)	; gets the character orientation
+2B48: CD 80 24    call $2480		; modifies the orientation passed in a with the current screen orientation
+2B4B: 0F          rrca				; shifts the orientation 4 bits to the left (each table entry is 16 bytes)
+2B4C: 0F          rrca
+2B4D: 0F          rrca
+2B4E: 0F          rrca
+2B4F: E6 30       and  $30			; a = orientation*16
+2B51: 80          add  a,b			; a = orientation*16 + 2*b
+2B52: 80          add  a,b
+2B53: 83          add  a,e			; de = de + a
+2B54: 5F          ld   e,a
+2B55: 8A          adc  a,d
+2B56: 93          sub  e
+2B57: 57          ld   d,a
+
+2B58: 1A          ld   a,(de)		; reads a byte from the table
+2B59: 85          add  a,l			; adds the x of the new coordinate system
+2B5A: FD 86 07    add  a,(iy+$07)	; adds an offset
+2B5D: 6F          ld   l,a			; updates x
+2B5E: 13          inc  de
+2B5F: 1A          ld   a,(de)		; reads a byte from the table
+2B60: 84          add  a,h			; adds the y of the new coordinate system
+2B61: FD 86 08    add  a,(iy+$08)	; adds an offset
+2B64: 67          ld   h,a			; updates y
+2B65: DD 75 01    ld   (ix+$01),l	; saves the x position of the sprite (in bytes)
+2B68: DD 74 02    ld   (ix+$02),h	; saves the y position of the sprite (in pixels)
+2B6B: DD 7E 00    ld   a,(ix+$00)
+2B6E: FE FE       cp   $FE
+2B70: C0          ret  nz			; if the sprite is not visible, continues
+2B71: DD 75 03    ld   (ix+$03),l	; saves the previous x position of the sprite (in bytes)
+2B74: DD 74 04    ld   (ix+$04),h	; saves the previous y position of the sprite (in pixels)
+2B77: C9          ret
+
+; arrives here if the character occupies one position (because it's on the stairs)
+2B78: 04          inc  b
+2B79: 04          inc  b			; advances to the third entry
+2B7A: FD CB 05 6E bit  5,(iy+$05)
+2B7E: 20 BA       jr   nz,$2B3A		; if not oriented to go up or down the stairs, jumps
+2B80: 04          inc  b			; advances to the fifth entry
+2B81: 04          inc  b
+
+; arrives here if the character occupies one position and is oriented to go up or down the stairs (already pointing to 5th entry)
+2B82: FD 7E 05    ld   a,(iy+$05)
+2B85: E6 03       and  $03
+2B87: 20 10       jr   nz,$2B99		; does this ever happen???
+2B89: FD CB 00 46 bit  0,(iy+$00)	; reads bit 0 of the animation counter
+2B8D: 28 B2       jr   z,$2B41
+2B8F: 04          inc  b			; advances to the sixth entry
+
+2B90: FD CB 05 66 bit  4,(iy+$05)	; checks if going down
+2B94: 28 AB       jr   z,$2B41
+2B96: 04          inc  b			; advances one entry
+2B97: 18 A8       jr   $2B41
+
+; ??? when does it arrive here???
+2B99: 04          inc  b			; advances to the eighth entry
+2B9A: 04          inc  b
+2B9B: 04          inc  b
+2B9C: FD CB 05 76 bit  6,(iy+$05)
+2BA0: 20 04       jr   nz,$2BA6
+2BA2: 04          inc  b			; advances to the 12th entry
+2BA3: 04          inc  b
+2BA4: 04          inc  b
+2BA5: 04          inc  b
+2BA6: FE 01       cp   $01			; if bits 0 and 1 of (iy+05) != 1, jumps (entry 12 or 13)
+2BA8: 20 E6       jr   nz,$2B90
+2BAA: 04          inc  b			; advances to the 14th entry
+2BAB: 04          inc  b
+2BAC: 18 E2       jr   $2B90		; jumps (entry 14 or 15)
+
+; table with data to move the characters
+; the table has 6 entries of 10 bytes with the format:
+; byte 0-1: address of the sprite associated with the character
+; byte 2-3: address to the position data of the character associated with the sprite
+; byte 4-5: address of the routine where the character thinks
+; byte 6-7: routine to call if graphics need to be flipped
+; byte 8-9: address of the animation table for the character
+2BAE:	2E17 3036 288D 353B	319F	; guillermo
+2BB8:	2E2B 3045 2C3A 34E2	31BF	; adso
+2BC2:	2E3F 3054 2C3A 34FB C000	; malaquias
+2BCC:	2E53 3063 2C3A 350B	C002	; the abbot
+2BD6:	2E67 3072 2C3A 351B C004	; berengario
+2BE0:	2E7B 3081 2C3A 352B C006	; severino
+	FFFF
+
+; table of pointers to the routine parameters
+2BEC: 	2922 -> where to copy the address of the current character's sprite
+	2929 -> where to copy the address of the current character's data
+	2951 -> where to copy the address of the behavior routine
+	2A59 -> where to copy the routine to call to flip the graphics
+	2A84 -> where to copy the address of the animation table for the character
+
+; sets the parameters of the 0x2920 routine for the current character
+2BF6: 06 05       ld   b,$05		; 5 values
+2BF8: DD 21 EC 2B ld   ix,$2BEC		; points to the table of addresses of the routine parameters
+2BFC: DD 5E 00    ld   e,(ix+$00)	; de = [ix]
+2BFF: DD 56 01    ld   d,(ix+$01)
+2C02: DD 23       inc  ix
+2C04: DD 23       inc  ix
+2C06: 7E          ld   a,(hl)		; reads a value from hl and copies it to de
+2C07: 12          ld   (de),a
+2C08: 23          inc  hl
+2C09: 13          inc  de
+2C0A: 7E          ld   a,(hl)
+2C0B: 12          ld   (de),a
+2C0C: 23          inc  hl
+2C0D: 10 ED       djnz $2BFC		; repeats until all values are done
+2C0F: C9          ret
+
+
+; reads a bit of data from the character's commands and puts it in the CF
+2C10: FD 7E 09    ld   a,(iy+$09)	; if iy+09 != 0, jumps
+2C13: A7          and  a
+2C14: 20 13       jr   nz,$2C29
+
+; enters here if the counter of bits 0-2 of iy+09 is 0, and bit 7 of iy+0x09 is not 1
+2C16: FD 7E 0C    ld   a,(iy+$0c)	; at 0x0c and 0x0d a pointer to the character's movement commands data is saved
+2C19: FD 86 0B    add  a,(iy+$0b)	; at 0x0b is the index within the commands
+2C1C: FD 34 0B    inc  (iy+$0b)
+2C1F: 6F          ld   l,a
+2C20: FD 8E 0D    adc  a,(iy+$0d)
+2C23: 95          sub  l
+2C24: 67          ld   h,a			; hl = dir(iy+0x0c-iy+0x0d)[iy+0x0b]
+2C25: 7E          ld   a,(hl)
+2C26: FD 77 0A    ld   (iy+$0a),a	; gets a new command byte and saves it
+
+2C29: FD 7E 09    ld   a,(iy+$09)	; increments the counter of bits 0-2
+2C2C: 3C          inc  a
+2C2D: E6 07       and  $07
+2C2F: FD 77 09    ld   (iy+$09),a
+2C32: FD 7E 0A    ld   a,(iy+$0a)	; shifts the command bits to the left one position
+2C35: 87          add  a,a
+2C36: FD 77 0A    ld   (iy+$0a),a
+2C39: C9          ret
+
+; executes movement commands for adso and for the monks
+; ix that points to the character's sprite
+; iy points to the character's position data
+2C3A: FD CB 09 7E bit  7,(iy+$09)	; if there are no commands in the buffer, exits
+2C3E: C0          ret  nz
+
+2C3F: CD 83 27    call $2783		; returns the address to calculate the height of neighboring positions according to the size of the character's position and orientation
+2C42: 11 06 00    ld   de,$0006
+2C45: 19          add  hl,de		; points to the amount to add to the position if the character keeps advancing in that direction
+2C46: E5          push hl
+2C47: CD 5C 2D    call $2D5C		; prepares for copying character data to buffer
+2C4A: ED B0       ldir				; copies the data to buffer (0x02-0x0b)
+2C4C: CD B8 2C    call $2CB8		; reads a command from the character into c
+2C4F: E1          pop  hl
+2C50: 79          ld   a,c			; a = command read
+2C51: 0E 01       ld   c,$01		; c = +1
+2C53: FE 03       cp   $03
+2C55: CA 0C 2A    jp   z,$2A0C		; if got a 3, turn left
+2C58: 0E FF       ld   c,$FF		; c = -1
+2C5A: FE 02       cp   $02
+2C5C: CA 0C 2A    jp   z,$2A0C		; if got a 2, turn right
+
+2C5F: FD CB 05 7E bit  7,(iy+$05)	; if the character occupies a single position in the height buffer, jumps
+2C63: 20 12       jr   nz,$2C77
+
+; arrives here if the character occupies 4 positions in the height buffer, and with c = -1
+2C65: FE 01       cp   $01
+2C67: 20 04       jr   nz,$2C6D		; if the command was not 1, jumps
+2C69: AF          xor  a
+2C6A: C3 A0 2C    jp   $2CA0		; if got a one, jumps to check if can move in that direction and if not, restores the character's position state
+
+; arrives here with c = -1 if the character occupies a single position in the height buffer or if got something different from one and the character occupies 4 tile buffer positions
+2C6D: FE 05       cp   $05
+2C6F: 3E FF       ld   a,$FF
+2C71: 28 2D       jr   z,$2CA0		; checks if can move in that direction and if not, restores the character's position state
+2C73: 3E 01       ld   a,$01
+2C75: 18 29       jr   $2CA0		; checks if can move in that direction and if not, restores the character's position state
+
+; arrives here with c = -1 if the character occupies a single position in the height buffer
+2C77: A7          and  a
+2C78: 20 10       jr   nz,$2C8A		; if didn't get a 0, jumps
+2C7A: FD CB 05 6E bit  5,(iy+$05)
+2C7E: 28 04       jr   z,$2C84		; if bit 5 is 0 (if not rotated on a slope), jumps
+2C80: AF          xor  a
+2C81: 4F          ld   c,a			; a and c = 0
+2C82: 18 1C       jr   $2CA0		; otherwise, checks if can move in that direction and if not, restores the character's position state
+
+; arrives here if the character occupies one position, got a 0 and bit 5 was 0 (if not rotated on a slope)
+2C84: 0E 02       ld   c,$02
+2C86: 3E 01       ld   a,$01
+2C88: 18 16       jr   $2CA0		; checks if can move in that direction and if not, restores the character's position state
+
+; arrives here if the character occupies one position, and didn't get a 0
+2C8A: FE 01       cp   $01
+2C8C: 20 06       jr   nz,$2C94		; if didn't get a 1, jumps
+2C8E: 0E FE       ld   c,$FE
+2C90: 3E FF       ld   a,$FF
+2C92: 18 0C       jr   $2CA0		; checks if can move in that direction and if not, restores the character's position state
+
+; arrives here if the character occupies one position, and didn't get a 0 or a 1
+2C94: FE 04       cp   $04
+2C96: 20 05       jr   nz,$2C9D		; if didn't get a 4, jumps
+2C98: 0E 01       ld   c,$01
+2C9A: 79          ld   a,c
+
+2C9B: 18 03       jr   $2CA0		; checks if can move in that direction and if not, restores the character's position state
+2C9D: 0E FF       ld   c,$FF
+2C9F: 79          ld   a,c
+
+; checks if can move in that direction and if not, restores the character's position state
+; in a passes the height difference to where it moves, which will be used if the character is not on the current screen
+2CA0: 47          ld   b,a
+2CA1: AF          xor  a
+2CA2: 32 C1 2D    ld   ($2DC1),a	; indicates that for now there is no movement
+2CA5: 78          ld   a,b
+2CA6: CD B8 27    call $27B8		; checks the height of the positions the character is going to move to and returns them in a and c
+								; if the character is not on the screen being shown, a = what was passed
+2CA9: CD 54 29    call $2954		; if can move forward, updates the character's sprite
+2CAC: 3A C1 2D    ld   a,($2DC1)	; if the character has moved, exits
+2CAF: A7          and  a
+2CB0: C0          ret  nz
+2CB1: CD 5C 2D    call $2D5C		; otherwise, prepares for copying character data to buffer
+2CB4: EB          ex   de,hl
+2CB5: ED B0       ldir				; restores the original data since it couldn't move
+2CB7: C9          ret
+
+; reads and interprets the commands passed to the character. According to the bits it reads, values are returned:
+; * if the character occupies 4 positions:
+;   if reads 1 -> returns c = 1 -> tries to advance one position forward (with a = 0 and c = -1) -> advances
+;   if reads 010 -> returns c = 2 -> turns right
+;   if reads 011 -> returns c = 3 -> turns left
+;   if reads 0010 -> returns c = 4 -> tries to advance one position forward (with a = 1 and c = -1) -> goes up (and comes to occupy one position)
+;   if reads 0011 -> returns c = 5 -> tries to advance one position forward (with a = -1 and c = -1) -> goes down (and comes to occupy one position)
+;   if reads 0001 -> sets bit 7,(9) and exits 2 routines outward
+;   if reads 0000 -> resets the counter, the index, enables commands, and processes another command
+; * if the character occupies 1 position:
+;   if reads 10 -> returns c = 0 -> 	if bit 5 = 1, tries to advance one position forward (with a = 0 and c = 0) -> advances
+;									if bit 5 = 0, goes up (and continues occupying one position) (with a = 1 and c = 2)
+;   if reads 11 -> returns c = 1 -> goes down (and continues occupying one position) (with a = -1 and c = -2)
+;   if reads 010 -> returns c = 2 -> turns right
+;   if reads 011 -> returns c = 3 -> turns left
+;   if reads 0010 -> returns c = 4 -> goes up (and comes to occupy 4 positions) (with a = 1 and c = 1)
+;   if reads 0011 -> returns c = 5 -> goes down (and comes to occupy 4 positions) (with a = -1 and c = -1)
+;   if reads 0001 -> sets bit 7,(9) and exits 2 routines outward
+;   if reads 0000 -> exits with c = 0
+2CB8: FD CB 05 7E bit  7,(iy+$05)	; if the character occupies 4 positions in the height buffer, jumps
+2CBC: 28 0D       jr   z,$2CCB
+
+; arrives here if the character occupies one position in the height buffer
+2CBE: CD 10 2C    call $2C10		; reads a bit of data from the character's commands and puts it in the CF
+2CC1: 30 0B       jr   nc,$2CCE		; if read a 0, jumps to process the rest as if it were 4 positions
+2CC3: CD 10 2C    call $2C10		; reads a bit of data from the character's commands and puts it in the CF
+2CC6: 0E 00       ld   c,$00
+2CC8: CB 11       rl   c			; c = (c << 1) | CF
+2CCA: C9          ret
+
+; arrives here if the character occupies 4 positions in the height buffer
+2CCB: CD 10 2C    call $2C10		; reads a bit of data from the character's commands and puts it in the CF
+
+2CCE: 0E 01       ld   c,$01
+2CD0: D8          ret  c			; if read a 1, exits
+
+2CD1: CD 10 2C    call $2C10		; reads a bit of data from the character's commands and puts it in the CF
+2CD4: 30 06       jr   nc,$2CDC		; if read a 0, jumps
+2CD6: CD 10 2C    call $2C10		; reads a bit of data from the character's commands and puts it in the CF
+2CD9: CB 11       rl   c			; c = (c << 1) | CF
+2CDB: C9          ret
+
+2CDC: CB 11       rl   c			; c = (c << 1) | CF
+2CDE: CD 10 2C    call $2C10		; reads a bit of data from the character's commands and puts it in the CF
+2CE1: 38 F3       jr   c,$2CD6		; if read a 1, jumps
+2CE3: CD 10 2C    call $2C10		; reads a bit of data from the character's commands and puts it in the CF
+2CE6: 38 11       jr   c,$2CF9		; if read a 1, jumps
+
+2CE8: 0E 00       ld   c,$00
+2CEA: FD CB 05 7E bit  7,(iy+$05)	; if it's a character that occupies only one position in the position buffer, exits
+2CEE: C0          ret  nz
+2CEF: FD 36 0B 00 ld   (iy+$0b),$00 ; resets the counter, the index and enables commands
+2CF3: FD 36 09 00 ld   (iy+$09),$00
+2CF7: 18 BF       jr   $2CB8
+
+2CF9: FD CB 09 FE set  7,(iy+$09)	; indicates that commands have finished and exits 2 routines outward
+2CFD: E1          pop  hl
+2CFE: E1          pop  hl
+2CFF: C9          ret
+
+; saves in 0x156a-0x156b the address of screen data a
+2D00: 32 BD 2D    ld   ($2DBD),a	; saves the current screen
+2D03: 21 00 40    ld   hl,$4000
+2D06: A7          and  a
+2D07: 28 15       jr   z,$2D1E		; if the current screen is not defined (or is number 0), jumps
+2D09: F3          di
+2D0A: 01 C7 7F    ld   bc,$7FC7		; loads abadia8
+2D0D: ED 49       out  (c),c
+
+2D0F: 47          ld   b,a			; b = screen to search for
+2D10: 7E          ld   a,(hl)		; the first byte indicates the length of the screen in bytes
+2D11: 85          add  a,l
+2D12: 6F          ld   l,a
+2D13: 8C          adc  a,h
+2D14: 95          sub  l
+2D15: 67          ld   h,a			; increments the pointer according to the screen size
+2D16: 10 F8       djnz $2D10		; repeats until reaching the desired screen
+
+2D18: 01 C0 7F    ld   bc,$7FC0		; restores the configuration
+2D1B: ED 49       out  (c),c
+2D1D: FB          ei
+2D1E: 22 6A 15    ld   ($156A),hl	; saves the address of the current screen data
+2D21: C9          ret
+
+; fills the height buffer indicated by 0x2d8a with data read from abadia7 and cropped for the character's screen passed in iy
+2D22: 2A 8A 2D    ld   hl,($2D8A)	; hl = gets the height buffer to fill
+2D25: 54          ld   d,h
+2D26: 5D          ld   e,l
+2D27: 13          inc  de
+2D28: 01 3F 02    ld   bc,$023F		; clears 576 bytes (24x24) = (4 + 16 + 4)x2
+2D2B: 36 00       ld   (hl),$00
+2D2D: ED B0       ldir
+
+2D2F: CD 8F 0B    call $0B8F		; calculates the minimum visible screen values for the character's position in iy
+2D32: A7          and  a
+2D33: 21 00 4A    ld   hl,$4A00		; height values of the ground floor
+2D36: 28 0A       jr   z,$2D42
+2D38: 21 00 4F    ld   hl,$4F00		; height values of the first floor
+2D3B: FE 0B       cp   $0B
+2D3D: 28 03       jr   z,$2D42
+2D3F: 21 80 50    ld   hl,$5080		; height values of the second floor
+
+2D42: 22 FB 38    ld   ($38FB),hl	; saves the address dependent on the floor
+2D45: C3 45 39    jp   $3945		; fills the screen buffer at 0x2d8a with data read from abadia7 and cropped for the current screen
+
+; ---------------- this routine is called on each interrupt --------------------------
+
+2D48: F3          di
+2D49: F5          push af
+2D4A: 3E 00       ld   a,$00		; in the interrupt the value of this counter is changed
+2D4C: 3C          inc  a
+2D4D: 28 03       jr   z,$2D52		; if the counter is 0xff, doesn't modify the value
+2D4F: 32 4B 2D    ld   ($2D4B),a	; updates the variable for the next execution
+2D52: CD 60 10    call $1060		; updates music if necessary
+2D55: CD 54 3B    call $3B54		; related to speech
+2D58: F1          pop  af
+2D59: FB          ei
+2D5A: ED 4D       reti
+
+; prepares for copying character data to buffer
+2D5C: FD E5       push iy
+2D5E: E1          pop  hl
+2D5F: 23          inc  hl			; advances the pointer position to the x position data
+2D60: 23          inc  hl
+2D61: 11 68 2D    ld   de,$2D68		; de = destination
+2D64: 01 0A 00    ld   bc,$000A		; data length
+2D67: C9          ret
+
+; auxiliary buffer for data
+2D68: 01 23 3E 20 12 13 78 04 B9 38
+
+2D72: 00	related to the demo key buffer
+
+; used to simulate another character input
+2D73: 00          nop
+2D74: 00          nop
+; X, Y position and height of the current character
+2D75: 00 00 00
+
+2D78: 01 	; indicates if door graphics were flipped
+2D79: 0D 70    ld   bc,$700D
+2D7B: 3D          dec  a
+2D7C: CD B4 3B    call $3BB4
+
+; copied to 0x114-0x121
+2D7F: 1F 01 04 BC 4F 9F 30 AC 0D 36 30 C0 01 01
+	0x2d7f energy (obsequium)
+	0x2d80 current day number (from 1 to 7)
+	0x2d81 current time of day
+		0 = night
+		1 = prime
+		2 = terce
+		3 = sext
+		4 = none
+		5 = vespers
+		6 = compline
+	0x2d82-0x2d83: pointer to the next hour of the day
+	0x2d84-0x2d85 address of the table for calculating offset according to the animation of a game entity for the current screen orientation
+	0x2d86-0x2d87 amount of time to wait for the time of day to advance (as long as it's not zero)
+	0x2d88-0x2d89 pointer to the data of the current character followed by the camera
+	0x2d8a-0x2d8b pointer to the current screen's height buffer (576 (24*24) byte buffer)
+	0x2d8c if it's 1 indicates the mirror hasn't been opened. If it's 0, indicates the mirror has been opened
+
+; --- clears from 0x2d8d to 0x2dd7
+
+2D8D: 07
+2D8E: 2313
+2D90: 0D20
+
+2D92: F7
+2D93: 1838
+2D95: E5D5
+
+2D97-2DBB: 00
+2DBC: 00 ; if != 0, contains the roman numeral generated for the mirror room puzzle
+2DBD: 00          nop
+2DBE: 0000 ; bonuses obtained
+2DC0: 00          nop
+2DC1: 00          nop
+
+2DC2: used to save the stack on initialization
+2DC4: C9          ret
+
+; auxiliary buffer for moving the character (used in the routine for guillermo to advance position)
+2DC5: 38 E1 D1 C1 23 13 10 E8 CD A0 00 7C B5 C8 3A 23
+
+2DD5: 0000
+2DD7: 0000
+
+; copied to 0x122-0x131. doors that characters can enter
+2DD9: 	08 3038
+	08 3047
+	1F 3056
+	19 3065
+	1F 3074
+	0C 3083
+	FF
+
+; copied to 0x132-0x154. character objects
+2DEC: 	01 3038 20 00 FD 00
+	01 3047 00 80 02 00
+	01 3056 00 80 02 00
+	00 3065 00 00 10 00
+	00 3074 00 00 00 00
+	00 3083 00 00 00 00
+	FF
+
+; character sprites
+2E17: FE 1E 42 1E 42 05 22 38B4 05 22 80 00 00 00 00 00 00 00 00 ; guillermo
+2E2B: FE 28 32 28 32 05 22 38AA 05 24 80 00 00 00 00 00 00 00 00 ; adso
+2E3F: FE 32 32 32 32 05 22 3A2A 05 22 00 00 00 00 00 00 00 00 00 ; malaquias
+2E53: FE 32 32 32 32 05 22 3A2A 05 22 00 00 00 00 00 00 00 00 00 ; the abbot
+2E67: FE 32 32 32 32 05 22 3A2A 05 22 00 00 00 00 00 00 00 00 00 ; berengario
+2E7B: FE 32 32 32 32 05 22 3A2A 05 22 00 00 00 00 00 00 00 00 00 ; severino
+
+; door sprites
+2E8F: FE 00 00 00 00 06 28 3A98 06 28 80 00 00 00 00 00 00 00 00 ; door of the abbot's room
+2EA3: FE 00 00 00 00 06 28 3A98 06 28 80 00 00 00 00 00 00 00 00 ; door of the monks' room (next to guillermo)
+2EB7: FE 00 00 00 00 06 28 3A98 06 28 80 00 00 00 00 00 00 00 00 ; door of severino's room
+2ECB: FE 00 00 00 00 06 28 3A98 06 28 80 00 00 00 00 00 00 00 00 ; exit door from the rooms towards the church
+2EDF: FE 00 00 00 00 06 28 3A98 06 28 80 00 00 00 00 00 00 00 00 ; exit door from the passage behind the kitchen
+2EF3: FE 00 00 00 00 06 28 3A98 06 28 80 00 00 00 00 00 00 00 00 ; door 1 that blocks the passage to the left part of the abbey's ground floor
+2F07: FE 00 00 00 00 06 28 3A98 06 28 80 00 00 00 00 00 00 00 00 ; door 2 that blocks the passage to the left part of the abbey's ground floor
+
+; object sprites
+2F1B: FE 00 00 00 00 04 0C 72F0 04 0C 80 00 00 00 00 00 00 00 00 ; book
+2F2F: FE 00 00 00 00 04 0C 89B0 04 0C 80 00 00 00 00 00 00 00 00 ; gloves
+2F43: FE 00 00 00 00 04 0C 8980 04 0C 80 00 00 00 00 00 00 00 00 ; glasses
+2F57: FE 00 00 00 00 04 0C 8A10 04 0C 80 00 00 00 00 00 00 00 00 ; parchment
+2F6B: FE 00 00 00 00 04 0C 89E0 04 0C 80 00 00 00 00 00 00 00 00 ; key 1
+2F7F: FE 00 00 00 00 04 0C 89E0 04 0C 80 00 00 00 00 00 00 00 00 ; key 2
+2F93: FE 00 00 00 00 04 0C 89E0 04 0C 80 00 00 00 00 00 00 00 00 ; key 3
+2FA7: FE 00 00 00 00 04 0C A006 04 0C 80 00 00 00 00 00 00 00 00 ; ???
+2FBB: FE 00 00 00 00 04 0C 72C0 04 0C 80 00 00 00 00 00 00 00 00 ; lamp
+2FCF: FE 00 00 00 00 14 50 0000 14 50 80 00 00 00 00 00 00 FE FE ; light sprite
+2FE3: FF
+
+; game door data. copied to 0x155-0x174. 5 bytes per entry
+2FE4: 	01 21 61 37 02 ; door of the abbot's room
+	02 22 B7 1E 02 ; door of the monks' room (next to guillermo)
+	00 04 66 5F 02 ; door of severino's room
+	03 28 9E 28 02 ; exit door from the rooms towards the church
+	03 10 7E 26 02 ; exit door from the passage behind the kitchen
+	02 E0 60 76 00 ; door 1 that blocks the passage to the left part of the abbey's ground floor
+	02 C0 60 7B 00 ; door 2 that blocks the passage to the left part of the abbey's ground floor
+	FF
+
+
+; position of game objects (copied to 0x175-0x197). 5 bytes per entry
+3008: 	00 01 34 5E 13
+	00 00 6B 55 06
+	80 00 EC 2D 00
+	00 01 36 5E 13
+	00 00 00 00 00
+	00 00 00 00 00
+	00 00 35 35 13
+	00 00 08 08 02
+	00 00 08 08 02
+	FF
+
+; character characteristics. 6 entries of 15 bytes
+3036: 	00 01 22 22 00 00 00 FE DE 00 00 00 00 00 10
+	00 01 24 24 00 00 00 FE E0 00 FD 00 C0 A2 20
+	00 00 26 26 0F 00 00 FE DE 00 FD 00 00 A2 10
+	00 00 88 84 02 00 00 FE DE 00 FD 00 30 A2 10
+	00 00 28 48 0F 00 00 FE DE 00 FD 00 60 A2 10
+	00 00 C8 28 00 00 00 FE DE 00 FD 00 90 A2 10
+; -- end of the 6 table entries
+
+
+3090: 0000
+3092: 0000
+3094: 00          nop
+3095: 00          nop
+3096: 00          nop
+
+; table with the monks' faces
+; the face data for each monk occupies 100 bytes and has 2 faces (50 bytes each, one if moving in x and another if moving in y)
+;  each face occupies 10 pixels high
+3097: 	B1CB	; pointer to the graphic data of malaquias's face
+	B167	; pointer to the graphic data of the abbot's face
+309B:	B22F	; pointer to the graphic data of berengario's face
+	B103	; pointer to the graphic data of severino's face
+
+	; note: these don't appear in this table but are listed here
+	B293 ; pointer to the graphic data of bernardo gui's face
+	B2F7 ; pointer to the graphic data of jorge's face
+	B35B ; pointer to the graphic data of the hooded figure
+
+; table for calculating offset according to the animation of a game entity
+; each table is a subtable according to screen orientation. Each subtable entry is 16 bytes:
+; according to a series of conditions, 2 bytes of the entry are used, one for x (in bytes) and another for y (in pixels).
+; byte 0-1: used if occupies 4 positions and it's the second animation movement
+; byte 2-3: used if occupies 4 positions and it's the first animation movement
+; byte 4-5: used if occupies one position, is not oriented to go up or down stairs and it's the second animation movement
+; byte 6-7: used if occupies one position, is not oriented to go up or down stairs and it's the first animation movement
+; byte 8-9: used if occupies one position, is oriented to go up or down stairs and it's the second animation movement
+; byte a-b: used if occupies one position and is going down stairs
+; byte c-d: used if occupies one position and is going up stairs
+; byte e-f: ???
+309F: 	00 00 FF FE FF 02 FE 00 01 02 00 00 00 FE 00 00 -> [00 00] [-1 -2] [-1 +2] [-2 00] [+1 +2] [00 00] [00 -2] [00 00]
+	00 00 FF 02 01 02 00 04 FF 02 FE 06 FE 00 00 00 -> [00 00] [-1 +2] [+1 +2] [00 +4] [-1 +2] [-2 +6] [-2 00] [00 00]
+	00 00 01 02 FF 02 00 04 01 02 02 06 02 00 00 00	-> [00 00] [+1 +2] [-1 +2] [00 +4] [+1 +2] [+2 +6] [+2 00] [00 00]
+	00 00 01 FE 01 02 02 00 FF 02 00 00	00 FE 00 00 -> [00 00] [+1 -2] [+1 +2] [+2 00] [-1 +2] [00 00] [00 -2] [00 00]
+
+	00 00 FF FE FF 02 FE 00 FF FE FE FC FE FA 00 00 -> [00 00] [-1 -2] [-1 +2] [-2 00] [-1 -2] [-2 -4] [-2 -6] [00 00]

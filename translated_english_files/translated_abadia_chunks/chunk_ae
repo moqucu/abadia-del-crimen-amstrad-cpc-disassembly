@@ -1,0 +1,600 @@
+11CB: DD 74 01    ld   (ix+$01),h
+11CE: DD CB 0E FE set  7,(ix+$0e)		; activates bit 7 in case byte one does not contain a note
+
+11D2: 79          ld   a,c
+11D3: E6 0F       and  $0F				; if the byte read & 0x0f = 0x0f, exit
+11D5: FE 0F       cp   $0F
+11D7: C8          ret  z
+
+11D8: DD CB 0E BE res  7,(ix+$0e)		; deactivates bit 7 of 0x0e
+
+; if it reaches here, in a there is a note of the chromatic scale
+11DC: 87          add  a,a				; adjusts entry in note tone table
+11DD: 21 E5 0F    ld   hl,$0FE5
+11E0: CD 48 13    call $1348
+11E3: 5E          ld   e,(hl)
+11E4: 23          inc  hl
+11E5: 56          ld   d,(hl)			; de = note tone
+11E6: 79          ld   a,c				; gets the original value with which it was indexed
+11E7: 0F          rrca					; keeps the 4 most significant bits of the first byte read
+11E8: 0F          rrca
+11E9: 0F          rrca
+11EA: 0F          rrca
+11EB: E6 07       and  $07				; gets the note octave
+11ED: EB          ex   de,hl
+11EE: CD 6C 13    call $136C			; hl = hl / (2 ^ a) (adjusts the octave tone)
+
+11F1: DD 75 03    ld   (ix+$03),l		; saves the result
+11F4: DD 74 04    ld   (ix+$04),h
+
+11F7: DD CB 0E 7E bit  7,(ix+$0e)		; exit if what it read was not a note
+11FB: C0          ret  nz
+11FC: DD CB 0E 56 bit  2,(ix+$0e)		; exit if envelopes and volume do not need to be updated
+1200: C0          ret  nz
+
+1201: CD 75 12    call $1275			; updates some registers (checks if envelope generation and volume need to be updated)
+1204: DD 35 11    dec  (ix+$11)			; decrements the counter and if it is not 0, exit
+1207: C0          ret  nz
+1208: DD 35 08    dec  (ix+$08)
+120B: CC 31 12    call z,$1231			; updates some registers (checks if the base note tone needs to be updated)
+
+120E: DD 7E 0F    ld   a,(ix+$0f)		; resets the counters
+1211: DD 77 11    ld   (ix+$11),a
+1214: DD 7E 13    ld   a,(ix+$13)		; gets the tone modification
+1217: 16 00       ld   d,$00
+1219: CB 7F       bit  7,a				; sign extends 0x13 and saves it in de
+121B: 28 01       jr   z,$121E
+121D: 15          dec  d
+121E: DD 6E 03    ld   l,(ix+$03)		; hl = note frequency
+1221: DD 66 04    ld   h,(ix+$04)
+1224: 5F          ld   e,a
+1225: 19          add  hl,de			; updates the note frequency
+1226: DD 75 03    ld   (ix+$03),l
+1229: DD 74 04    ld   (ix+$04),h
+122C: DD CB 0E F6 set  6,(ix+$0e)		; indicates that the PSG frequency needs to be changed
+1230: C9          ret
+
+; checks if the base note tone needs to be updated
+1231: DD 7E 09    ld   a,(ix+$09)		; reads the table index
+1234: DD 6E 05    ld   l,(ix+$05)		; reads the data address
+1237: DD 66 06    ld   h,(ix+$06)
+123A: CD 48 13    call $1348			; hl = hl + a
+123D: 7E          ld   a,(hl)
+123E: FE 7F       cp   $7F
+1240: 20 10       jr   nz,$1252			; if it did not read 0x7f, jump
+1242: 3E FF       ld   a,$FF			; counters to maximum
+1244: DD 77 11    ld   (ix+$11),a
+1247: DD 77 0F    ld   (ix+$0f),a
+124A: DD 77 08    ld   (ix+$08),a
+124D: DD 36 13 00 ld   (ix+$13),$00		; note tone is not modified
+1251: C9          ret
+
+1252: FE 80       cp   $80
+1254: 20 06       jr   nz,$125C			; if it did not read 0x80, jump
+1256: AF          xor  a				; clears the table index and reprocesses the data from that address
+1257: DD 77 09    ld   (ix+$09),a
+125A: 18 D5       jr   $1231
+
+; otherwise updates the values
+125C: DD 77 08    ld   (ix+$08),a		; updates the change counter
+125F: 23          inc  hl
+1260: 7E          ld   a,(hl)
+1261: DD 77 13    ld   (ix+$13),a		; updates the tone modification
+1264: 23          inc  hl
+1265: 7E          ld   a,(hl)
+1266: DD 77 0F    ld   (ix+$0f),a		; starts the main counter and its limit
+1269: DD 77 11    ld   (ix+$11),a
+126C: DD 7E 09    ld   a,(ix+$09)		; points to the next table entry
+126F: C6 03       add  a,$03
+1271: DD 77 09    ld   (ix+$09),a
+1274: C9          ret
+
+; checks if envelope generation and volume need to be updated
+1275: DD 35 12    dec  (ix+$12)
+1278: C0          ret  nz
+1279: DD 35 0D    dec  (ix+$0d)
+127C: CC 9B 12    call z,$129B		; updates some envelope registers and volume
+
+127F: DD CB 0E EE set  5,(ix+$0e)	; indicates that envelopes and volume need to be set
+1283: DD 7E 10    ld   a,(ix+$10)
+1286: DD 77 12    ld   (ix+$12),a	; reloads the counter for envelope generation and volume modification
+1289: DD CB 0E 66 bit  4,(ix+$0e)	; if using the envelope generator, exit
+128D: C0          ret  nz
+128E: DD 7E 07    ld   a,(ix+$07)	; reads the note volume
+1291: DD 86 14    add  a,(ix+$14)	; adds the volume increment
+1294: E6 0F       and  $0F
+1296: DD 77 07    ld   (ix+$07),a	; updates the note volume
+1299: 4F          ld   c,a
+129A: C9          ret
+
+; reads values from the envelope and base volume table and updates the registers
+129B: DD 7E 0C    ld   a,(ix+$0c)	; recovers the table index
+129E: DD 6E 0A    ld   l,(ix+$0a)	; gets the data address
+12A1: DD 66 0B    ld   h,(ix+$0b)
+12A4: CD 48 13    call $1348		; hl = hl + a
+12A7: 7E          ld   a,(hl)
+12A8: FE 7F       cp   $7F			; if the byte read is not 0x7f, jump
+12AA: 20 10       jr   nz,$12BC
+12AC: 3E FF       ld   a,$FF
+12AE: DD 77 12    ld   (ix+$12),a	; counters to maximum and without modifying note volume
+12B1: DD 77 10    ld   (ix+$10),a
+12B4: DD 77 0D    ld   (ix+$0d),a
+12B7: DD 36 14 00 ld   (ix+$14),$00
+12BB: C9          ret
+
+12BC: FE 80       cp   $80			; if the byte read is not 0x80, jump
+12BE: 20 06       jr   nz,$12C6
+12C0: AF          xor  a
+12C1: DD 77 0C    ld   (ix+$0c),a	; resets the table index and continues processing
+12C4: 18 D5       jr   $129B
+
+12C6: CB 7F       bit  7,a			; if bit 7 of the byte read is not active, jump
+12C8: 28 23       jr   z,$12ED		; otherwise, updates the envelope period and type
+12CA: E6 0F       and  $0F
+12CC: 32 9B 0F    ld   ($0F9B),a	; updates the envelope type
+12CF: 23          inc  hl
+12D0: 7E          ld   a,(hl)
+12D1: 32 99 0F    ld   ($0F99),a	; updates the envelope period
+12D4: 23          inc  hl
+12D5: 7E          ld   a,(hl)
+12D6: 32 9A 0F    ld   ($0F9A),a
+12D9: 23          inc  hl
+12DA: 7E          ld   a,(hl)		; reads the new counter
+12DB: DD 77 12    ld   (ix+$12),a
+12DE: DD 36 0D 01 ld   (ix+$0d),$01
+12E2: DD CB 0E E6 set  4,(ix+$0e)	; leaves the volume in the hands of the envelope generator
+12E6: DD 7E 0C    ld   a,(ix+$0c)	; advances the table index by 4
+12E9: C6 04       add  a,$04
+12EB: 18 15       jr   $1302
+
+12ED: DD 77 0D    ld   (ix+$0d),a	; updates the second counter
+12F0: 23          inc  hl
+12F1: 7E          ld   a,(hl)
+12F2: DD 77 14    ld   (ix+$14),a	; updates the base volume
+12F5: 23          inc  hl
+12F6: 7E          ld   a,(hl)
+12F7: DD 77 10    ld   (ix+$10),a	; updates the first counter and its limit
+12FA: DD 77 12    ld   (ix+$12),a
+12FD: DD 7E 0C    ld   a,(ix+$0c)	; advances the table index by 3
+1300: C6 03       add  a,$03
+
+1302: DD 77 0C    ld   (ix+$0c),a
+1305: C9          ret
+
+; table of 6 entries (related to 0x114c and tables 0x0fac)
+; format:
+	byte 1: pattern to search
+	bytes 2 and 3: address to jump to if the pattern is found
+1306: 	FE 131B -> saves a new note address in channel 2 and activates it
+		FD 132A -> saves a new note address in channel 3 and activates it
+		FB 1339 -> saves a new base note tone address
+		FC 1347 -> does nothing
+		FA 1340 -> saves a new address for volume changes and envelope generator
+		F9 1318 -> changes by bc (changes to another position in the music table)
+
+; routine reached with entry 5 of 0x1306
+1318: 50          ld   d,b	; de = bc
+1319: 59          ld   e,c
+131A: C9          ret
+
+; routine reached with entry 0 of 0x1306
+131B: ED 43 B8 0F ld   ($0FB8),bc	; saves a new note address in channel 2
+131F: 3E 05       ld   a,$05		; + 0x0e = 5
+1321: 32 C6 0F    ld   ($0FC6),a	; and activates channel 2
+1324: 3E 01       ld   a,$01
+1326: 32 BA 0F    ld   ($0FBA),a	; sets a note duration of 1 unit
+1329: C9          ret
+
+; routine reached with entry 1 of 0x1306
+132A: ED 43 D0 0F ld   ($0FD0),bc	; saves a new note address in channel 3
+132E: 3E 05       ld   a,$05
+1330: 32 DE 0F    ld   ($0FDE),a	; and activates channel 3
+1333: 3E 01       ld   a,$01
+1335: 32 D2 0F    ld   ($0FD2),a
+1338: C9          ret
+
+; routine reached with entry 2 of 0x1306
+1339: DD 71 05    ld   (ix+$05),c	; saves what was read in the base tone change table
+133C: DD 70 06    ld   (ix+$06),b
+133F: C9          ret
+
+; routine reached with entry 4 of 0x1306
+1340: DD 71 0A    ld   (ix+$0a),c	; saves what was read in the volume change and envelope generator table
+1343: DD 70 0B    ld   (ix+$0b),b
+1346: C9          ret
+
+; routine reached with entry 3 of 0x1306
+1347: C9          ret
+
+; sums hl + a
+1348: 85          add  a,l
+1349: 6F          ld   l,a
+134A: 8C          adc  a,h
+134B: 95          sub  l
+134C: 67          ld   h,a
+134D: C9          ret
+
+; writes to PSG register number 'a' the value 'c'
+; a = register number
+; c = value to write
+134E: 06 F4       ld   b,$F4	; PPI port A, write PSG register index
+1350: ED 79       out  (c),a
+1352: 06 F6       ld   b,$F6	; PPI port C
+1354: ED 78       in   a,(c)
+1356: F6 C0       or   $C0
+1358: ED 79       out  (c),a	; selects the corresponding PSG register
+135A: E6 3F       and  $3F
+135C: ED 79       out  (c),a
+135E: 06 F4       ld   b,$F4
+1360: ED 49       out  (c),c	; writes the value to the corresponding register
+1362: 06 F6       ld   b,$F6	; PPI port C
+1364: 4F          ld   c,a
+1365: F6 80       or   $80
+1367: ED 79       out  (c),a	; writes the data to the PSG register
+1369: ED 49       out  (c),c
+136B: C9          ret
+
+; hl = hl / (2 ^ a)
+136C: A7          and  a			; if a = 0, exit
+136D: C8          ret  z
+136E: CB 3C       srl  h			; divide by 2
+1370: CB 1D       rr   l
+1372: 3D          dec  a			; continue while a > 0
+1373: 20 F9       jr   nz,$136E
+1375: C9          ret
+
+; turns off sound
+1376: 3E 84       ld   a,$84		; stops sound generation
+1378: 32 AE 0F    ld   ($0FAE),a
+137B: 32 C6 0F    ld   ($0FC6),a
+137E: 32 DE 0F    ld   ($0FDE),a
+1381: 0E 3F       ld   c,$3F		; 0011 1111 (turns off the 3 sound channels)
+1383: 3E 07       ld   a,$07		; register 7 (PSG enable)
+1385: C3 4E 13    jp   $134E
+
+; ------- end of music code section -------
+
+; ------- music data -------
+
+; base note tone for voices
+1388: 	01 01 01
+		02 FF 01
+		01 01 01
+		80 			-> resets and continues processing
+
+1390:       01 01 04 02 FF 04-01 01 04 80 0C 01 01 0C ................
+13A0: FF 01 7F 01 FF 02 80 01-01 04 80 01 0F 08 0F FF ................
+13B0: 0A 7F 0F 01 05 0F FF 09-7F 01 D8 02 80 01 00 01 ................
+13C0: 7F
+
+; envelopes and volume changes for voices
+13C1: 01 05 01    ld   bc,$0105
+13C4: 7F
+
+13C5:                01 0F 01-01 00 28 0F FF 14 7F 05 ..........(.....
+13D0: 01 02 05 02 01 05 FF 0F-01 00 3C 0A FF 14 7F 0F ..........<.....
+13E0: 01 0F 01 01 00 28 0F FF 0F-7F 01 0C 01 01 00 28 0C ....(.........(.
+13F0: FF 0A 7F 01 0C 14 02 FF-14 7F 01 0A 0A 7F FB 92 ................
+1400: 13 FA CF 13 59 14 FA F3-13 5B 04 59 08 FA CF 13 ....Y....[.Y....
+1410: 57 10 59 10 55 10 57 10-59 20 60 20 59 20 60 20 W.Y.U.W.Y ` Y `
+1420: 59 08 60 08 59 10 59 14-FA F3 13 5B 04 59 08 FA Y.`.Y.Y....[.Y..
+1430: CF 13 57 10 59 10 55 10-57 10 59 20 65 10 62 10 ..W.Y.U.W.Y e.b.
+1440: 64 10 60 10 62 40 65 20-67 10 65 10 64 20 60 20 d.`.b@e g.e.d `
+1450: 65 20 62 10 64 08 65 08-64 20 60 20 65 10 67 10 e b.d.e.d ` e.g.
+1460: 69 10 6A 10 70 20 67 20-65 06 FA F3 13 67 04 65 i.j.p g e....g.e
+1470: 06 FA CF 13 62 10 64 10-60 10 62 40 F9 FE 13 FF ....b.d.`.b@....
+1480: FB BD 13 FA DF 13 FE 8D-14 82 50 1A FF FB A3 13 ..........P.....
+1490: FA DF 13 20 50 FF FB B9-13 FA 9C 13 17 04 FF FB ... P...........
+14A0: A3 13 FA CF 13 60 0F FF-FA CF 13 FB A7 13 7B 0F .....`........{.
+14B0: FF
+
+; initialization data of the voice for channel 3
+14B1: FB 1388 -> saves a new base note tone address
+14B4: FA 13C1 -> saves a new address for envelopes and volume changes
+14B7: 54 -> note and octave
+
+14B8:                         0A FF FB BD 13 FA AB 13 .......T........
+14C0: FE D2 14 6B 04 6B 05 6B-04 6B 05 6B 04 6B 05 6B ...k.k.k.k.k.k.k
+14D0: 0F FF FB BD 13 FA AB 13-76 04 76 05 76 04 76 05 ........v.v.v.v.
+14E0: 76 04 76 05 76 0F FF FB-B9 13 FA B2 13 82 14 1A v.v.v...........
+14F0: 0F 0F FF FB 92 13 FA C5-13 FE 3E 15 4B 1E 4F 01 ..........>.K.O.
+1500: FE 47 15 49 28 4F 04 FE-3E 15 4B 1E 4F 01 FE 47 .G.I(O..>.K.O..G
+1510: 15 49 28 4F 04 FE 3E 15-4B 1E 4F 01 FE 47 15 49 .I(O..>.K.O..G.I
+1520: 28 4F 04 FE 3E 15 4B 1E-4F 01 FE 47 15 49 28 4F (O..>.K.O..G.I(O
+1530: 04 FE 3E 15 4B 1E 4F 01-FE 47 15 49 3C FF FB 92 ..>.K.O..G.I<...
+1540: 13 FA C5 13 43 1E FF FB-92 13 FA C5 13 43 28 FF ....C........C(.
+1550: FB BD 13 FA E9 13 A2 14-1A A2 14 1A A0 1E 19 FF ................
+1560: FB BD 13 FA E9 13 A0 1E-19 FF
+
+; ------- end of game sound effects data -----------
+
+; ---------------------- code and data related to screen generation -----------------------------------
+
+156A-156B: address of the graphic data that forms the screen
+156C: if it is 0, indicates if the screen is illuminated
+
+; table of block types that form the screens. Each entry contains a pointer to the block information
+156D: 	0000 -> 0x00 (0x00) -> this block does not exist
+		1973 -> 0x01 (0x02) -> thin black brick parallel to y
+		196E -> 0x02 (0x04) -> thin red brick parallel to x
+		193C -> 0x03 (0x06)	-> thick black brick parallel to y
+		1941 -> 0x04 (0x08) -> thick red brick parallel to x
+		1946 -> 0x05 (0x0a) -> small windows block, slightly rounded and black parallel to the y axis
+		194B -> 0x06 (0x0c) -> small windows block, slightly rounded and red parallel to the x axis
+		1950 -> 0x07 (0x0e) -> red railing parallel to the y axis
+		1955 -> 0x08 (0x10) -> red railing parallel to the x axis
+		195A -> 0x09 (0x12) -> white column parallel to the y axis
+		1969 -> 0x0a (0x14) -> white column parallel to the x axis
+		1AEF -> 0x0b (0x16) -> stairs with black brick on the edge parallel to the y axis
+		1B28 -> 0x0c (0x18) -> stairs with red brick on the edge parallel to the x axis
+		1BA0 -> 0x0d (0x1a) -> floor of thick blue tiles
+		1BA5 -> 0x0e (0x1c) -> floor of red and blue tiles forming a checkerboard effect
+		1BAA -> 0x0f (0x1e) -> floor of blue tiles
+		1BAF -> 0x10 (0x20) -> floor of yellow tiles
+		1CB8 -> 0x11 (0x22) -> block of arches passing through pairs of columns parallel to the y axis
+		1CFD -> 0x12 (0x24) -> block of arches passing through pairs of columns parallel to the x axis
+		1D23 -> 0x13 (0x26) -> block of arches with columns parallel to the y axis
+		1D48 -> 0x14 (0x28) -> block of arches with columns parallel to the x axis
+		1F5F -> 0x15 (0x2a) -> double yellow rivet on the brick parallel to the y axis
+		1F64 -> 0x16 (0x2c) -> double yellow rivet on the brick parallel to the x axis
+		17FE -> 0x17 (0x2e) -> solid block of thin brick parallel to the x axis
+		18A6 -> 0x18 (0x30) -> solid block of thin brick parallel to the y axis
+		17F9 -> 0x19 (0x32) -> white table parallel to the x axis
+		18A1 -> 0x1a (0x34) -> white table parallel to the y axis
+		1932 -> 0x1b (0x36) -> small discharge pillar placed next to a wall on the x axis
+		1B9B -> 0x1c (0x38) -> red and black terrain area
+		1E0F -> 0x1d (0x3a) -> bookshelves parallel to the y axis
+		1E33 -> 0x1e (0x3c) -> bed
+		1E5F -> 0x1f (0x3e) -> large blue and yellow windows parallel to the y axis
+		1E9D -> 0x20 (0x40) -> large blue and yellow windows parallel to the x axis
+		1ECC -> 0x21 (0x42) -> candelabras with 2 candles parallel to the x axis
+		1ED6 -> 0x22 (0x44) -> does nothing
+		1EDE -> 0x23 (0x46) -> yellow rivet with support parallel to the y axis
+		18DA -> 0x24 (0x48) -> red railing corner
+		1EE3 -> 0x25 (0x4a) -> yellow rivet with support parallel to the x axis
+		18EF -> 0x26 (0x4c) -> red railing corner (2)
+		1F1A -> 0x27 (0x4e) -> rounded passage hole with thin red and black bricks parallel to the x axis
+		192D -> 0x28 (0x50) -> small windows block, rectangular and black parallel to the y axis
+		1928 -> 0x29 (0x52) -> small windows block, rectangular and red parallel to the x axis
+		191E -> 0x2a (0x54) -> 1 bottle and a jar
+		1925 -> 0x2b (0x56) -> does nothing
+		1AE9 -> 0x2c (0x58) -> stairs with black brick on the edge parallel to the y axis (2)
+		1A99 -> 0x2d (0x5a) -> stairs with red brick on the edge parallel to the x axis (2)
+		1726 -> 0x2e (0x5c) -> rectangular passage hole with thin black bricks parallel to the y axis
+		177C -> 0x2f (0x5e) -> rectangular passage hole with thin red bricks parallel to the x axis
+		17A4 -> 0x30 (0x60) -> thin black and red brick corner
+		17AE -> 0x31 (0x62) -> thick black and red brick corner
+		1EE8 -> 0x32 (0x64) -> rounded passage hole with thin black and red bricks parallel to the y axis
+		1C86 -> 0x33 (0x66) -> yellow rivet corner with support
+		1C96 -> 0x34 (0x68) -> yellow rivet corner
+		17B8 -> 0x35 (0x6a) -> does nothing
+		1903 -> 0x36 (0x6c) -> red railing corner (3)
+		1F76 -> 0x37 (0x6e) -> thin red and black brick pyramid
+		18AB -> 0x38 (0x70) -> solid block of thin red and black brick, with yellow and black tiles on top, parallel to the y axis
+		1803 -> 0x39 (0x72) -> solid block of thin red and black brick, with yellow and black tiles on top, parallel to the x axis
+		18CD -> 0x3a (0x74) -> solid block of thin red and black brick, with yellow and black tiles on top, that grows upwards
+		1EC6 -> 0x3b (0x76) -> candelabras with 2 candles parallel to the x axis (2)
+		1EA3 -> 0x3c (0x78) -> candelabras with 2 candles parallel to the y axis
+		1ED1 -> 0x3d (0x7a) -> candelabras with wall support and 2 candles parallel to the y axis
+		1937 -> 0x3e (0x7c) -> small discharge pillar placed next to a wall on the y axis
+		18B1 -> 0x3f (0x7e) -> thin black and red brick corner (2)
+		18BF -> 0x40 (0x80) -> thin black and red brick corner (3)
+		1F80 -> 0x41 (0x82) -> thin red brick forming a right triangle parallel to the x axis
+		1F86 -> 0x42 (0x84) -> thin black brick forming a right triangle parallel to the y axis
+		1F2B -> 0x43 (0x86) -> rounded passage hole with thin red and black bricks parallel to the y axis, with thick pillars between the holes
+		1F59 -> 0x44 (0x88) -> rounded passage hole with thin red and black bricks parallel to the x axis, with thick pillars between the holes
+		1D99 -> 0x45 (0x8a) -> bench to sit on parallel to the x axis
+		1D6B -> 0x46 (0x8c) -> bench to sit on parallel to the y axis
+		1797 -> 0x47 (0x8e) -> very low thin black and red brick corner
+		178A -> 0x48 (0x90) -> very low thick black and red brick corner
+		1B96 -> 0x49 (0x92) -> flat corner delimited with black line and blue floor
+		1D9F -> 0x4a (0x94) -> work table
+		1DD8 -> 0x4b (0x96) -> plates
+		1DFC -> 0x4c (0x98) -> bottles with handles
+		1E06 -> 0x4d (0x9a) -> cauldron
+		1BB4 -> 0x4e (0x9c) -> flat corner delimited with black line and yellow floor
+		17EF -> 0x4f (0x9e) -> solid block of thin red and black brick, with blue tiles on top, parallel to the y axis
+		17F4 -> 0x50 (0xa0) -> solid block of thin red and black brick, with blue top, parallel to the y axis
+		1897 -> 0x51 (0xa2) -> solid block of thin red and black brick, with blue tiles on top, parallel to the x axis
+		189C -> 0x52 (0xa4) -> solid block of thin red and black brick, with blue top, parallel to the x axis
+		17BB -> 0x53 (0xa6) -> solid block of thin red and black brick, with blue tiles on top and stair-stepped, parallel to the x axis
+		17E7 -> 0x54 (0xa8) -> solid block of thin red and black brick, with blue top and stair-stepped, parallel to the x axis
+		1841 -> 0x55 (0xaa) -> solid block of thin red and black brick, with blue tiles on top and stair-stepped, parallel to the y axis
+		186D -> 0x56 (0xac) -> solid block of thin red and black brick, with blue top and stair-stepped, parallel to the y axis
+		1DDD -> 0x57 (0xae) -> human skulls
+		1B91 -> 0x58 (0xb0) -> skeleton remains???
+		1914 -> 0x59 (0xb2) -> monster face with horns
+		1919 -> 0x5a (0xb4) -> support with cross
+		1E01 -> 0x5b (0xb6) -> large cross
+		1F69 -> 0x5c (0xb8) -> library books parallel to the x axis
+		1ED9 -> 0x5d (0xba) -> library books parallel to the y axis
+		195F -> 0x5e (0xbc) -> top of a wall with small slightly rounded and black window parallel to the y axis???
+		1964 -> 0x5f (0xbe) -> top of a wall with small slightly rounded and red window parallel to the x axis???
+
+; hl = hl + a
+162D: 85          add  a,l
+162E: 6F          ld   l,a
+162F: 8C          adc  a,h
+1630: 95          sub  l
+1631: 67          ld   h,a
+1632: C9          ret
+
+; checks if the tile indicated by hl is visible, and if so, updates the tile shown in this position and the associated depth data
+; h = pos in y using the tile buffer coordinate system
+; l = pos in x using the tile buffer coordinate system
+; c = tile number to place
+; ix = pointer to the block construction data
+
+; the tile buffer is 16x20, although the grid is 32x36. The part of the grid that is mapped in the tile buffer is the central one
+; (removing 8 units to the left, right, top and bottom)
+1633: 7C          ld   a,h			; gets the position in y
+1634: D6 08       sub  $08			; translates the position y 8 units upwards to have the coordinate at the origin
+1636: FE 14       cp   $14
+1638: D0          ret  nc			; if it is outside the visible area in y (y - 8 >= 20), exit
+1639: 57          ld   d,a			; d = translated y position
+
+163A: 7D          ld   a,l			; gets the position in x
+163B: D6 08       sub  $08			; translates the position x 8 units to the left to have the coordinate at the origin
+163D: FE 10       cp   $10			; if it is outside the visible area in x (x - 8 >= 16), exit
+163F: D0          ret  nc
+1640: 5F          ld   e,a			; e = translated x position
+
+; here it arrives saving in de the final coordinates in the tile buffer, and in hl the old ones
+1641: E5          push hl			; saves the non-translated coordinates of the tile buffer on the stack (will be retrieved by routine 0x1667)
+1642: EB          ex   de,hl		; hl = positions calculated now, de = old positions
+1643: 7D          ld   a,l
+1644: 6C          ld   l,h
+1645: 26 00       ld   h,$00
+1647: 29          add  hl,hl
+1648: 29          add  hl,hl
+1649: 29          add  hl,hl
+164A: 29          add  hl,hl
+164B: 29          add  hl,hl
+164C: 5D          ld   e,l
+164D: 54          ld   d,h
+164E: 29          add  hl,hl
+164F: 19          add  hl,de
+1650: 87          add  a,a
+1651: 5F          ld   e,a
+1652: 87          add  a,a
+1653: 83          add  a,e
+1654: 85          add  a,l			; hl = 96*translated y pos + 6*translated x pos
+1655: 6F          ld   l,a
+1656: 8C          adc  a,h
+1657: 95          sub  l
+1658: 67          ld   h,a
+
+1659: 11 80 8D    ld   de,$8D80		; de points to the start of the tile buffer
+165C: 19          add  hl,de		; indexes in the tile buffer with the translated positions
+165D: C3 67 16    jp   $1667		; updates the current tile data, according to what is in the tile, the new tile to place and the local grid coordinates
+
+; here never arrives (???)
+1660: 11 80 07    ld   de,$0780
+1663: 19          add  hl,de
+1664: 71          ld   (hl),c
+1665: E1          pop  hl
+1666: C9          ret
+
+; saves the tile data in hl, according to what the current depth coordinates are and c (tile to write)
+; if a tile had already been projected before, the new one has higher priority over the old one
+; hl = pointer to the current tile data in the tile buffer
+; c = tile number to place
+1667: C5          push bc		; preserves bc and hl
+1668: E5          push hl
+1669: 23          inc  hl
+166A: 23          inc  hl
+166B: 54          ld   d,h		; de = hl + 2
+166C: 5D          ld   e,l
+166D: 23          inc  hl		; hl = hl + 3
+
+; gets the highest priority tile values currently in the grid
+166E: 4E          ld   c,(hl)	; c = previous x depth ([hl+3])
+166F: 23          inc  hl
+1670: 46          ld   b,(hl)	; b = previous y depth ([hl+4])
+1671: 23          inc  hl
+1672: 7E          ld   a,(hl)	; a = previous tile with higher priority ([hl+5])
+
+1673: 12          ld   (de),a	; [hl + 2] = a (the previous tile now has lower priority)
+1674: 13          inc  de		; de = hl + 3
+1675: 21 DE 1F    ld   hl,$1FDE	; points to the tile depth in the grid (local grid coordinate system)
+1678: 7E          ld   a,(hl)	; a = new x depth
+1679: 12          ld   (de),a	; [hl + 3] = sets the new x depth
+167A: B9          cp   c		; compares x depth with old x depth
+167B: 30 08       jr   nc,$1685	; if new x depth >= old x depth, jump
+167D: 23          inc  hl
+167E: 7E          ld   a,(hl)	; a = new y depth
+167F: 2B          dec  hl
+1680: B8          cp   b		; if new y depth >= old y depth, jump
+1681: 30 02       jr   nc,$1685
+
+1683: 47          ld   b,a		; otherwise, b = new y depth
+1684: 4E          ld   c,(hl)	; c = new x depth
+
+1685: 23          inc  hl		; hl points to the new y depth (local grid coordinate system)
+1686: 13          inc  de		; de = hl + 4
+1687: 7E          ld   a,(hl)
+1688: 12          ld   (de),a	; [hl + 4] = new y depth
+1689: 13          inc  de		; de = hl + 5
+168A: E1          pop  hl
+168B: 71          ld   (hl),c	; [hl + 0] = c modified by previous and calc1 (old x depth)
+168C: 23          inc  hl
+168D: 70          ld   (hl),b	; [hl + 1] = b modified by previous and calc2 (old y depth)
+168E: EB          ex   de,hl
+168F: C1          pop  bc
+1690: 71          ld   (hl),c	; [hl + 5] = new tile with highest priority
+
+1691: E1          pop  hl		; recovers from the stack the non-translated tile buffer coordinates (put by the calling routine)
+1692: C9          ret
+
+; data about the tiles that form the blocks
+1693: 2A 2C  							; 1 bottle and a jar
+1695: DE E0 DF 							; large cross
+1698: FD FC 							; monster face with horns
+169A: 5F FE								; support with cross
+169C: 1B 3A 3A 							; library books parallel to the y axis?
+169F: 69 39 39							; library books parallel to the x axis?
+16A2: 28 09 29 00						; thin black brick
+16A6: 2B 0A 2D 00						; thin red brick
+16AA: 23 22 61 29						; small windows block, rectangular and black parallel to the y axis
+16AE: 26 25 27 2D						; small windows block, rectangular and red parallel to the x axis
+16B2: 62 02 63 03						; thick black brick
+16B6: 6A 06 74 07						; thick red brick
+16BA: 23 22 21 29   					; small windows, slightly rounded and black
+16BE: 26 25 24 2D						; small windows, slightly rounded and red
+16C2: 37 36 35 00						; red railing parallel to the y axis
+16C6: 34 33 32 00						; red railing parallel to the x axis
+16CA: 99 9A 97 98						; yellow column
+16CE: 23 21 1B 3A    					; top of a wall with small slightly rounded and black window parallel to the y axis???
+16D2: 26 24 69 39						; top of a wall with small slightly rounded and red window parallel to the x axis???
+16D6: 7F 7E 7D 00						; small discharge pillar placed next to a wall on the x axis
+16DA: 58 57 56 00  						; small discharge pillar placed next to a wall on the y axis
+16DE: 41 17 16 1A 14 1D 1E 40 15 1F 20 19	; work table
+16EA: 12 B2 B2 45 13 B4 B5 B3 B1		; stairs with black brick on the edge parallel to the y axis
+16F3: 10 81 81 44 11 83 84 82 80		; stairs with red brick on the edge parallel to the x axis
+16FC: 1C 1B B8 B7 BA B9 B6 BB 28 09		; stairs with black brick on the edge parallel to the y axis (2)
+1706: 6B 69 6C B0 AD AC AF AE 2B 0A 	; stairs with red brick on the edge parallel to the x axis (2)
+1710: 58 28 51 53 57 55 54 50 52 2B 0A	; rectangular passage hole with thin black bricks parallel to the y axis
+171B: 7F 2B 78 7A 7E 7C 7B 77 79 28 09  ; rectangular passage hole with thin red bricks parallel to the x axis
+
+; characteristics of material 0x2e
+1726: 1710			; pointer to the tiles that form the block
+FC
+F2 01 6D 84
+F1 6D
+
+172F:
+F7 70 02 84 70
+F7 71 03 6D 6D 84 71
+FC
+F9 6A
+FD
+F9 6B
+FA
+FB
+F5
+F9 61
+FD
+F9 65
+FA
+F9 68 80 63 80 69
+FB
+EF
+F7 71 02 6D 6D 71
+F9 61
+FD
+F9 65
+FA
+F9 66 80 67
+F7 70 02 70
+F7 71 6D 6D 84 71
+F6
+F6
+F5
+FE
+FC
+F9 62 80 63 80 64
+FB
+F5
+F4
+FA
+FF

@@ -1,0 +1,600 @@
+	00 00 FF 02 FF FE FE 00 FF 02 FE 06 FE 00 00 00 -> [00 00] [-1 +2] [-1 -2] [-2 00] [-1 +2] [-2 +6] [-2 00] [00 00]
+	00 00 01 02 FF 02 00 04 FF FE 00 02 00 FC 00 00 -> [00 00] [+1 +2] [-1 +2] [00 +4] [-1 -2] [00 +2] [00 -4] [00 00]
+	00 00 01 FE FF FE 00 FC FF 02 00 00 00 FE 00 00 -> [00 00] [+1 -2] [-1 -2] [00 -4] [-1 +2] [00 00] [00 -2] [00 00]
+
+	00 00 FF FE 01 FE 00 FC FF FF FE FC FE FA 00 00 -> [00 00] [-1 -2] [+1 -2] [00 -4] [-1 -2] [-2 -4] [-2 -6] [00 00]
+	00 00 FF 02 FF FE FE 00 01 FE 00 02 00 FD 00 00 -> [00 00] [-1 +2] [-1 -2] [-2 00] [+1 -2] [00 +2] [00 -3] [00 00]
+	00 00 01 02 01 FE 02 00 FF FE 00 02 00 FC 00 00 -> [00 00] [+1 +2] [+1 -2] [+2 00] [-1 -2] [00 +2] [00 -4] [00 00]
+	00 00 01 FE FF FE 00 FC 01 FE 02 FC 02 FA 00 00 -> [00 00] [+1 -2] [-1 -2] [00 -4] [+1 -2] [+2 -4] [+2 -6] [00 00]
+
+	00 00 FF FE 01 FE 00 FC	01 02 00 00 00 FE 00 00 -> [00 00] [-1 -2] [+1 -2] [00 -4] [+1 +2] [00 00] [00 -2] [00 00]
+	00 00 FF 02 01 02 00 04	01 FE 00 02 00 FC 00 00 -> [00 00] [-1 +2] [+1 +2] [00 +4] [+1 -2] [00 +2] [00 -4] [00 00]
+	00 00 01 02 01 FE 02 00 01 02 02 06 02 00 00 00 -> [00 00] [+1 +2] [+1 -2] [+2 00] [+1 +2] [+2 +6] [+2 00] [00 00]
+	00 00 01 FE 01 02 02 00 01 FE 02 FC 02 FA 00 00 -> [00 00] [+1 -2] [+1 +2] [+2 00] [+1 -2] [+2 -4] [+2 -6] [00 00]
+
+; each animation table (for adso and guillermo) has 8 entries.
+; The first 4 are if it moves on the x axis and the other 4 if it moves on the y axis
+; each entry is 4 bytes:
+; byte 0-1: address of the graphic data of the associated sprite
+; byte 2: sprite width (in bytes)
+; byte 3: sprite height (in pixels)
+; table related to guillermo's animation
+319F: 	A3B4 05 22
+	A300 05 24
+	A3B4 05 22
+	A45E 05 22
+
+	A666 04 21
+	A508 05 23
+	A666 04 21
+	A5B7 05 21
+
+; table related to adso's animation
+31BF:	A78A 05 20
+	A6EA 05 20
+	A78A 05 20
+	A82A 05 1F
+ 	A8C5 04 1E
+ 	A93D 04 1E
+ 	A8C5 04 1E
+ 	A9B5 04 1E
+
+; table for the animation of the monks
+; each monk has 1 entry. Each entry is 4 bytes (with similar structure to guillermo and adso's animations)
+31DF:	B103 05 22
+	B103 05 24
+	B103 05 22
+ 	B103 05 22
+
+31EF:
+ 	B135 05 21
+ 	B135 05 23
+ 	B135 05 21
+ 	B135 05 21
+
+; ---------------------- code related to keys -------------------------------------------------
+
+; routine called when keyboard data is recorded to the keystroke buffer
+31FF: CD BC 32    call $32BC		; reads the state of the keys and saves it in the keyboard buffers
+3202: CD 7E 33    call $337E		; checks if the keystroke buffer has finished and if not, jumps
+3205: 38 20       jr   c,$3227
+
+; arrives here if the stored demo keystroke buffer has finished
+3207: FB          ei
+3208: 06 14       ld   b,$14		; 20 times
+320A: C5          push bc
+320B: CD 20 10    call $1020		; starts channel 3
+320E: 01 D0 07    ld   bc,$07D0
+3211: CD 0E 49    call $490E		; waits a bit
+3214: C1          pop  bc
+3215: 10 F3       djnz $320A
+
+; ensures that keys are read
+3217: 21 BC 32    ld   hl,$32BC
+321A: 22 12 33    ld   ($3312),hl	; changes the reading method of the QR routine, so it reads from keyboard
+321D: AF          xor  a
+321E: 32 09 33    ld   ($3309),a	; ensures that data is obtained from the keyboard
+3221: 3D          dec  a
+3222: 32 69 34    ld   ($3469),a	; ensures that the keyboard reading routine works properly for the keyboard
+3225: F3          di
+3226: C9          ret
+
+; arrives here if the keystroke buffer has not finished
+3227: DD 21 AC 36 ld   ix,$36AC		; ix points to the key recording table
+322B: 01 00 08    ld   bc,$0800		; 8 keys
+322E: CD B6 33    call $33B6		; records in the keystroke buffer the state of F0-F7
+3231: 01 00 08    ld   bc,$0800		; 8 keys
+3234: CD B6 33    call $33B6		; records in the keystroke buffer the state of F8-F9, cursors, space and shift
+3237: 01 00 08    ld   bc,$0800		; 8 keys
+323A: CD B6 33    call $33B6		; records in the keystroke buffer the state of q,r,n,s,y,period
+323D: FD 2B       dec  iy
+323F: FD 2B       dec  iy
+3241: FD 2B       dec  iy			; points to the newly obtained keys
+3243: FD 7E 00    ld   a,(iy+$00)
+3246: FD BE FC    cp   (iy-$04)
+3249: 20 18       jr   nz,$3263		; if any of the first 8 change, records the new state in the keystroke buffer
+324B: FD 7E 01    ld   a,(iy+$01)
+324E: FD BE FD    cp   (iy-$03)
+3251: 20 10       jr   nz,$3263		; if any of the second 8 change, records the new state in the keystroke buffer
+3253: FD 7E 02    ld   a,(iy+$02)
+3256: FD BE FE    cp   (iy-$02)
+3259: 20 08       jr   nz,$3263		; if any of the third 8 change, records the new state in the keystroke buffer
+
+325B: FD 34 FF    inc  (iy-$01)		; if there is no change, increments the counter that indicates the number of times there have been no changes
+325E: 20 13       jr   nz,$3273		;  for the last key state, and in that case, does not record the new state
+3260: FD 35 FF    dec  (iy-$01)		; if the change counter overflows, leaves it at 0xff and starts the next state counter at 1
+
+3263: FD 36 03 01 ld   (iy+$03),$01	; records the new state in the keystroke buffer
+3267: FD 23       inc  iy
+3269: FD 23       inc  iy
+326B: FD 23       inc  iy
+326D: FD 23       inc  iy
+326F: FD 22 D1 33 ld   ($33D1),iy	; saves the position buffer pointer
+
+3273: FD 36 00 00 ld   (iy+$00),$00	; marks the new entry as the last one, to identify where the demo recording ends
+3277: FD 36 01 00 ld   (iy+$01),$00
+327B: C9          ret
+
+; routine called when data is read from the keystroke buffer and copied to the keyboard buffers
+327C: F3          di
+327D: CD 7E 33    call $337E			; checks if the keystroke buffer has finished
+3280: 06 01       ld   b,$01
+3282: D2 29 36    jp   nc,$3629			; if the buffer has finished, jumps and restarts the demo
+
+3285: 3A 72 2D    ld   a,($2D72)		; decrements the counter of number of times the state has not changed
+3288: 3D          dec  a
+3289: 20 18       jr   nz,$32A3			; if the state doesn't need to be changed yet, jumps
+328B: FD 23       inc  iy				; passes to the next key state stored in the buffer
+328D: FD 23       inc  iy
+328F: FD 23       inc  iy
+3291: FD 23       inc  iy
+3293: FD 22 D1 33 ld   ($33D1),iy		; updates the keystroke buffer pointer
+3297: FD 7E 00    ld   a,(iy+$00)		; if the recorded demo has finished, jumps and restarts the demo
+329A: FD A6 01    and  (iy+$01)
+329D: CA 29 36    jp   z,$3629
+32A0: FD 7E 03    ld   a,(iy+$03)		; reads the number of times this block is used
+
+32A3: 32 72 2D    ld   ($2D72),a		; updates the number of times to use this block
+32A6: DD 21 AC 36 ld   ix,$36AC			; ix points to the key table that was recorded in the demo
+32AA: CD 94 33    call $3394			; retrieves from the keystroke buffer the state of F0-F7 8 keys and updates the buffer where pressed keys are stored
+32AD: CD 94 33    call $3394			; retrieves from the keystroke buffer the state of F8-F9, cursors, space and shift and updates the buffer where pressed keys are stored
+32B0: CD 94 33    call $3394			; retrieves from the keystroke buffer the state of q,r,n,s,y,period and updates the buffer where pressed keys are stored
+32B3: FD 21 E7 33 ld   iy,$33E7			; places the buffer to read key presses
+32B7: 3E 09       ld   a,$09
+32B9: 32 09 33    ld   ($3309),a		; ensures that data is obtained from the buffer instead of from the keyboard
+
+; reads the state of the keys and saves it in the keyboard buffers
+32BC: F3          di
+32BD: 01 0E F4    ld   bc,$F40E	; 1111 0100 0000 1110 (8255 PPI port A)
+32C0: ED 49       out  (c),c
+32C2: 06 F6       ld   b,$F6
+32C4: ED 78       in   a,(c)
+32C6: E6 30       and  $30
+32C8: 4F          ld   c,a
+32C9: F6 C0       or   $C0		; PSG write register index operation (activates 14 for port A communication)
+32CB: ED 79       out  (c),a
+
+32CD: ED 49       out  (c),c	; PSG operation: inactive
+32CF: 04          inc  b		; b = 0xf7 write to 8255 PPI control
+32D0: 3E 92       ld   a,$92	; 1001 0010 (port A: input, port B: input, port C upper: output, port C lower: output)
+32D2: ED 79       out  (c),a
+32D4: C5          push bc
+
+32D5: 21 D3 33    ld   hl,$33D3	; points to the buffer to save the last press of each key
+32D8: 11 DD 33    ld   de,$33DD ; points to the buffer where changes in key press state are saved
+
+32DB: CB F1       set  6,c		; PSG operation: read data from register
+32DD: 06 F6       ld   b,$F6
+32DF: ED 49       out  (c),c
+32E1: 06 F4       ld   b,$F4	; port A of 8255 PPI
+32E3: ED 78       in   a,(c)	; gets the data and saves it in b
+32E5: 47          ld   b,a
+32E6: CD 05 33    call $3305	; if there is carry, ignores the key press and gets from IY buffer
+32E9: 78          ld   a,b
+32EA: B6          or   (hl)		; combines them with the previous data
+32EB: 2F          cpl			; complements them
+32EC: 70          ld   (hl),b	; saves the read value
+32ED: 47          ld   b,a
+32EE: 1A          ld   a,(de)	; checks if there has been a change in the presses
+32EF: A0          and  b
+32F0: B6          or   (hl)
+32F1: 12          ld   (de),a	; saves the changes
+32F2: 0C          inc  c		; passes to the next keyboard line
+32F3: 13          inc  de		; advances the press buffers
+32F4: 23          inc  hl
+32F5: 79          ld   a,c
+32F6: E6 0F       and  $0F
+32F8: FE 0A       cp   $0A
+32FA: 38 DF       jr   c,$32DB	; while not finished with the lines, continues processing
+32FC: C1          pop  bc
+32FD: 3E 82       ld   a,$82	; 1001 0010 (port A: output, port B: input, port C upper: output, port C lower: output)
+32FF: ED 79       out  (c),a
+3301: 05          dec  b
+3302: ED 49       out  (c),c	; PSG operation: inactive
+3304: C9          ret
+
+; checks if keyboard presses are ignored and presses stored in a buffer are taken
+3305: 79          ld   a,c			; gets the keyboard line being processed
+3306: E6 0F       and  $0F
+3308: FE 00       cp   $00			; (this parameter is modified from outside)
+330A: D0          ret  nc			; if the line to process is not greater than indicated
+330B: FD 46 00    ld   b,(iy+$00)	; gets the data from the buffer pointed to by iy instead of from the keyboard
+330E: FD 23       inc  iy
+3310: C9          ret
+
+; checks if QR was pressed in the mirror room and acts accordingly
+3311: CD BC 32    call $32BC		; reads the state of the keys and saves it in the keyboard buffers
+3314: 01 C0 7F    ld   bc,$7FC0		; sets configuration 0 (0, 1, 2, 3)
+3317: ED 49       out  (c),c
+3319: FB          ei
+331A: 3A 8C 2D    ld   a,($2D8C)	; checks if the mirror has been opened
+331D: A7          and  a
+331E: C8          ret  z			; if it has already been opened, exits
+
+331F: CD F1 33    call $33F1		; checks if in front of the mirror and if so, if Q and R were pressed, returning the result in e
+3322: 7B          ld   a,e
+3323: A7          and  a
+3324: C8          ret  z			; if QR was not pressed on any staircase, exits
+3325: 3A BC 2D    ld   a,($2DBC)	; gets the roman numeral of the mirror room.
+3328: FE 04       cp   $04
+332A: 28 08       jr   z,$3334		; if it is 4, dies (when does this happen???)
+332C: 21 BF 2D    ld   hl,$2DBF		; points to the bonuses
+332F: CB D6       set  2,(hl)		; sets to 1 the bit that indicates QR was pressed on one of the mirror staircases
+3331: BB          cp   e			; if it matches the roman numeral staircase, survives
+3332: 28 1A       jr   z,$334E
+
+; if it arrives here, guillermo dies
+3334: 3E 01       ld   a,$01
+3336: 32 97 3C    ld   ($3C97),a	; indicates that guillermo dies
+3339: 3E 14       ld   a,$14
+333B: 32 8F 28    ld   ($288F),a	; changes guillermo's state
+
+333E: 3E 6B       ld   a,$6B
+3340: 2A E0 34    ld   hl,($34E0)	; gets the pointer to the block that forms the mirror
+3343: 2B          dec  hl
+3344: 2B          dec  hl
+3345: CD 72 33    call $3372		; changes the data of a block in the mirror room so that a trap opens and guillermo falls
+3348: CD 1B 50    call $501B		; writes the sentence on the scoreboard
+334B: 22 							ESTAIS MUERTO, FRAY GUILLERMO, HABEIS CAIDO EN LA TRAMPA
+334C: 18 0C       jr   $335A
+
+; if it arrives here, guillermo survives
+334E: F3          di
+334F: 3E FF       ld   a,$FF
+3351: CD 65 33    call $3365		; modifies the height data of the mirror room
+3354: 3E 51       ld   a,$51
+3356: CD 6F 33    call $336F		; modifies the data of the mirror room so that the mirror is open
+3359: FB          ei
+
+335A: AF          xor  a
+335B: 32 75 2D    ld   ($2D75),a	; indicates a screen change
+335E: 32 8C 2D    ld   ($2D8C),a	; indicates that the mirror has been opened
+3361: CD FD 0F    call $0FFD		; plays a sound
+3364: C9          ret
+
+; places abadia7 at 0x4000 and saves a in the height of the mirror room
+3365: 01 C6 7F    ld   bc,$7FC6
+3368: ED 49       out  (c),c
+336A: 2A D9 34    ld   hl,($34D9)
+336D: 77          ld   (hl),a
+336E: C9          ret
+
+; saves a in the block that forms the mirror in the mirror room
+336F: 2A E0 34    ld   hl,($34E0)		; retrieves the address of the block that forms the mirror
+3372: 01 C7 7F    ld   bc,$7FC7
+3375: ED 49       out  (c),c			; puts abadia8
+3377: 77          ld   (hl),a
+3378: 01 C0 7F    ld   bc,$7FC0			; restores the typical configuration
+337B: ED 49       out  (c),c
+337D: C9          ret
+
+; checks if the keystroke buffer has finished. If so, exits with CF = 0. If not finished, loads abadia6.bin at 0x4000
+; puts in iy the address of the keystroke buffer and exits with CF = 1
+337E: 2A D1 33    ld   hl,($33D1)		; gets the pointer to the demo keystroke buffer
+3381: E5          push hl
+3382: 11 F0 6F    ld   de,$6FF0
+3385: A7          and  a
+3386: ED 52       sbc  hl,de			; checks if the pointer reached the limit
+3388: E1          pop  hl
+3389: D0          ret  nc				; if hl >= de, exits
+338A: 01 C5 7F    ld   bc,$7FC5			; puts abadia6.bin at 0x4000 and sets the carry flag
+338D: ED 49       out  (c),c
+338F: E5          push hl
+3390: FD E1       pop  iy				; iy = current address of the keystroke buffer
+3392: 37          scf					; sets the carry flag
+3393: C9          ret
+
+; retrieves from the keystroke buffer the state of 8 keys and updates the buffer where pressed keys are stored
+3394: FD 4E 00    ld   c,(iy+$00)	; reads the current byte
+3397: FD 23       inc  iy
+3399: 06 08       ld   b,$08		; repeats for 8 keys
+339B: C5          push bc
+339C: DD 7E 00    ld   a,(ix+$00)	; reads the current key
+339F: DD 23       inc  ix
+33A1: 11 E7 33    ld   de,$33E7		; buffer where key presses are placed to later read them instead of keyboard presses
+33A4: CD 8D 34    call $348D		; checks if the key read in iy+0 was pressed
+33A7: 7E          ld   a,(hl)
+33A8: 2F          cpl
+33A9: 4F          ld   c,a
+33AA: 1A          ld   a,(de)
+33AB: A1          and  c
+33AC: C1          pop  bc
+33AD: CB 11       rl   c			; gets the current bit of the key that was checked
+33AF: 30 01       jr   nc,$33B2
+33B1: B6          or   (hl)
+33B2: 12          ld   (de),a		; updates the buffer depending on whether the key was pressed or not
+33B3: 10 E6       djnz $339B
+33B5: C9          ret
+
+; records in the keystroke buffer the state of the keys indicated in ix
+33B6: C5          push bc
+33B7: DD 7E 00    ld   a,(ix+$00)	; reads a key
+33BA: DD 23       inc  ix
+33BC: 11 D3 33    ld   de,$33D3		; de points to the table with the last keyboard press for each line
+33BF: CD 8D 34    call $348D		; checks if key a was pressed using the keyboard buffer passed in de
+33C2: 1A          ld   a,(de)		; reads the key and checks if it was pressed
+33C3: A6          and  (hl)
+33C4: C6 FF       add  a,$FF		; if it was not pressed, a = 0, so adding 0xff will not carry
+33C6: C1          pop  bc
+33C7: CB 11       rl   c			; puts whether it was pressed or not in c
+33C9: 10 EB       djnz $33B6		; repeats for the rest of the keys
+33CB: FD 71 00    ld   (iy+$00),c	; saves in the keystroke buffer the state of the keys that have been checked
+33CE: FD 23       inc  iy
+33D0: C9          ret
+
+33D1-33D2: pointer to the demo keypresses
+33D3-33DC: last keyboard press for each line
+33DD-33E6: keyboard press changes for each line
+33E7-33F0: buffer to store the demo keys
+
+; checks if Q and R are pressed on any of the mirror staircases
+; e indicates if QR was pressed on any staircase and on which staircase it was pressed
+33F1: 1E 00       ld   e,$00		; initially e is 0
+33F3: DD 21 36 30 ld   ix,$3036		; points to guillermo's position data
+33F7: DD 7E 02    ld   a,(ix+$02)	; reads the x position
+33FA: FE 22       cp   $22
+33FC: C0          ret  nz			; if not in the appropriate place, exits
+33FD: DD 7E 04    ld   a,(ix+$04)	; if not at the appropriate height, exits
+3400: FE 1A       cp   $1A
+3402: C0          ret  nz
+3403: 3E 43       ld   a,$43
+3405: CD 82 34    call $3482		; if the Q key has not been pressed, exits
+3408: C8          ret  z
+3409: 3E 32       ld   a,$32		; if the R key has not been pressed, exits
+340B: CD 82 34    call $3482		; checks if the key with code a has been pressed
+340E: C8          ret  z
+340F: DD 7E 03    ld   a,(ix+$03)	; reads guillermo's y position and modifies e according to this position
+3412: 1C          inc  e
+3413: FE 6D       cp   $6D			; if on the left staircase, exits with e = 1
+3415: C8          ret  z
+3416: 1C          inc  e
+3417: FE 69       cp   $69			; if on the center staircase, exits with e = 2
+3419: C8          ret  z
+341A: 1C          inc  e
+341B: FE 65       cp   $65			; if on the right staircase, exits with e = 3
+341D: C8          ret  z
+341E: 1E 00       ld   e,$00		; if QR was pressed but not on any staircase, ignores it
+3420: C9          ret
+
+3421: key read
+3422: FF
+3423-3426: 08 25 4A FF keys that move left (cursor left, K, joystick left)
+3427-342A: 2F 2F 49 FF action keys (space, joystick button)
+342B-342E: 00 45 48 FF keys that move up (cursor up, A, joystick up)
+342F-3432: 01 24 4B FF keys that move right (cursor right, L, joystick right)
+3433-3436: 02 47 4D FF keys that move down (cursor down, Z, joystick down)
+
+; checks if the key passed as parameter has been pressed (or one that does the same function). If so, returns non-zero
+3437: ED 53 5F 34 ld   ($345F),de	; modifies an instruction with the buffer data
+343B: 21 21 34    ld   hl,$3421		; saves the key to check
+343E: 77          ld   (hl),a
+343F: 23          inc  hl
+3440: 23          inc  hl
+3441: FE 08       cp   $08			; if it is the left cursor jumps
+3443: 28 16       jr   z,$345B
+3445: 21 27 34    ld   hl,$3427		; if it is space jumps
+3448: FE 2F       cp   $2F
+344A: 28 0F       jr   z,$345B
+344C: 21 21 34    ld   hl,$3421
+344F: FE 03       cp   $03			; if it is not one of the cursors, jumps
+3451: 30 08       jr   nc,$345B
+
+3453: 21 2B 34    ld   hl,$342B
+3456: 87          add  a,a			; a = key*4
+3457: 87          add  a,a
+3458: CD 2D 16    call $162D		; hl = hl + a
+
+345B: 7E          ld   a,(hl)		; reads what was in that position
+345C: 23          inc  hl
+345D: E5          push hl
+345E: 11 00 00    ld   de,$0000		; de = destination buffer (the buffer is filled outside)
+3461: CD 8D 34    call $348D		; checks if the key that was in that position was pressed
+3464: E3          ex   (sp),hl		; saves the selected mask on the stack
+3465: 20 09       jr   nz,$3470		; if the key was pressed, exits with a != 0
+3467: 7E          ld   a,(hl)		; continues testing alternative keys for that function
+3468: FE FF       cp   $FF			; (this instruction is changed from outside)
+346A: 30 03       jr   nc,$346F		; if all have been tested, exits with a = 0
+346C: D1          pop  de
+346D: 18 EC       jr   $345B
+
+346F: AF          xor  a
+3470: E1          pop  hl
+3471: C9          ret
+
+; checks if there has been a change in the state of the key with code a. If pressed, returns non-zero
+3472: E5          push hl
+3473: D5          push de
+3474: 11 DD 33    ld   de,$33DD		; de = keyboard press changes for each line
+3477: CD 37 34    call $3437		; checks if the state of the key passed as parameter has changed
+347A: F5          push af
+347B: 1A          ld   a,(de)
+347C: B6          or   (hl)
+347D: 12          ld   (de),a
+347E: F1          pop  af
+347F: D1          pop  de
+3480: E1          pop  hl
+3481: C9          ret
+
+; checks if the key with code a has been pressed. If pressed, returns non-zero
+3482: E5          push hl
+3483: D5          push de
+3484: 11 D3 33    ld   de,$33D3	; points to the table with the last key press
+3487: CD 37 34    call $3437	; checks if the key with code a has been pressed
+348A: D1          pop  de
+348B: E1          pop  hl
+348C: C9          ret
+
+; checks if a key a was pressed using the keyboard buffer passed in de
+348D: 4F          ld   c,a		; c = what was in that position
+348E: CB 3F       srl  a		; c = c/8
+3490: CB 3F       srl  a
+3492: CB 3F       srl  a
+3494: 83          add  a,e		; de = de + c/8 (finds the offset of the key to search in the pressed keys buffer)
+3495: 5F          ld   e,a
+3496: 8A          adc  a,d
+3497: 93          sub  e
+3498: 57          ld   d,a
+3499: 79          ld   a,c
+349A: E6 07       and  $07		; gets the bit of the line
+349C: 21 A8 34    ld   hl,$34A8	; points to the bit masks
+349F: 85          add  a,l		; indexes into the table
+34A0: 6F          ld   l,a
+34A1: 8C          adc  a,h
+34A2: 95          sub  l
+34A3: 67          ld   h,a
+34A4: 1A          ld   a,(de)	; reads the position of pressed keys
+34A5: 2F          cpl
+34A6: A6          and  (hl)		; checks if the key in question was pressed
+34A7: C9          ret
+
+; masks for each bit
+34A8: 01 02 04 08 10 20 40 80
+
+
+; routine called during initialization
+34B0: 3E 01       ld   a,$01
+34B2: 32 8C 2D    ld   ($2D8C),a	; initially the secret room behind the mirror is not open
+34B5: AF          xor  a
+34B6: 32 BC 2D    ld   ($2DBC),a	; indicates that the roman numeral of the mirror room has not been generated yet
+
+34B9: F3          di
+34BA: 01 C6 7F    ld   bc,$7FC6		; loads abadia7.bin
+34BD: ED 49       out  (c),c
+34BF: 21 DB 34    ld   hl,$34DB		; points to the height data for the mirror room if the mirror is closed
+34C2: ED 5B D9 34 ld   de,($34D9)	; gets the pointer where to copy the height data
+34C6: 01 05 00    ld   bc,$0005
+34C9: ED B0       ldir				; copies the bytes to abadia7.bin
+
+34CB: 3E 11       ld   a,$11
+34CD: CD 6F 33    call $336F		; modifies the mirror room so the mirror appears closed
+34D0: 2B          dec  hl
+34D1: 2B          dec  hl			; points to the beginning of the entry
+34D2: 3E 1F       ld   a,$1F
+34D4: CD 72 33    call $3372		; modifies the mirror room so the trap is closed
+34D7: FB          ei				; enables interrupts
+34D8: C9          ret
+
+34D9-34DA: saves the address of the mirror height data in abadia7.bin
+
+; height data if the mirror is closed
+34DB: F5 20 62 0B FF
+
+34E0-34E1: offset to the block that forms the mirror in the mirror screen of abadia8.bin
+
+; this method is called when adso's sprite orientation changes and handles flipping adso's sprites
+34E2: 3A 4B 30    ld   a,($304B)		; changes the state of bit 1
+34E5: EE 01       xor  $01
+34E7: 32 4B 30    ld   ($304B),a
+34EA: 21 EA A6    ld   hl,$A6EA			; points to adso's sprites 5 bytes wide
+34ED: 01 05 5F    ld   bc,$5F05
+34F0: CD 52 35    call $3552			; flips them
+34F3: 21 C5 A8    ld   hl,$A8C5			; points to adso's sprites 4 bytes wide
+34F6: 01 04 5A    ld   bc,$5A04
+34F9: 18 57       jr   $3552			; flips them
+
+; this method is called when malaquias's sprite orientation changes and handles flipping the sprite faces
+34FB: 3A 5A 30    ld   a,($305A)		; changes the state of bit 1
+34FE: EE 01       xor  $01
+3500: 32 5A 30    ld   ($305A),a
+3503: 2A 97 30    ld   hl,($3097)		; hl points to malaquias's face data
+3506: 01 05 14    ld   bc,$1405
+3509: 18 47       jr   $3552			; flips malaquias's faces
+
+; this method is called when the abbot's sprite orientation changes and handles flipping the sprite faces
+350B: 3A 69 30    ld   a,($3069)
+350E: EE 01       xor  $01
+3510: 32 69 30    ld   ($3069),a		; changes the state of bit 1
+3513: 2A 99 30    ld   hl,($3099)		; hl points to the abbot's face data
+3516: 01 05 14    ld   bc,$1405
+3519: 18 37       jr   $3552			; flips the abbot's faces
+
+; this method is called when berengario's sprite orientation changes and handles flipping the sprite faces
+351B: 3A 78 30    ld   a,($3078)		; changes the state of bit 1
+351E: EE 01       xor  $01
+3520: 32 78 30    ld   ($3078),a
+3523: 2A 9B 30    ld   hl,($309B)		; hl points to berengario's face data
+3526: 01 05 14    ld   bc,$1405
+3529: 18 27       jr   $3552			; flips berengario's faces
+
+; this method is called when severino's sprite orientation changes and handles flipping the sprite faces
+352B: 3A 87 30    ld   a,($3087)		; changes the state of bit 1
+352E: EE 01       xor  $01
+3530: 32 87 30    ld   ($3087),a
+3533: 2A 9D 30    ld   hl,($309D)		; hl points to severino's face data
+3536: 01 05 14    ld   bc,$1405
+3539: 18 17       jr   $3552			; flips severino's faces
+
+
+; this method is called when guillermo's sprite orientation changes and handles flipping guillermo's sprites
+353B: 3A 3C 30    ld   a,($303C)	; changes the state of bit 1
+353E: EE 01       xor  $01
+3540: 32 3C 30    ld   ($303C),a
+3543: 21 00 A3    ld   hl,$A300		; hl points to guillermo's graphics 5 bytes wide
+3546: 01 05 AE    ld   bc,$AE05		; bc -> indicates 5 bytes wide and 0x366 bytes (0xae*5)
+3549: CD 52 35    call $3552		; flips guillermo's graphics 5 bytes wide with respect to xy
+354C: 21 66 A6    ld   hl,$A666		; hl points to guillermo's graphics 4 bytes wide
+354F: 01 04 21    ld   bc,$2104		; bc -> indicates 4 bytes wide and 0x84 bytes (0x21*4)
+
+; rotates with respect to x a series of graphic data passed in hl (the graphics width is passed in c and in b a number
+;  to calculate how many graphics to rotate)
+3552: C5          push bc			; saves the original parameter
+3553: 5D          ld   e,l			; de = source graphics address
+3554: 54          ld   d,h
+3555: 06 00       ld   b,$00
+3557: ED 43 7B 35 ld   ($357B),bc	; saves the object width in the routine
+
+355B: 0D          dec  c
+355C: 09          add  hl,bc		; hl = points to the last byte of a group of object pixels (dependent on its width)
+355D: 06 A1       ld   b,$A1		; in bc will point to the auxiliary table for flipx
+355F: D9          exx				; exchanges registers
+3560: C1          pop  bc			; retrieves the original parameter
+3561: 0C          inc  c
+3562: CB 39       srl  c
+3564: 69          ld   l,c			; saves in l the number of swaps per block for the block to be completely rotated
+3565: D9          exx				; exchanges registers
+3566: D5          push de			; saves the original object address
+3567: D9          exx
+
+3568: D9          exx
+3569: 4E          ld   c,(hl)		; gets the byte to swap
+356A: 0A          ld   a,(bc)		; flips the 4 pixels using the flipx table and saves it in a' for later
+356B: 08          ex   af,af'
+356C: 1A          ld   a,(de)		; gets the other byte to swap
+356D: 4F          ld   c,a
+356E: 0A          ld   a,(bc)		; flips the 4 pixels using the flipx table
+356F: 77          ld   (hl),a		; swaps the values obtained from the read bytes
+3570: 08          ex   af,af'
+3571: 12          ld   (de),a
+3572: 2B          dec  hl			; tries for the next byte
+3573: 13          inc  de
+3574: D9          exx
+3575: 2D          dec  l
+3576: 20 F0       jr   nz,$3568		; repeats until the entire line has been copied
+
+; when it arrives here, the block it has processed is perfectly rotated
+3578: D9          exx
+3579: E1          pop  hl			; retrieves the initial object address
+
+357A: 11 00 00    ld   de,$0000		; this parameter is filled above with the width
+357D: 19          add  hl,de		; passes to the next block
+357E: EB          ex   de,hl
+357F: 2D          dec  l
+3580: 19          add  hl,de		; with hl points to the last byte of a group of object pixels (dependent on its width)
+3581: D9          exx
+3582: 10 E0       djnz $3564		; repeats until finished
+3584: C9          ret
+
+; opens the doors of the left wing of the abbey
+3585: 21 02 E0    ld   hl,$E002
+3588: 22 FD 2F    ld   ($2FFD),hl
+358B: 26 C0       ld   h,$C0
+358D: 22 02 30    ld   ($3002),hl
+3590: C9          ret
+
+; calculates in hl the position at which to save/load the data, in de points to the current data and in bc indicates the data length
+3591: 25          dec  h
+3592: CB F4       set  6,h			; adjusts the banks to 0x4000-0x49ff
+3594: 2E 00       ld   l,$00
+3596: 11 00 A2    ld   de,$A200
+3599: 01 FF 00    ld   bc,$00FF
+359C: C9          ret

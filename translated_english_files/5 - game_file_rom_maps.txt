@@ -1,0 +1,68 @@
+This file, maparoms.txt, serves as a ROM map for "La abadía del crimen." It details the contents of the various .bin files that make up the game, providing a high-level overview of how the game's assets and code are organized on disk.
+
+Here's a breakdown of its function:
+
+- File Content Description: It lists each abadia*.bin file and describes the data it contains. This includes everything from the game's presentation and code to graphics, music, text, and even a Z80 debugger.
+- Data Organization: For each file, it provides memory address ranges (offsets within the file) and explains what is stored in those ranges. For example, abadia3.bin is shown to contain character sprites, music data, game text, and initial game settings, all at specific locations within the file.
+- Asset Location: The file acts as a guide for locating specific game assets. If a developer wanted to find the graphics for the monks, the music for the final scroll, or the game's presentation code, this map would point them to the correct file and the relevant section within it.
+
+In summary, this file is a crucial piece of documentation for understanding the game's file structure. It complements game_memory_map.txt by showing what data is stored in the game's files, whereas game_memory_map.txt describes how that data is arranged in active memory during gameplay. This map is essential for anyone looking to analyze, modify, or reverse-engineer the game.
+
+abadia.bas -> loader of the pirate version
+
+abadia.bin -> 
+		0x0000-0x01ff loader 2 of the pirate version
+
+abadia0.bin -> 
+		0x0000-0x3fff presentation
+		
+abadia1.bin ->  (starts at 0x100)
+		0x0100-0x3fff code
+		
+abadia2.bin -> 
+		0x0000-0x32ff code
+		0x3300-0x3fff text of the presentation scroll
+
+abadia3.bin -> 
+		0x0000-0x02ff music data of the scroll
+		0x0300-0x22ff pieces of the abbey (X = 4)
+		0x2300-0x33ff william, adso and the monks (X = 4 and X = 5) + doors (X = 6)
+			0x2300-0x2665 william with X = 5
+			0x2666-0x26e9 william with X = 4
+			0x26ea-0x28c7 adso with X = 5
+			0x28c9-0x2a48 adso with X = 4
+			0x2a49-0x2b58 door with X = 6
+			0x2b59-0x3102 monks with X = 5
+			0x3103-0x33be faces of the monks with X = 5
+			0x33bf-0x33ff monk suit with X = 4
+		0x3400-0x357f table with the graphic data of the characters used during the game
+		0x3580-0x3aff table of game words
+		0x3b00-0x3eff table of game strings
+		0x3f00-0x3fff some important values such as
+			0x3f49 value to regulate the game speed
+			0x3f4e initial time of day
+			0x3f4f initial day number
+			0x3f50-0x3f51 initial position of william
+			0x3f52 initial height of william
+
+abadia5.bin -> z80 debugger
+		
+abadia6.bin ->
+		0x0000-0x2fff space used to save the demo keystrokes
+		0x3000-0x3fff routines of the manuscript and others (same as abadia2 0x259d-0x359c)
+
+abadia7.bin ->
+		0x0000-0x09ff repeated graphics of a few parts of the abbey (???)
+		0x0a00-0x17ff height data of the floors
+			0x0a00-0x0eff height data of floor 0
+			0x0f00-0x107f height data of floor 1
+			0x1080-0x1414 height data of floor 2
+		0x1800-0x3fff data of banks 9 to 0 of 0x2d7f and 0x3c85 (in memory)
+		
+abadia8.bin -> screen data
+		0x0000-0x2237 data about the blocks that form the screens
+		0x2328-0x2b27 graphics of the scoreboard
+		0x2b28-0x2dff music of the final scroll
+		0x2e00-0x37ff text of the final scroll
+		0x3800-0x39ff empty
+		0x3a00-0x3fff graphic data of the border of the scroll

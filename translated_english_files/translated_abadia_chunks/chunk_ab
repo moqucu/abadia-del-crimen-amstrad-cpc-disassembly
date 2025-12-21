@@ -1,0 +1,597 @@
+04CB: CD 22 04    call $0422		; delay
+04CE: CD 6D 05    call $056D		; checks if S or N key was pressed
+04D1: 28 E5       jr   z,$04B8		; repeat until one is pressed
+04D3: 30 21       jr   nc,$04F6		; if N was pressed, jump
+04D5: 2A D9 34    ld   hl,($34D9)	; gets the end address of the height of the mirror room
+04D8: 01 C6 7F    ld   bc,$7FC6		; puts abadia7 at 0x4000
+04DB: ED 49       out  (c),c
+04DD: 7E          ld   a,(hl)		; reads the last byte
+04DE: F5          push af
+04DF: E5          push hl
+04E0: 36 FF       ld   (hl),$FF		; restores the original height
+04E2: 01 C6 12    ld   bc,$12C6		; saves what's in bank 6 (tracks 0x12-0x16) (abadia7.bin)
+04E5: CD 0B 05    call $050B		; copies data to disk from track b to track b+4, setting the memory configuration indicated by c, and reading the data at 0x4000-0x7fff
+04E8: 01 C5 17    ld   bc,$17C5		; saves what's in bank 5 (tracks 0x17-0x1b) (abadia6.bin)
+04EB: CD 0B 05    call $050B		; copies data to disk from track b to track b+4, setting the memory configuration indicated by c, and reading the data at 0x4000-0x7fff
+04EE: E1          pop  hl
+04EF: F1          pop  af
+04F0: 01 C6 7F    ld   bc,$7FC6		; places abadia7 at 0x4000
+04F3: ED 49       out  (c),c
+04F5: 77          ld   (hl),a		; restores the last byte
+
+04F6: AF          xor  a			; turns off disk drive motor
+04F7: 01 7E FA    ld   bc,$FA7E
+04FA: ED 79       out  (c),a
+04FC: 01 C0 7F    ld   bc,$7FC0		; sets the original configuration
+04FF: ED 49       out  (c),c
+0501: 3E 01       ld   a,$01
+0503: 11 10 27    ld   de,$2710
+0506: CD 22 04    call $0422		; delay
+0509: FB          ei
+050A: C9          ret
+
+; saves data to disk from track b to track b+4, setting the memory configuration indicated by c, and reading data from 0x4000-0x7fff
+050B: 21 FF 7F    ld   hl,$7FFF
+050E: 3E 05       ld   a,$05		; data length = 5 cylinders
+
+; saves data to disk from a tracks starting at track b, setting the memory configuration indicated by c, and reading data from hl (downwards)
+; a = number of tracks to save
+; b = initial track
+; c = memory configuration to set
+; hl = memory position where to start taking data (saves from top to bottom)
+0510: 80          add  a,b			; modifies an instruction with the last track to save
+0511: 32 32 05    ld   ($0532),a	; a = initial track
+0514: 78          ld   a,b
+0515: 06 7F       ld   b,$7F		; sets the memory configuration passed in c
+0517: ED 49       out  (c),c        ; bc = main register of disk drive
+0519: 01 7E FB    ld   bc,$FB7E
+051C: F5          push af
+051D: 32 82 04    ld   ($0482),a	; modifies the track of the command
+0520: CD 03 04    call $0403		; writes a track seek command to a
+0523: 11 7F 04    ld   de,$047F		; points to the write command data
+0526: CD 2D 04    call $042D		; writes the command pointed by de to the drive
+0529: CD 86 05    call $0586		; writes memory bytes to the disk drive
+052C: CD 3A 04    call $043A        ; reads the bytes sent by the disk drive after a command, and stores them in a buffer
+052F: F1          pop  af
+0530: 3C          inc  a			; advance to the next track
+0531: FE 00       cp   $00			; instruction modified externally with the last track to save
+0533: 20 E7       jr   nz,$051C
+0535: C9          ret
+
+; recalibrates the disk drive
+0536: 01 7E FB    ld   bc,$FB7E		; bc = main register of disk drive
+0539: 3E 07       ld   a,$07        ; command to recalibrate the drive
+053B: CD 65 04    call $0465		; waits for the drive to be ready, and if possible, sends data
+053E: AF          xor  a            ; drive 0
+053F: CD 65 04    call $0465		; waits for the drive to be ready, and if possible, sends data
+0542: 3E 03       ld   a,$03
+0544: CD 22 04    call $0422		; waits for the drive to be ready, and if possible, sends data
+0547: 3E 08       ld   a,$08        ; command to get status information
+0549: CD 65 04    call $0465		; waits for the drive to be ready, and if possible, sends data
+054C: CD 3A 04    call $043A		; reads the bytes sent by the disk drive after a command, and stores them in a buffer
+054F: C9          ret
+
+; copies a 4x8 pixel rectangle from a buffer to screen, and saves what's on screen in the buffer
+0550: 21 00 C0    ld   hl,$C000		; points to screen
+0553: 11 65 05    ld   de,$0565		; points to the cursor graphics data
+
+; copies a 4x8 pixel rectangle from de to hl, and saves what's in hl to de
+0556: 06 08       ld   b,$08		; 8 bytes (32 pixels)
+0558: 4E          ld   c,(hl)       ; reads a byte from screen
+0559: 1A          ld   a,(de)		; reads a byte from buffer
+055A: 77          ld   (hl),a       ; copies the buffer byte to screen
+055B: 79          ld   a,c
+055C: 12          ld   (de),a       ; copies the screen byte to buffer
+055D: 13          inc  de           ; goes to next buffer position
+055E: 7C          ld   a,h
+055F: C6 08       add  a,$08        ; goes to next screen line
+0561: 67          ld   h,a
+0562: 10 F4       djnz $0558
+0564: C9          ret
+
+; cursor graphic shown when pressing ctrl+tab, and space to save what was on screen
+0565: 00 00 0F 0F F0 F0 FF FF
+
+; checks if S or N key was pressed
+056D: CD BC 32    call $32BC	; reads key state and stores it in keyboard buffers
+0570: 3E 3C       ld   a,$3C
+0572: CD 72 34    call $3472	; checks if S state changes
+0575: 37          scf
+0576: C0          ret  nz		; if it has changed, exit (with carry)
+0577: 3E 2E       ld   a,$2E
+0579: CD 72 34    call $3472	; checks if N state changes
+057C: C8          ret  z		; if it hasn't changed, exit
+057D: F6 FF       or   $FF		; if it has changed, a = 0xff
+057F: C9          ret
+
+; writes a memory byte to the disk drive
+0580: 0C          inc  c			; points to data register
+0581: 7E          ld   a,(hl)       ; reads a byte from memory
+0582: ED 79       out  (c),a        ; stores it in the selected sector of current track
+0584: 0D          dec  c            ; points to status register
+0585: 2B          dec  hl           ; points to the next byte to save
+0586: ED 78       in   a,(c)		; reads the status register
+0588: F2 86 05    jp   p,$0586
+058B: E6 20       and  $20
+058D: 20 F1       jr   nz,$0580		; if the write operation is not complete, save another byte
+058F: C9          ret
+; -------------- end of code for saving saved games from memory to disk --------------------------
+
+; ------------------------ data related to pathfinding --------------------------------
+
+0590: C3 9A 24    jp   $249A
+0591: 00 00
+
+; buffer of alternative positions. Each position takes 3 bytes
+0593: 	00 00 00
+	00 00 00
+	00 00 00
+	00 00 00
+	00 00 00
+	FF
+
+05A3: 0000	; pointer to the alternative being tried
+
+; displacement table according to orientation
+05A5: 	02 00 -> [+2 00]
+	00 FE -> [00 -2]
+	FE 00 -> [-2 00]
+	00 02 -> [00 +2]
+
+; displacement table related to door orientations
+; each entry takes 8 bytes
+; byte 0: related to screen x position
+; byte 1: related to screen y position
+; byte 2: related to sprite depth
+; byte 3: indicates the flipx state of graphics needed by the door
+; byte 4: related to grid x position
+; byte 5: related to grid y position
+; byte 6-7: not used, but is the displacement in the height buffer
+05AD: 	FF DE 01 00 00 00 0001 -> -01 -34  +01  00    00  00   +01
+	FF D6 00 01 00 00 FFE8 -> -01 -42   00 +01    00  00   -24
+	FB D6 00 00 00 00 FFFF -> -05 -42   00  00    00  00   -01
+	FB DE 01 01 01 01 0018 -> -05 -34  +01 +01   +01 +01   +24
+
+05CD: tables with room connections of the floors
+if bit 0 = 0, indicates if it's a room from which you can exit right
+if bit 1 = 0, indicates if it's a room from which you can exit up
+if bit 2 = 0, indicates if it's a room from which you can exit left
+if bit 3 = 0, indicates if it's a room from which you can exit down
+if bit 4 = 1, indicates if from that screen you can go up to another floor
+if bit 5 = 1, indicates if from that screen you can go down to another floor
+; X 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f  Y
+; ================================================== ==
+	00 00 00 00 00 00 00 00 08 00 08 08 00 00 00 00  00
+	00 08 08 00 08 08 08 09 07 0D 07 07 0C 00 00 00  01
+	01 1E 03 0D 06 0A 0A 0B 0C 02 08 08 03 04 00 00  02
+	00 03 04 0A 01 0E 0A 0A 02 08 0A 0A 01 04 00 00  03
+	00 01 05 0F 05 06 03 07 05 07 06 02 01 04 00 00  04
+	00 09 04 02 01 0C 07 05 05 05 04 00 01 04 00 00  05
+	01 1E 08 00 08 1B 05 05 05 05 04 08 09 04 00 00  06
+	00 02 03 0C 0A 0A 01 0D 05 0D 05 06 02 00 00 00  07
+	00 00 00 02 02 03 0C 0A 00 0A 09 06 00 00 00 00  08
+	00 00 00 00 00 00 02 03 05 06 02 02 00 00 00 00  09
+	00 00 00 00 00 00 00 01 0D 04 00 00 00 00 00 00  0a
+	00 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00  0b
+
+067D y 0x685:
+; X 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f  Y
+; ================================================== ==
+	XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX  00
+	00 08 08 00 08 08 00 00 XX XX XX XX XX XX XX XX  01
+	01 2E 03 0D 06 1B 0D 06 XX XX XX XX XX XX XX XX  02
+	00 03 04 0A 01 0E 0A 08 XX XX XX XX XX XX XX XX  03
+	00 01 05 0F 05 06 03 07 XX XX XX XX XX XX XX XX  04
+	00 09 04 0A 01 0C 01 05 XX XX XX XX XX XX XX XX  05
+	01 2E 09 0F 0C 2B 05 05 XX XX XX XX XX XX XX XX  06
+	00 02 03 0C 0A 0A 01 0D XX XX XX XX XX XX XX XX  07
+
+; X 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f  Y
+; ================================================== ==
+	XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX 00
+	00 08 08 00 08 08 00 00 XX XX XX XX XX XX XX XX 01
+	01 0E 03 0D 06 2B 0D 06 XX XX XX XX XX XX XX XX 02
+	00 03 04 0A 01 0E 0A 08 XX XX XX XX XX XX XX XX 03
+	00 01 05 0F 05 06 03 07 XX XX XX XX XX XX XX XX 04
+	00 09 04 0A 01 0C 01 05 XX XX XX XX XX XX XX XX 05
+	01 0E 09 0F 0C 0B 05 05 XX XX XX XX XX XX XX XX 06
+	00 02 03 0C 0A 0A 01 0D XX XX XX XX XX XX XX XX 07
+
+; ---------------------- end of data related to pathfinding ------------------------------
+
+; executes malaquias' behavior
+06FD: FD 21 54 30 ld   iy,$3054		; points to malaquias' characteristics
+0701: DD 21 AB 3C ld   ix,$3CAB		; points to malaquias' movement variables
+0705: AF          xor  a
+0706: 32 9C 3C    ld   ($3C9C),a	; indicates that the character initially wants to move
+0709: CD 5E 57    call $575E		; executes malaquias' logic (can change 0x3c9c)
+070C: 0E 3F       ld   c,$3F
+070E: CD A4 3E    call $3EA4		; modifies the table at 0x05cd with information from the door table and which rooms they're between
+0711: 21 C2 2B    ld   hl,$2BC2		; points to the data table for moving malaquias
+0714: CD 1D 29    call $291D		; checks if character can move where they want and updates their sprite and height buffer
+0717: DD 21 AB 3C ld   ix,$3CAB		; points to malaquias' movement variables
+071B: C3 3C 07    jp   $073C		; jump to generate more movement commands for malaquias according to where they want to move
+
+; executes the abbot's behavior
+071E: FD 21 63 30 ld   iy,$3063		; iy points to the abbot's characteristics
+0722: DD 21 C9 3C ld   ix,$3CC9		; points to the abbot's movement variables
+0726: AF          xor  a
+0727: 32 9C 3C    ld   ($3C9C),a	; indicates that the character initially wants to move
+072A: CD CB 5F    call $5FCB		; executes the abbot's logic
+072D: 0E 3F       ld   c,$3F
+072F: CD A4 3E    call $3EA4		; modifies the table at 0x05cd with information from the door table and which rooms they're between
+0732: 21 CC 2B    ld   hl,$2BCC		; points to the table for moving the abbot
+0735: CD 1D 29    call $291D		; checks if character can move where they want and updates their sprite and height buffer
+0738: DD 21 C9 3C ld   ix,$3CC9		; points to the abbot's movement variables
+	; generates more movement commands for the abbot according to where they want to move
+
+; ----------------- movement generation for AI characters ------------------------------
+; all "thinking" characters jump here to fill their action buffer
+; ix = the character's logic variables
+; iy = character position data
+073C: FD CB 09 7E bit  7,(iy+$09)	; if they have a thought-out movement, skip the next part
+0740: CA 72 08    jp   z,$0872
+
+; arrives here if the character doesn't have a thought-out movement
+0743: 3A 9C 3C    ld   a,($3C9C)	; if the character doesn't have to go anywhere, exit
+0746: A7          and  a
+0747: C0          ret  nz
+
+0748: DD E5       push ix
+074A: DD 7E FF    ld   a,(ix-$01)	; reads where to go
+074D: FE FF       cp   $FF
+074F: 28 4D       jr   z,$079E		; if going after guillermo, jump
+0751: FE FE       cp   $FE
+0753: 28 44       jr   z,$0799		; if going after the abbot, jump
+0755: FE FD       cp   $FD
+0757: 28 3B       jr   z,$0794		; if going after the book, jump
+0759: FE FC       cp   $FC
+075B: 28 32       jr   z,$078F		; if going after the parchment, jump
+
+; arrives here if 0xff, 0xfe, 0xfd or 0xfc were not found in ix-1
+075D: 4F          ld   c,a			; c = a
+075E: 87          add  a,a			; a = 2*a
+075F: 81          add  a,c			; a = 3*a
+0760: 4F          ld   c,a
+0761: 06 00       ld   b,$00		; bc = 3*a (each entry takes 3 bytes)
+0763: DD 09       add  ix,bc		; indexes into the table of places the character usually goes
+0765: DD E5       push ix
+0767: E1          pop  hl			; hl = obtained address
+0768: E5          push hl
+0769: 11 93 05    ld   de,$0593		; points to destination
+076C: ED A0       ldi
+076E: ED A0       ldi
+0770: ED A0       ldi				; copies 3 bytes to buffer used in position algorithms
+0772: 3E FF       ld   a,$FF
+0774: 12          ld   (de),a		; marks the end of the entry
+0775: E1          pop  hl			; retrieves the obtained address
+0776: 2B          dec  hl
+0777: 2B          dec  hl			; goes back 2 positions, to treat the entry as position data
+0778: 11 94 05    ld   de,$0594		; points to the next free position of buffer -2
+077B: 18 27       jr   $07A4		; jump to generate alternatives
+
+; jumps here to process an alternative
+; ix position generated in buffer
+; iy points to the character's position data
+077D: CD 8A 09    call $098A		; goes after a character that isn't in the same screen area being shown (iy after ix)
+0780: DD E1       pop  ix			; recovers pointer to character's logic variables
+0782: 3A B6 2D    ld   a,($2DB6)	; if not at destination, exit
+0785: FE FD       cp   $FD
+0787: C0          ret  nz
+0788: DD 7E FF    ld   a,(ix-$01)	; if reached the place, indicate it
+078B: DD 77 FD    ld   (ix-$03),a
+078E: C9          ret
+
+; arrives here if 0xfc was found
+078F: 21 17 30    ld   hl,$3017		; points to the parchment's position data
+0792: 18 0D       jr   $07A1
+
+; arrives here if 0xfd was found
+0794: 21 08 30    ld   hl,$3008		; points to the book's position data
+0797: 18 08       jr   $07A1
+
+; arrives here if 0xfe was found
+0799: 21 63 30    ld   hl,$3063		; points to the abbot's position data
+079C: 18 03       jr   $07A1
+
+; arrives here if 0xff was found
+079E: 21 36 30    ld   hl,$3036		; points to guillermo's position data
+
+07A1: 11 91 05    ld   de,$0591		; points to the first free position of buffer - 2
+
+; hl has the address of a character's or object's position data to reach
+; de points to an empty buffer position for searching alternative paths
+; iy points to the character's position data to move
+07A4: FD E5       push iy				; saves the character's position data
+07A6: CD BD 07    call $07BD			; generates a movement proposal to the position indicated by hl for each possible orientation and saves it in the de buffer
+07A9: DD 21 93 05 ld   ix,$0593			; points to the first buffer data entry
+07AD: DD 22 A3 05 ld   ($05A3),ix		; initializes pointer to first alternative position
+07B1: DD 7E 00    ld   a,(ix+$00)
+07B4: FE FF       cp   $FF				; if alternatives are finished, exit
+07B6: FD E1       pop  iy
+07B8: 20 C3       jr   nz,$077D			; if there's at least one entry, jump
+07BA: DD E1       pop  ix
+07BC: C9          ret
+
+; generates a movement proposal to the side of the position indicated by hl for each possible orientation and saves it in the de buffer
+; hl has the address of a character's or object's position data to reach
+; de points to an empty buffer position for searching alternative paths
+; iy points to the character's position data to move
+07BD: E5          push hl
+07BE: DD E1       pop  ix			; ix = hl
+07C0: D5          push de
+07C1: FD E1       pop  iy			; iy = de
+07C3: DD 46 01    ld   b,(ix+$01)	; reads the orientation of character/object to reach
+07C6: CD D2 07    call $07D2		; given position data of ix, generates a proposal to reach 2 positions to the side of character according to orientation of b
+07C9: 04          inc  b
+07CA: CD D2 07    call $07D2		; given position data of ix, generates a proposal to reach 2 positions to the side of character according to orientation of b
+07CD: 04          inc  b
+07CE: CD D2 07    call $07D2		; given position data of ix, generates a proposal to reach 2 positions to the side of character according to orientation of b
+07D1: 04          inc  b
+
+; given position data of ix, generates a proposal to reach 2 positions to the side of character according to orientation of b
+; ix has the address of a character's or object's position data to reach
+; iy points to an empty buffer position for searching alternative paths
+;  b = orientation
+07D2: 21 A5 05    ld   hl,$05A5		; points to the displacement table according to orientation
+07D5: 78          ld   a,b
+07D6: E6 03       and  $03
+07D8: 47          ld   b,a			; b = b & 0x03 (adjusts orientation to be among the 4 valid ones)
+07D9: 87          add  a,a			; each entry takes 2 bytes
+07DA: CD 2D 16    call $162D		; hl = hl + a
+07DD: 78          ld   a,b			; a = adjusted orientation
+07DE: 0F          rrca
+07DF: 0F          rrca				; puts the 2 orientation bits as the 2 most significant bits of a
+07E0: EE 80       xor  $80			; inverts the orientation in x and y
+07E2: E6 C0       and  $C0			; keeps only the 2 orientation bits
+07E4: DD B6 04    or   (ix+$04)		; combines with destination height/orientation with current and saves in c
+07E7: 4F          ld   c,a
+07E8: DD 7E 04    ld   a,(ix+$04)	; copies destination height/orientation to buffer
+07EB: FD 77 04    ld   (iy+$04),a
+07EE: DD 7E 02    ld   a,(ix+$02)	; gets destination x position
+07F1: 86          add  a,(hl)
+07F2: 23          inc  hl
+07F3: FD 77 02    ld   (iy+$02),a	; copies destination x position plus a small displacement according to orientation in buffer
+07F6: DD 7E 03    ld   a,(ix+$03)	; gets destination y position
+07F9: 86          add  a,(hl)
+07FA: FD 77 03    ld   (iy+$03),a	; copies destination y position plus a small displacement according to orientation in buffer
+07FD: DD E5       push ix
+07FF: C5          push bc
+									; called with iy = address of position data associated with character/object
+0800: CD BE 0C    call $0CBE		; if the position to go to isn't one of the center ones of the screen being shown, CF=1
+									; otherwise, returns in ix a pointer to the height table entry of corresponding position
+0803: C1          pop  bc
+0804: FD 71 04    ld   (iy+$04),c	; saves height/orientation combined with destination
+0807: DD 7E 00    ld   a,(ix+$00)	; reads the possible height buffer content
+080A: DD E1       pop  ix
+080C: 38 17       jr   c,$0825		; if position isn't one of those in screen buffer, jump
+
+; arrives here if in a the height of the position to go was read because it's one of the positions shown on screen
+080E: E6 EF       and  $EF			; removes from height buffer data the characters that are there (except adso) (???)
+0810: C5          push bc
+0811: 4F          ld   c,a			; saves the cell height in c
+0812: DD 7E 04    ld   a,(ix+$04)	; gets destination height
+0815: CD 73 24    call $2473		; depending on height, returns base height of floor in b
+0818: 90          sub  b			; subtracts from destination height the base floor height
+0819: 91          sub  c			; subtracts the height in height buffer
+081A: 3C          inc  a
+081B: FE 06       cp   $06
+081D: C1          pop  bc
+081E: 38 05       jr   c,$0825		; if there's little height difference, puts end marker at end of this entry
+0820: FD 36 02 FF ld   (iy+$02),$FF	; puts end marker at start of this entry (this entry is discarded)
+0824: C9          ret
+
+; arrives here if the position to go to isn't one of those in screen's height buffer
+0825: FD 23       inc  iy
+0827: FD 23       inc  iy
+0829: FD 23       inc  iy
+082B: FD 36 02 FF ld   (iy+$02),$FF	; puts end marker at end of this entry
+082F: C9          ret
+
+; executes berengario's behavior
+0830: FD 21 72 30 ld   iy,$3072		; points to berengario's position data
+0834: DD 21 EA 3C ld   ix,$3CEA		; points to berengario's movement variables
+0838: AF          xor  a
+0839: 32 9C 3C    ld   ($3C9C),a	; indicates that initially wants to move
+083C: CD 3F 59    call $593F		; executes berengario's logic
+083F: 0E 3F       ld   c,$3F
+0841: CD A4 3E    call $3EA4		; modifies the table at 0x05cd with information from the door table and which rooms they're between
+0844: 21 D6 2B    ld   hl,$2BD6		; points to berengario's table
+0847: CD 1D 29    call $291D		; checks if character can move where they want and updates their sprite and height buffer
+084A: DD 21 EA 3C ld   ix,$3CEA		; points to berengario's movement variables
+084E: C3 3C 07    jp   $073C		; jump to generate more movement commands for berengario according to where they want to move
+
+; executes severino's behavior
+0851: FD 21 81 30 ld   iy,$3081		; points to severino's position data
+0855: DD 21 02 3D ld   ix,$3D02		; points to severino's state variables
+0859: AF          xor  a
+085A: 32 9C 3C    ld   ($3C9C),a	; indicates that character wants to move
+085D: CD C6 5B    call $5BC6		; executes severino/jorge state changes
+0860: 0E 2F       ld   c,$2F
+0862: CD A4 3E    call $3EA4		; modifies the table at 0x05cd with information from the door table and which rooms they're between
+0865: 21 E0 2B    ld   hl,$2BE0		; points to severino's table
+0868: CD 1D 29    call $291D		; checks if character can move where they want and updates their sprite and height buffer
+086B: DD 21 02 3D ld   ix,$3D02		; points to severino's state variables
+086F: C3 3C 07    jp   $073C		; jump to generate more movement commands for severino according to where they want to move
+
+; arrives here if they have a thought-out movement
+0872: 3A C1 2D    ld   a,($2DC1)
+0875: FE FF       cp   $FF			; if no movement
+0877: C2 BE 08    jp   nz,$08BE		; discards thought-out movements and indicates that a new movement needs to be thought
+087A: C9          ret
+
+; ----------------- end of movement generation for AI characters ------------------------------
+
+; adso's behavior
+087B: FD 21 45 30 ld   iy,$3045		; points to adso's position data
+087F: DD 21 14 3D ld   ix,$3D14		; points to adso's state data
+0883: AF          xor  a
+0884: 32 9C 3C    ld   ($3C9C),a	; indicates that character initially wants to move
+0887: CD A1 5D    call $5DA1		; processes adso's behavior
+088A: 0E 3C       ld   c,$3C
+088C: CD A4 3E    call $3EA4		; modifies the table at 0x05cd with information from the door table and which rooms they're between
+088F: 21 B8 2B    ld   hl,$2BB8		; points to the table for moving adso
+0892: CD 1D 29    call $291D		; checks if character can move where they want and updates their sprite and height buffer
+0895: DD 21 14 3D ld   ix,$3D14
+0899: 3A 13 3D    ld   a,($3D13)	; reads where adso should go
+089C: FE FF       cp   $FF
+089E: C2 3C 07    jp   nz,$073C		; if doesn't have to follow guillermo, jump
+
+08A1: 3A 8F 3C    ld   a,($3C8F)	; reads the character the camera follows
+08A4: FE 02       cp   $02
+08A6: D0          ret  nc			; if camera doesn't follow guillermo or adso, exit
+
+08A7: FD CB 09 7E bit  7,(iy+$09)
+08AB: 20 22       jr   nz,$08CF		; if doesn't have a thought-out movement, jump
+
+; arrives here if had a thought-out movement
+08AD: 21 AA 2D    ld   hl,$2DAA		; points to frustrated movement counter
+08B0: 3A C1 2D    ld   a,($2DC1)	; if character could move where they wanted, exit
+08B3: FE FF       cp   $FF
+08B5: C8          ret  z
+
+08B6: 7E          ld   a,(hl)		; gets the counter and increments it
+08B7: 3C          inc  a
+08B8: 77          ld   (hl),a
+08B9: FE 0A       cp   $0A			; if < 10, exit
+08BB: D8          ret  c
+08BC: AF          xor  a
+08BD: 77          ld   (hl),a		; keeps the value between 0 and 9
+
+; arrives here if that counter overflows to 0
+
+; discards thought-out movements and indicates that a new movement needs to be thought
+08BE: FD 6E 0C    ld   l,(iy+$0c)		; hl = action data address
+08C1: FD 66 0D    ld   h,(iy+$0d)
+08C4: 36 10       ld   (hl),$10			; writes the command to set bit 7,(9)
+08C6: FD 36 09 00 ld   (iy+$09),$00
+08CA: FD 36 0B 00 ld   (iy+$0b),$00
+08CE: C9          ret
+
+; arrives here if didn't have a thought-out movement
+
+; if control is pressed, adso stays still
+08CF: 3E 17       ld   a,$17
+08D1: CD 82 34    call $3482		; checks if control is pressed
+08D4: CD C6 41    call $41C6		; puts a to 0, so control is never given as pressed
+08D7: C0          ret  nz			; before this made it so if control was pressed, exit
+
+08D8: FD 21 45 30 ld   iy,$3045
+08DC: AF          xor  a
+08DD: 32 B6 2D    ld   ($2DB6),a	; indicates that for now hasn't found a route to guillermo
+08E0: CD BE 0C    call $0CBE		; if position isn't one of the center ones of screen being shown, CF=1
+									; otherwise, returns in ix a pointer to the height table entry of corresponding position
+08E3: DA 7F 09    jp   c,$097F		; if adso isn't on the screen being shown, jump
+08E6: 3E 00       ld   a,$00
+08E8: CD 82 34    call $3482		; if not pressing cursor up, jump
+08EB: 28 1C       jr   z,$0909
+
+; arrives here if adso is in center of screen and cursor up is pressed
+08ED: FD 21 36 30 ld   iy,$3036		; points to guillermo's position data
+08F1: CD B4 27    call $27B4		; checks the height of positions guillermo is going to move to and returns them in a and c
+									; if character isn't visible, returns the same as passed in a
+08F4: FD 21 45 30 ld   iy,$3045		; points to adso's position data
+08F8: 21 C6 2D    ld   hl,$2DC6		; points to auxiliary buffer for height calculation of movements used by previous routine
+08FB: 7E          ld   a,(hl)		; combines content of the 2 cells guillermo is going to move to
+08FC: 23          inc  hl
+08FD: B6          or   (hl)
+08FE: 23          inc  hl			; goes to next line
+08FF: 23          inc  hl
+0900: 23          inc  hl
+0901: B6          or   (hl)			; combines the 2 cells where guillermo is
+0902: 23          inc  hl
+0903: B6          or   (hl)
+0904: CB 6F       bit  5,a
+0906: C2 A4 45    jp   nz,$45A4		; if adso isn't in any of those, writes commands to move towards them
+
+; arrives here if cursor up isn't pressed or if adso didn't bother guillermo to advance
+0909: 3E 02       ld   a,$02
+090B: CD 82 34    call $3482
+090E: C2 82 45    jp   nz,$4582		; if cursor down is pressed, jump
+
+0911: FD 21 36 30 ld   iy,$3036		; points to guillermo's position data
+0915: 0E 00       ld   c,$00
+0917: CD EF 28    call $28EF		; if sprite position is central and height is correct, clears positions guillermo occupies in height buffer
+091A: FD 21 45 30 ld   iy,$3045		; points to adso's position data
+091E: 0E 00       ld   c,$00
+0920: CD EF 28    call $28EF		; if sprite position is central and height is correct, clears positions adso occupies in height buffer
+
+0923: 2A 47 30    ld   hl,($3047)	; gets adso's position
+0926: CD 9B 27    call $279B		; adjusts position passed in hl to the central 20x20 positions shown. If position is outside, CF=1
+0929: 22 B4 2D    ld   ($2DB4),hl	; saves adso's relative position
+092C: 2A 38 30    ld   hl,($3038)	; gets guillermo's position
+092F: CD 9B 27    call $279B		; adjusts position passed in hl to the central 20x20 positions shown. If position is outside, CF=1
+0932: 22 B2 2D    ld   ($2DB2),hl	; saves guillermo's relative position
+0935: CD 29 44    call $4429		; searches path to go from guillermo to adso (or vice versa)
+0938: 22 6B 46    ld   ($466B),hl	; saves the stack address where performed movements are
+093B: CD AE 0B    call $0BAE		; removes all traces of the search from height buffer
+
+093E: FD 21 36 30 ld   iy,$3036		; points to guillermo's position data
+0942: FD 4E 0E    ld   c,(iy+$0e)
+0945: CD EF 28    call $28EF		; if sprite position is central and height is correct, puts c in the positions it occupies in height buffer
+0948: FD 21 45 30 ld   iy,$3045		; points to adso's position data
+094C: FD 4E 0E    ld   c,(iy+$0e)
+094F: CD EF 28    call $28EF		; if sprite position is central and height is correct, puts c in the positions it occupies in height buffer
+0952: 3A B6 2D    ld   a,($2DB6)
+0955: A7          and  a
+0956: C8          ret  z			; if didn't find a path from origin to destination, exit
+
+; arrives here if a path from origin to destination was found
+; iy points to adso's position data
+0957: 0E 04       ld   c,$04		; minimum number of algorithm iterations
+0959: FD CB 05 7E bit  7,(iy+$05)
+095D: 20 11       jr   nz,$0970		; if character occupies a single position in height buffer, jump
+095F: 0D          dec  c			; if occupies 4 positions, one less iteration is allowed
+0960: 2A 38 30    ld   hl,($3038)	; gets guillermo's position
+0963: FD 7E 02    ld   a,(iy+$02)	; gets character's x position
+0966: BD          cp   l
+0967: 28 07       jr   z,$0970		; if x positions are equal, jump
+0969: FD 7E 03    ld   a,(iy+$03)	; gets character's y position
+096C: BC          cp   h
+096D: 28 01       jr   z,$0970		; if y positions are equal, jump
+096F: 0C          inc  c			; if neither coordinate is equal, increments minimum iterations of algorithm
+
+0970: 3A 19 44    ld   a,($4419)	; gets recursion level of search routine
+0973: B9          cp   c			; if number of iterations is less than tolerable, exit
+0974: D8          ret  c
+
+0975: 3A 18 44    ld   a,($4418)	; gets last orientation used to find character in search routine
+0978: 4F          ld   c,a			; c = last orientation used in search algorithm
+0979: CD 3F 46    call $463F		; writes a command to advance in character's new orientation
+097C: C3 7B 08    jp   $087B		; call adso's behavior again
+
+; arrives here if adso isn't in screen area being shown
+; iy points to adso's data
+097F: DD 21 38 30 ld   ix,$3038		; points to guillermo's position
+0983: CD 8A 09    call $098A		; goes after a character that isn't in the same screen area being shown (iy after ix)
+0986: DA 7B 08    jp   c,$087B		; if found a path, executes adso's movement again
+0989: C9          ret
+
+; ---------------- high-level algorithm for pathfinding between 2 positions -------------------------
+
+; pathfinding algorithm between 2 points
+; iy points to the character data searching for another
+; ix points to the position of character/object being searched
+098A: 3E FE       ld   a,$FE
+098C: 32 B6 2D    ld   ($2DB6),a	; indicates that a path couldn't be searched
+098F: 3E 00       ld   a,$00		; modified from main game loop with guillermo's animation
+0991: E6 01       and  $01
+0993: C0          ret  nz			; if in middle of animation, exit
+
+0994: 3A A9 2D    ld   a,($2DA9)	; if in this iteration a path has already been found, exit (only one path search per iteration)
+0997: A7          and  a			; if a path has already been found, exit
+0998: C0          ret  nz
+
+0999: 3E 76       ld   a,$76
+099B: 32 A4 48    ld   ($48A4),a	; indicates to search for a position with bit 6 in pathfinding algorithm
+099E: AF          xor  a
+099F: 32 B6 2D    ld   ($2DB6),a	; indicates that for now a path hasn't been found
+09A2: FD 7E 04    ld   a,(iy+$04)	; gets height of character searching for another
+09A5: CD 73 24    call $2473		; depending on height, returns base height of floor in b
+09A8: 58          ld   e,b			; e = base height of floor of character searching for another
+09A9: DD 7E 02    ld   a,(ix+$02)	; gets height of searched character
+09AC: E6 3F       and  $3F
+09AE: CD 73 24    call $2473		; depending on height, returns base height of floor in b
+
+09B1: 7B          ld   a,e			; a = base height of floor of character searching for another
+09B2: 21 CD 05    ld   hl,$05CD		; points to table with room connections (ground floor)

@@ -1,0 +1,600 @@
+
+; characteristics of material 0x2f
+177C: 	171B		; pointer to the tiles that form the block
+FC
+F2 01 6D 84
+F1 6D 84
+E9
+EA 172F
+
+; characteristics of material 0x48
+178A: 16B2			; pointer to the tiles that form the block
+EC 193C
+F1
+6E
+6E
+01 EC 41
+19
+FF
+
+; characteristics of material 0x47
+1797: 16A2			; pointer to the tiles that form the block
+EC 1973				Call(0x1973);
+F1
+6E
+6E
+01
+EC 196E
+FF
+
+; characteristics of material 0x30
+17A4: 16A6			; pointer to the tiles that form the block
+EC 196E
+6E
+19
+F5
+EC 1973
+FF
+
+; characteristics of material 0x31
+17AE: 16B6				; pointer to the tiles that form the block
+EC 1941			Call(0x1941)
+F5
+EC 193C
+FF
+
+; characteristics of material 0x35
+17B8: 1B31				; pointer to the tiles that form the block
+FF
+
+; characteristics of material 0x53
+17BB: 1B49				; pointer to the tiles that form the block
+
+EC 17EF
+F7 70 02 84 70
+F7 71 01 84 71
+F2 6D 01 84
+F9 61
+F1 01 84 6D
+F2 6D 6D 02
+EC 1891
+F5
+F6
+F7 6E 6D
+F7 6D 00
+EC 1B28
+FF
+
+; characteristics of material 0x54
+17E7: 1B6D			; pointer to the tiles that form the block
+EC 17F4				call(0x17f4);
+EA 17C0				ChangePc(0x17c0)
+
+; characteristics of material 0x4f
+17EF: 1B49			; pointer to the tiles that form the block
+17F1: EA 1805		; ChangePC(0x1805)
+
+; characteristics of material 0x50
+17F4: 1B6D			; pointer to the tiles that form the block
+17F6: EA 1805		; ChangePC(0x1805)
+
+; characteristics of material 0x19
+17F9: 	1B88		; pointer to the tiles that form the block
+		EA 1805		; ChangePC(0x1805)
+
+; characteristics of material 0x17
+17FE: 	1B31		; pointer to the tiles that form the block
+		EA 1805		; ChangePC(0x1805)
+
+; characteristics of material 0x39
+1803: 	1B5B		; pointer to the tiles that form the block
+
+1805:
+F7 71 71 82 FF			actualizaRegistro(0x71, -(valorRegistro(0x71)) + 0xff);
+F7 70 6E 6E 02 84 70	actualizaRegistro(0x70, -(valorRegistro(0x6e) + valorRegistro(0x6e) + 2) + valorRegistro(0x70));
+FC
+F9 64
+FE
+F9 69
+FA
+F9 61 81 65 80 62
+FB
+F3
+FD
+FC
+F9 66
+FE
+F9 68
+FA
+F9 61 81 67 80 61 80 62
+FB
+F3
+F4
+FA
+F9 66
+FE
+F9 68
+FA
+F9 61 81 67 80 63
+FF
+
+; characteristics of material 0x55
+1841: 1B52			; pointer to the tiles that form the block
+EC 1897
+F7 71 02 84 71
+F7 70 01 84 70
+F2 01 6D 84
+F9 61
+F1 6D 84 01
+F2 6D 6D 02
+EC 1875
+F3
+F6
+F7 6E 6D
+F7 6D 00
+EC 1AEF
+FF
+
+; characteristics of material 0x56
+186D: 1B76			; pointer to the tiles that form the block
+EC 189C
+EA 1846
+
+; auxiliary material characteristics called from material 0x55
+1875: 16A2			; pointer to the tiles that form the block
+F7 71 6D 6D 84 71
+F7 6E 01
+FE
+FC
+F9 61
+FD
+F9 62
+FA
+F7 6E 01 6E
+FB
+F5
+F4
+FA
+FF
+
+; auxiliary material characteristics called from material 0x53
+1891:	16A6		; pointer to the tiles that form the block
+E9
+EA 1877
+
+; characteristics of material 0x51
+1897: 1B52			; pointer to the tiles that form the block
+1899: EA 18AD		; changePC(0x18ad);
+
+; characteristics of material 0x52
+189C: 1B76			; pointer to the tiles that form the block
+189E: EA 18AD		; changePC(0x18ad);
+
+; characteristics of material 0x1a
+18A1: 	1B7F		; pointer to the tiles that form the block
+		EA 18AD		; changePC(0x18ad);
+
+; characteristics of material 0x18
+18A6: 	1B3A		; pointer to the tiles that form the block
+		EA 18AD		; changePC(0x18ad);
+
+; characteristics of material 0x38
+18AB: 1B64			; pointer to the tiles that form the block
+18AD: E9          	FlipX();
+18AE: EA 1805 		ChangePC(0x1805);
+
+; characteristics of material 0x3f
+18B1: 	16A6			; pointer to the tiles that form the block
+F5
+EC 1973				Call(0x1973)
+F3
+F7 6E 00
+EC 196E				Call(0x196e)
+FF
+
+; characteristics of material 0x40
+18BF:	16A2				; pointer to the tiles that form the block
+F3
+EC 196E			Call(0x196e)
+F5
+F7 6E 00
+EC 1973			Call(0x1973)
+FF
+
+; characteristics of material 0x3a
+18CD: 1B5B			; pointer to the tiles that form the block
+18CF: F7          rst  $30
+18D0: 6D          ld   l,l
+18D1: 6D          ld   l,l
+18D2: 6E          ld   l,(hl)
+18D3: F7          rst  $30
+18D4: 6E          ld   l,(hl)
+18D5: 00          nop
+18D6: EC AB 18    call pe,$18AB
+18D9: FF          rst  $38
+
+; characteristics of material 0x24
+18DA: 16C2 		; pointer to the tiles that form the block
+18DC:
+EC 18E7			Call(0x18e7);
+F7 6E 00 		actualizaRegistro(0x6e, 00);
+F3				decTilePosX();
+EC 1955			Call(0x1955);
+FF
+
+; auxiliary material characteristics called from material 0x24, 0x26 and 0x36
+18E7: 16C2		; pointer to the tiles that form the block
+18E9:
+F7 6D 00		actualizaRegistro(0x6d, 00);
+EA 19CA			ChangePC(0x19ca)
+
+; characteristics of material 0x26
+18EF: 16C2		; pointer to the tiles that form the block
+EC 18E7			Call(0x18e7)
+F2 6E 84 6D		UpdateTilePosY(-valorRegistro(0x6e) + valorRegistro(0x6d));
+F1 01 6E 6D		UpdateTilePosX(1 + valorRegistro(0x6e) + valorRegistro(0x6d));
+F7 6E 00		actualizaRegistro(0x6e, 00);
+EC 1955			Call(0x1955)
+FF
+
+; characteristics of material 0x36
+1903: 16C2 		; pointer to the tiles that form the block
+EC 18E7			Call(0x18e7)
+F2 6D 01 		UpdateTilePosY(01 + valorRegistro(0x6d));
+F1 6D           UpdateTilePosX(valorRegistro(0x6d));
+F7 6E 00		actualizaRegistro(0x6e, 00);
+EC 1955			Call(0x1955)
+FF
+
+; characteristics of material 0x59
+1914: 	1698		; pointer to the tiles that form the block
+		EA 1920		; ChangePC(0x1920);
+
+; characteristics of material 0x5a
+1919: 	169A		; pointer to the tiles that form the block
+		EA 1920		; ChangePC(0x1920);
+
+; characteristics of material 0x2a
+191E: 	1693		; pointer to the tiles that form the block
+1920:
+F9 63 80 64			pintaTile(63, decrementaTilePosYyDibujaUnoMas, 64);
+FF
+
+1925: 16AE			; pointer to the tiles that form the block
+		FF
+
+; characteristics of material 0x29
+1928: 16AE			; pointer to the tiles that form the block
+		EA 19A9		; ChangePC(0x19a9);
+
+; characteristics of material 0x28
+192D: 16AA			; pointer to the tiles that form the block
+		EA 1990		; ChangePC(0x1990);
+
+; characteristics of material 0x1b
+1932: 	16D6		; pointer to the tiles that form the block
+		EA 198C		; ChangePC(0x198c);
+
+; characteristics of material 0x3e
+1937: 16DA 			; pointer to the tiles that form the block
+		EA 1975		; ChangePC(0x1975);
+
+; characteristics of material 0x03
+193C: 	16B2		; pointer to the tiles that form the block
+		EA 19AD		; ChangePC(0x19ad);
+
+; characteristics of material 0x04
+1941: 	16B6		; pointer to the tiles that form the block
+		EA 19C6 	; ChangePC(0x19C6);
+
+; characteristics of material 0x05
+1946: 	16BA		; pointer to the tiles that form the block
+		EA 1990		; ChangePC(0x1990);
+
+; characteristics of material 0x06
+194B: 	16BE		; pointer to the tiles that form the block
+		EA 19A9		; ChangePC(0x19a9);
+
+; characteristics of material 0x07
+1950: 	16C2		; pointer to the tiles that form the block
+		EA 19CA		; ChangePC(0x19ca);
+
+; characteristics of material 0x08
+1955:	16C6		; pointer to the tiles that form the block
+		EA 19D4		; ChangePC(0x19d4);
+
+; characteristics of material 0x09
+195A: 	16CA		; pointer to the tiles that form the block
+		EA 1990		; ChangePC(0x1990);
+
+; characteristics of material 0x5e
+195F: 	16CE		; pointer to the tiles that form the block
+		EA 1990		; ChangePC(0x1990);
+
+; characteristics of material 0x5f
+1964: 	16D2		; pointer to the tiles that form the block
+		EA 19A9		; ChangePC(0x1990);
+
+; characteristics of material 0x0a
+1969: 	16CA		; pointer to the tiles that form the block
+		EA 19A9		; ChangePC(0x19a9);
+
+; characteristics of material 0x02
+196E: 	16A6		; pointer to the tiles that form the block
+		EA 198C		; ChangePC(0x198c);
+
+; characteristics of material 0x01
+1973: 	16A2			; pointer to the tiles that form the block
+
+1975:
+							// depth and in grid = depth and in grid - (param2*2 + 1);
+F7 71 01 6E 6E 84 71		actualizaRegistro(0x71, -(01 + valorRegistro(0x6e) + valorRegistro(0x6e)) + valorRegistro(0x71));
+
+EF          				IncParam2();
+
+FD 							while (param2 > 0){
+  	     						// save the initial position
+FC								pushTilePos();
+
+F9 61 							pintaTile(61, decrementaTilePosY);
+
+FE 								while (param1 > 0){
+F9 62 								pintaTile(62, decrementaTilePosY);
+
+									(param1--;)
+FA								}
+
+F9 63							pintaTile(63, decrementaTilePosY);
+
+FB          					popTilePos();
+F5 								incTilePosX();
+F4 								decTilePosY();
+
+								(param2--;)
+FA 							}
+FF
+
+198C:
+E9          				FlipX();
+EA 1975						ChangePC(1975);
+
+; code that generates the columns and more blocks
+1990:
+; interpreted as:
+						// decrement the depth in y of the block so characters are not covered by columns if they pass in front of them
+						// depth and in grid = depth and in grid - (numColumns*2 + 1);
+F7 71 01 6E 6E 84 71	actualizaRegistro(0x71, -(01 + valorRegistro(0x6e) + valorRegistro(0x6e)) + valorRegistro(0x71));
+
+						// at minimum paint one column
+EF						IncParam2();
+
+						// parameter 2 indicates the number of columns to paint
+FD						while (param2 > 0){
+							// save the initial position of the column
+FC							pushTilePos();
+
+							// paint the base of the column
+F9 61						pintaTile(61, decrementaTilePosY);
+
+							// parameter 1 indicates the height of the column
+FE 							while (param1 > 0){
+								// paint the tile that forms the column itself
+F9 62							pintaTile(62, decrementaTilePosY);
+
+								(param1--;)
+FA							}
+
+							// paint the capital of the column
+F9 63 80 64					pintaTile(63, decrementaTilePosYyDibujaUnoMas, 64);
+
+							// update the position to draw the next column
+FB 							popTilePos();
+F5 							incTilePosX();
+F4 							decTilePosY();
+
+							(param2--;)
+FA 						}
+FF
+
+
+19A9: 	E9 -> flipX
+		EA 1990 -> changepc(1990)
+
+19AD:
+							// depth and in grid = depth and in grid - (param2*2 + 1);
+F7 71 01 6E 6E 84 71		actualizaRegistro(0x71, -(01 + valorRegistro(0x6e) + valorRegistro(0x6e)) + valorRegistro(0x71));
+
+EF          				IncParam2();
+
+FD 							while (param2 > 0){
+  	     						// save the initial position
+FC								pushTilePos();
+
+F9 61 							pintaTile(61, decrementaTilePosY);
+
+FE 								while (param1 > 0){
+
+F9 62 80 64							pintaTile(62, decrementaTilePosYyDibujaUnoMas, 64);
+
+									(param1--;)
+FA 								}
+
+F9 63 							pintaTile(63, decrementaTilePosY);
+
+FB 								popTilePos();
+F5 								incTilePosX();
+F4 								decTilePosY();
+
+								(param2--;)
+FA 							}
+FF
+
+19C6:
+E9 				FlipX();
+EA 19AD			ChangePC(0x19ad)
+
+19CA:
+F7 6E 6E 6D		actualizaRegistro(0x6e, valorRegistro(0x6e) + valorRegistro(0x6d));
+F7 6D 01		actualizaRegistro(0x6d, 01);
+EA 1975			ChangePC(0x1975)
+
+19D4:
+E9				FlipX();
+EA 19CA			ChangePC(0x19ca)
+
+; draws the screen that is in the tiles buffer
+19D8: 3A 6C 15    ld   a,($156C)	; read if it's an illuminated room or not
+19DB: A7          and  a
+19DC: 28 02       jr   z,$19E0		; if it's illuminated, jump
+19DE: 3E FF       ld   a,$FF		; background color = black
+19E0: CD 70 1A    call $1A70		; clear the grid and fill a 256x160 rectangle starting at (32, 0) with color a
+19E3: DD 2A 6A 15 ld   ix,($156A)	; ix = address of the current screen data
+19E7: DD 23       inc  ix			; advance the length byte
+19E9: 21 67 16    ld   hl,$1667		; modify a jump in a routine
+19EC: 22 5E 16    ld   ($165E),hl
+19EF: 01 C7 7F    ld   bc,$7FC7		; load abadia8
+19F2: ED 49       out  (c),c
+19F4: CD 0A 1A    call $1A0A		; generate the scenery with abadia8 data and project it to the grid
+19F7: 01 C0 7F    ld   bc,$7FC0		; load abadia0
+19FA: ED 49       out  (c),c
+19FC: 21 60 16    ld   hl,$1660		; modify a jump in a routine
+19FF: 22 5E 16    ld   ($165E),hl
+1A02: 3A 6C 15    ld   a,($156C)	; read if it's an illuminated room or not
+1A05: A7          and  a
+1A06: CA B2 4E    jp   z,$4EB2		; if it's an illuminated room, draw the grid contents to screen from center outwards
+1A09: C9          ret
+
+; generate the scenery from abadia8 data and project it
+; read the abadia8 entry with a screen construction block and call 0x1bbc
+1A0A: DD 7E 00    ld   a,(ix+$00)	; read a byte
+1A0D: FE FF       cp   $FF			; 0xff indicates end of screen
+1A0F: C8          ret  z
+1A10: E6 FE       and  $FE			; discard the lower bit for indexing
+1A12: 21 6D 15    ld   hl,$156D		; point to the block types table
+1A15: 85          add  a,l			; hl = hl + a
+1A16: 6F          ld   l,a
+1A17: 8C          adc  a,h
+1A18: 95          sub  l
+1A19: 67          ld   h,a
+1A1A: 5E          ld   e,(hl)		; de = pointer to the block characteristics
+1A1B: 23          inc  hl
+1A1C: 56          ld   d,(hl)
+1A1D: ED 53 62 1A ld   ($1A62),de	; modify an instruction
+1A21: DD 7E 01    ld   a,(ix+$01)	; read byte 1
+1A24: 4F          ld   c,a
+1A25: E6 1F       and  $1F
+1A27: 6F          ld   l,a			; l = x position of the element (tiles buffer coordinate system)
+1A28: 79          ld   a,c
+1A29: 07          rlca
+1A2A: 07          rlca
+1A2B: 07          rlca
+1A2C: E6 07       and  $07
+1A2E: 4F          ld   c,a			; c = x length of the element
+1A2F: DD 7E 02    ld   a,(ix+$02)	; read byte 2
+1A32: 47          ld   b,a
+1A33: E6 1F       and  $1F
+1A35: 67          ld   h,a			; h = y position of the element (tiles buffer coordinate system)
+1A36: 78          ld   a,b
+1A37: 07          rlca
+1A38: 07          rlca
+1A39: 07          rlca
+1A3A: E6 07       and  $07
+1A3C: 47          ld   b,a			; b = y length of the element
+
+1A3D: 11 00 00    ld   de,$0000
+1A40: ED 53 DE 1F ld   ($1FDE),de	; initialize to (0, 0) the block position in the grid (local grid coordinate system)
+1A44: DD 7E 00    ld   a,(ix+$00)	; read the first byte
+1A47: DD 23       inc  ix
+1A49: DD 23       inc  ix
+1A4B: DD 23       inc  ix			; advance to the next entry
+1A4D: E6 01       and  $01			; keep bit 0
+1A4F: 3E FF       ld   a,$FF
+1A51: 28 05       jr   z,$1A58		; if it's 0, the entry is 3 bytes
+1A53: DD 7E 00    ld   a,(ix+$00)	; otherwise it's 4 bytes
+1A56: DD 23       inc  ix
+1A58: 32 DD 1F    ld   ($1FDD),a	; store 0xff or byte 4 to ???
+
+1A5B: E5          push hl
+1A5C: 21 0A 1A    ld   hl,$1A0A
+1A5F: E3          ex   (sp),hl		; push the address of this routine as return address
+1A60: E5          push hl
+1A61: 21 00 00    ld   hl,$0000		; instruction modified from outside with the address of the block construction data
+1A64: 5E          ld   e,(hl)
+1A65: 23          inc  hl
+1A66: 56          ld   d,(hl)
+1A67: 23          inc  hl			; de = pointer from material to tiles that form the block
+1A68: E3          ex   (sp),hl		; save on stack a pointer to the rest of material characteristics
+1A69: C3 BC 1B    jp   $1BBC		; initialize the buffer with current block data and evaluate block construction parameters
+
+; hide the game area
+1A6C: 3E FF       ld   a,$FF
+1A6E: 18 0D       jr   $1A7D
+
+; clear 0x8d80-0x94ff and fill a rectangle 160 high by 256 wide starting at position (32, 0) with a
+1A70: 21 80 8D    ld   hl,$8D80		; point to free memory
+1A73: 11 81 8D    ld   de,$8D81
+1A76: 36 00       ld   (hl),$00
+1A78: 01 7F 07    ld   bc,$077F
+1A7B: ED B0       ldir				; clear 0x8d80-0x94ff
+
+; fill a rectangle 160 high by 256 wide starting at position (32, 0) with a
+1A7D: 06 A0       ld   b,$A0		; b = 160
+1A7F: 32 8B 1A    ld   ($1A8B),a	; modify the value to fill with
+1A82: 21 08 C0    ld   hl,$C008		; position (32, 0)
+1A85: C5          push bc
+1A86: E5          push hl
+1A87: 54          ld   d,h			; de = hl
+1A88: 5D          ld   e,l
+1A89: 13          inc  de
+1A8A: 36 00       ld   (hl),$00		; this instruction is modified from outside
+1A8C: 01 3F 00    ld   bc,$003F
+1A8F: ED B0       ldir				; fill 64 bytes (256 pixels)
+1A91: E1          pop  hl
+1A92: CD 4D 3A    call $3A4D		; advance to the next line
+1A95: C1          pop  bc
+1A96: 10 ED       djnz $1A85		; repeat until complete
+1A98: C9          ret
+
+; characteristics of material 0x2d
+1A99: 1706			; pointer to the tiles that form the block
+1A9B:
+F7 71 02 6E 6E 84 71
+F7 70 01 84 70
+FC
+FC
+F8 69
+FE
+F8 6A
+FA
+FB
+F4
+FC
+F8 61
+FE
+F8 62
+FA
+F8 63
+FB
+F4
+FD
+FC
+F8 66
+FE
+F8 64
+FA
+F8 65 80 63
+FB
+F4
+F5
+FA
+F8 66
+FE
+F8 67
+FA
+F8 68
+FB
+F7 6E 00
+FE
+F5
+F6
+FC

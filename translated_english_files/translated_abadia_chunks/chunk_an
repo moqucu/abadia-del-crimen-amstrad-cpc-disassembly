@@ -1,0 +1,601 @@
+3991: 0F          rrca
+3992: 0F          rrca
+3993: 0F          rrca
+3994: 0F          rrca
+3995: E6 0F       and  $0F		; a = 4 most significant bits of byte 3
+
+3997: 4F          ld   c,a		; c = value 1
+3998: 7A          ld   a,d		; a = byte 0
+3999: 0F          rrca
+399A: 0F          rrca
+399B: 0F          rrca
+399C: 0F          rrca
+399D: E6 0F       and  $0F			; gets the 4 upper bits of byte 0
+399F: DD 6E 01    ld   l,(ix+$01)	; hl = address of bytes 1 and 2
+39A2: DD 66 02    ld   h,(ix+$02)
+39A5: DD CB 00 5E bit  3,(ix+$00)
+39A9: 28 02       jr   z,$39AD		; advance the entry 4 or 5 bytes
+39AB: DD 23       inc  ix
+39AD: DD 23       inc  ix
+39AF: DD 23       inc  ix
+39B1: DD 23       inc  ix
+39B3: DD 23       inc  ix
+
+; arrives here with the parameters:
+; a = bits 7-4 of byte 0
+; c = block length in x
+; b = block length in y
+; l = initial x coordinate of the block
+; h = initial y coordinate of the block
+; If bit 3 of the read byte 0 is 1, b and c will be 8-bit numbers. Otherwise they will be 4 bits
+39B5: 08          ex   af,af'		; saves a
+39B6: 04          inc  b
+39B7: 0C          inc  c
+39B8: 7D          ld   a,l			; gets the initial X coordinate of the block
+39B9: D6 00       sub  $00			; adjusts the coordinate to the start of what's visible in X
+39BB: 30 07       jr   nc,$39C4		; if X coordinate >= lower limit in X, jump
+39BD: ED 44       neg				; a = difference between the lower limit in X and the X coordinate
+39BF: B9          cp   c			; if the difference >= c, go to the next entry
+39C0: 30 B1       jr   nc,$3973
+39C2: 18 04       jr   $39C8		; otherwise, check if visible in y
+
+39C4: FE 18       cp   $18			; if X coordinate >= upper limit in X, go to the next entry
+39C6: 30 AB       jr   nc,$3973
+
+; if it reaches here, it's because this entry is valid in x
+39C8: 7C          ld   a,h			; gets the starting Y coordinate of the block
+39C9: D6 00       sub  $00			; adjusts the position to the start of what's visible in Y
+39CB: 30 07       jr   nc,$39D4		; if Y coordinate > lower limit in Y, jump
+39CD: ED 44       neg				; a = difference between the lower limit in y and the Y coordinate
+39CF: B8          cp   b			; if the difference >= b, go to the next entry
+39D0: 30 A1       jr   nc,$3973
+39D2: 18 04       jr   $39D8
+
+39D4: FE 18       cp   $18			; if Y coordinate >= upper limit in Y, go to the next entry
+39D6: 30 9B       jr   nc,$3973
+
+; if it enters here, it's because something from the entry is visible
+39D8: 7A          ld   a,d			; a = initial height of the block
+39D9: E6 07       and  $07			; keeps the 3 lower bits
+39DB: FE 05       cp   $05
+39DD: 28 0F       jr   z,$39EE		; if it's a 5, jump
+39DF: 87          add  a,a
+39E0: 11 EF 38    ld   de,$38EF		; otherwise, index into the instruction table to modify a loop of the height calculation
+39E3: 83          add  a,e			; de = de + a
+39E4: 5F          ld   e,a
+39E5: 8A          adc  a,d
+39E6: 93          sub  e
+39E7: 57          ld   d,a
+39E8: 08          ex   af,af'		; recover the value of byte 0
+39E9: CD FD 38    call $38FD
+39EC: 18 85       jr   $3973
+
+; clip in X
+39EE: 7D          ld   a,l			; gets the current X coordinate of the entry
+39EF: D6 00       sub  $00			; adjusts the coordinate to the start of what's visible in X
+39F1: 30 0C       jr   nc,$39FF		; if X coordinate > lower limit in X, jump
+39F3: 81          add  a,c			; finds the last X coordinate of this entry
+39F4: FE 18       cp   $18			; if the last X coordinate <= upper limit in X, jump
+39F6: 38 02       jr   c,$39FA		;  otherwise truncate the last X coordinate to the X limit
+39F8: 3E 18       ld   a,$18
+
+39FA: 4F          ld   c,a			; c = number of elements to draw in X
+39FB: 2E 00       ld   l,$00		; l = initial position in X
+39FD: 18 0A       jr   $3A09		; go to clip in Y
+
+; arrives here if X coordinate > lower limit in X
+39FF: 6F          ld   l,a		; l = initial position in X
+3A00: 81          add  a,c		; add to the initial position the number of elements in X
+3A01: D6 18       sub  $18		; if final X coordinate <= upper limit in X, jump
+3A03: 38 04       jr   c,$3A09
+3A05: ED 44       neg			; a = difference between the upper limit in X and the final X coordinate
+3A07: 81          add  a,c
+3A08: 4F          ld   c,a		; c = number of elements to draw in X
+
+; arrives here after clipping in X
+3A09: 7C          ld   a,h			; gets the current Y coordinate of the entry
+3A0A: D6 00       sub  $00			; adjusts the coordinate to the start of what's visible in Y
+3A0C: 30 0C       jr   nc,$3A1A		; if Y coordinate > lower limit in Y, jump
+3A0E: 80          add  a,b			; finds the last Y coordinate of this entry
+3A0F: FE 18       cp   $18			; if the last Y coordinate <= upper limit in Y, jump
+3A11: 38 02       jr   c,$3A15
+3A13: 3E 18       ld   a,$18
+3A15: 47          ld   b,a			; b = number of elements to draw in y
+3A16: 26 00       ld   h,$00		; h = initial position in Y
+3A18: 18 0A       jr   $3A24
+
+; arrives here if Y coordinate > lower limit in Y
+3A1A: 67          ld   h,a			; h = initial position in Y
+3A1B: 80          add  a,b			; add to the initial position the number of elements in Y
+3A1C: D6 18       sub  $18			; if final Y coordinate <= upper limit in Y, jump
+3A1E: 38 04       jr   c,$3A24
+3A20: ED 44       neg				; a = difference between the upper limit in Y and the final Y coordinate
+3A22: 80          add  a,b
+3A23: 47          ld   b,a			; b = number of elements to draw in Y
+
+; the entry arrives here once it has been clipped in X and Y
+; l = initial position in X
+; h = initial position in Y
+; c = number of elements to draw in X
+; b = number of elements to draw in Y
+3A24: 7D          ld   a,l			; a = initial position in X
+3A25: 6C          ld   l,h			; l = initial position in Y
+3A26: 26 00       ld   h,$00
+3A28: 29          add  hl,hl
+3A29: 29          add  hl,hl
+3A2A: 29          add  hl,hl
+3A2B: 54          ld   d,h			; de = 8*hl
+3A2C: 5D          ld   e,l
+3A2D: 29          add  hl,hl
+3A2E: 19          add  hl,de		; hl = 24*hl
+3A2F: ED 5B 8A 2D ld   de,($2D8A)	; reads the address of the screen buffer
+3A33: 85          add  a,l			; hl = hl + initial pos in X
+3A34: 6F          ld   l,a
+3A35: 8C          adc  a,h
+3A36: 95          sub  l
+3A37: 67          ld   h,a
+3A38: 19          add  hl,de		; hl = offset in the screen buffer for the initial position in X and Y
+3A39: 11 18 00    ld   de,$0018		; each line occupies 24 bytes
+3A3C: 08          ex   af,af'		; recover the 4 most significant bits of byte 0
+3A3D: C5          push bc
+3A3E: E5          push hl
+3A3F: 41          ld   b,c			; b = width
+3A40: 77          ld   (hl),a
+3A41: 23          inc  hl
+3A42: 10 FC       djnz $3A40		; write the value traversing the width
+3A44: E1          pop  hl
+3A45: 19          add  hl,de		; go to the next line
+3A46: C1          pop  bc
+3A47: 10 F4       djnz $3A3D		; continue processing the height
+3A49: C3 73 39    jp   $3973		; continue processing the rest of elements
+
+; here should be the routine that draws the map of the current screen, but for the final version it was removed
+3A4C: C9          ret
+
+; returns in hl the address of the next screen line
+3A4D: 7C          ld   a,h			; go to the next bank
+3A4E: C6 08       add  a,$08
+3A50: 38 02       jr   c,$3A54
+3A52: 67          ld   h,a
+3A53: C9          ret
+
+3A54: 7C          ld   a,h			; if there is carry, go to the next line and adjust so it's in the range 0xc000-0xffff
+3A55: E6 C7       and  $C7
+3A57: 67          ld   h,a
+3A58: 3E 50       ld   a,$50
+3A5A: 85          add  a,l
+3A5B: 6F          ld   l,a
+3A5C: D0          ret  nc
+3A5D: 8C          adc  a,h
+3A5E: 95          sub  l
+3A5F: 67          ld   h,a
+3A60: C9          ret
+
+; The memory configuration when reaching this point is:
+banks: (0, 1, 2, 3)
+0 -> abadia1 (from 0x0100)
+1 -> abadia2
+2 -> abadia3
+3 -> abadia3 (with one overwritten tile and the first 0x1000 bytes overwritten)
+4 -> abadia5
+5 -> abadia6
+6 -> abadia7
+7 -> abadia8
+
+; creates a table to flip x to 4 pixels, and also initiates the mirror room data
+3A61: 21 00 A1    ld   hl,$A100		; point to the memory where to create the table
+3A64: 7D          ld   a,l
+3A65: E6 F0       and  $F0
+3A67: 4F          ld   c,a			; c = 4 most significant bits of l
+3A68: 7D          ld   a,l
+3A69: E6 0F       and  $0F			; a = 4 least significant bits of l
+3A6B: CB 11       rl   c
+3A6D: 1F          rra
+3A6E: CB 11       rl   c
+3A70: 1F          rra
+3A71: CB 11       rl   c
+3A73: 1F          rra
+3A74: CB 11       rl   c
+3A76: 1F          rra
+3A77: CB 11       rl   c
+3A79: B1          or   c			; a = b4 b5 b6 b7 b0 b1 b2 b3
+3A7A: 77          ld   (hl),a
+3A7B: 2C          inc  l
+3A7C: 20 E6       jr   nz,$3A64		; complete the table
+
+3A7E: 21 86 50    ld   hl,$5086		; point to abadia7 data (height data of floor 2)
+3A81: 01 C6 7F    ld   bc,$7FC6		; set configuration 6 (0, 6, 2, 3)
+3A84: ED 49       out  (c),c
+3A86: CD C2 3A    call $3AC2		; increment hl until the end of the height data of floor 2
+3A89: 01 C7 7F    ld   bc,$7FC7		; set configuration 7 (0, 7, 2, 3)
+3A8C: ED 49       out  (c),c
+3A8E: 22 D9 34    ld   ($34D9),hl	; save the end of table pointer (which points to the mirror room data)
+
+3A91: 06 72       ld   b,$72		; 114 screens
+3A93: 21 00 40    ld   hl,$4000		; point to abadia8 data
+3A96: 7E          ld   a,(hl)		; read the number of bytes of the screen
+3A97: 85          add  a,l
+3A98: 6F          ld   l,a			; advance to the next screen
+3A99: 8C          adc  a,h
+3A9A: 95          sub  l
+3A9B: 67          ld   h,a
+3A9C: 10 F8       djnz $3A96
+
+; hl points to the mirror room
+3A9E: 06 00       ld   b,$00		; up to 256 blocks
+3AA0: 7E          ld   a,(hl)		; read a byte
+3AA1: 23          inc  hl
+3AA2: FE 1F       cp   $1F			; if it's not 0x1f, jump
+3AA4: 20 19       jr   nz,$3ABF
+3AA6: 7E          ld   a,(hl)		; if it's 0x1f, read the next 2 bytes
+3AA7: 23          inc  hl
+3AA8: 4E          ld   c,(hl)
+3AA9: 2B          dec  hl
+3AAA: FE AA       cp   $AA			; if the next byte of the block is not 0xaa, keep advancing
+3AAC: 20 11       jr   nz,$3ABF
+3AAE: 79          ld   a,c
+3AAF: FE 51       cp   $51			; if the second byte of the block is not 0x51, keep advancing
+3AB1: 20 0C       jr   nz,$3ABF
+
+3AB3: 23          inc  hl			; if it reaches here, the room data indicates the mirror is open
+3AB4: 36 11       ld   (hl),$11		;  so modify the room so the mirror closes
+3AB6: 22 E0 34    ld   ($34E0),hl	; save the offset of the mirror screen in abadia8.bin
+3AB9: 01 C0 7F    ld   bc,$7FC0		; set configuration 0 (0, 1, 2, 3)
+3ABC: ED 49       out  (c),c
+3ABE: C9          ret
+
+3ABF: 10 DF       djnz $3AA0
+3AC1: C9          ret
+
+; increment hl until finding the end of the table
+3AC2: 7E          ld   a,(hl)		; read a byte
+3AC3: FE FF       cp   $FF			; 0xff indicates the end
+3AC5: C8          ret  z
+3AC6: CB 5F       bit  3,a
+3AC8: 28 01       jr   z,$3ACB
+3ACA: 23          inc  hl			; increment the address 4 or 5 bytes depending on bit 3
+3ACB: 23          inc  hl
+3ACC: 23          inc  hl
+3ACD: 23          inc  hl
+3ACE: 23          inc  hl
+3ACF: 18 F1       jr   $3AC2
+
+; generates 4 tables of 0x100 bytes for pixel handling through AND and OR operations at 0x9d00 to 0xa0ff
+3AD1: 01 00 9D    ld   bc,$9D00	; point to abadia3 data that has already been copied before, so it can be overwritten without problem
+3AD4: 79          ld   a,c		; a = b7 b6 b5 b4 b3 b2 b1 b0
+3AD5: E6 F0       and  $F0		; a = b7 b6 b5 b4 0 0 0 0
+3AD7: 57          ld   d,a		; d = b7 b6 b5 b4 0 0 0 0
+3AD8: 79          ld   a,c		; a = b7 b6 b5 b4 b3 b2 b1 b0
+3AD9: 0F          rrca			; a = b0 b7 b6 b5 b4 b3 b2 b1
+3ADA: 0F          rrca			; a = b1 b0 b7 b6 b5 b4 b3 b2
+3ADB: 0F          rrca			; a = b2 b1 b0 b7 b6 b5 b4 b3
+3ADC: 0F          rrca			; a = b3 b2 b1 b0 b7 b6 b5 b4
+3ADD: 5F          ld   e,a		; e = b3 b2 b1 b0 b7 b6 b5 b4
+3ADE: A1          and  c		; a = b3&b7 b2&b6 b1&b5 b0&b4 b3&b7 b2&b6 b1&b5 b0&b4
+3ADF: E6 0F       and  $0F		; a = 0 0 0 0 b3&b7 b2&b6 b1&b5 b0&b4
+3AE1: B2          or   d		; a = b7 b6 b5 b4 b3&b7 b2&b6 b1&b5 b0&b4
+3AE2: 02          ld   (bc),a	; write pixel i = (Pi1&Pi0 Pi0) (0->0, 1->1, 2->0, 3->3)
+
+3AE3: 04          inc  b		; point to the next table
+3AE4: 7B          ld   a,e		; a = b3 b2 b1 b0 b7 b6 b5 b4
+3AE5: A9          xor  c		; a = b3^b7 b2^b6 b1^b5 b0^b4 b3^b7 b2^b6 b1^b5 b0^b4
+3AE6: A1          and  c		; a = (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4 (b3^b7)&b3 (b2^b6)&b2 (b1^b5)&b1 (b0^b4)&b0
+3AE7: E6 0F       and  $0F		; a = 0 0 0 0 (b3^b7)&b3 (b2^b6)&b2 (b1^b5)&b1 (b0^b4)&b0
+3AE9: 57          ld   d,a		; d = 0 0 0 0 (b3^b7)&b3 (b2^b6)&b2 (b1^b5)&b1 (b0^b4)&b0
+3AEA: 87          add  a,a		; a = 0 0 0 (b3^b7)&b3 (b2^b6)&b2 (b1^b5)&b1 (b0^b4)&b0 0
+3AEB: 87          add  a,a		; a = 0 0 (b3^b7)&b3 (b2^b6)&b2 (b1^b5)&b1 (b0^b4)&b0 0 0
+3AEC: 87          add  a,a		; a = 0 (b3^b7)&b3 (b2^b6)&b2 (b1^b5)&b1 (b0^b4)&b0 0 0 0
+3AED: 87          add  a,a		; a = (b3^b7)&b3 (b2^b6)&b2 (b1^b5)&b1 (b0^b4)&b0 0 0 0 0
+3AEE: B2          or   d		; a = (b3^b7)&b3 (b2^b6)&b2 (b1^b5)&b1 (b0^b4)&b0 (b7^b3)&b3 (b6^b2)&b2 (b5^b1)&b1 (b0^b4)&b0
+3AEF: 02          ld   (bc),a	; write pixel i = ((Pi1^Pi0)&Pi1 (Pi1^Pi0)&Pi1) (0->0, 1->0, 2->3, 3->0)
+
+3AF0: 04          inc  b		; point to the next table
+3AF1: 79          ld   a,c		; a = b7 b6 b5 b4 b3 b2 b1 b0
+3AF2: E6 0F       and  $0F		; a = 0 0 0 0 b3 b2 b1 b0
+3AF4: 57          ld   d,a		; d = 0 0 0 0 b3 b2 b1 b0
+3AF5: 7B          ld   a,e		; a = b3 b2 b1 b0 b7 b6 b5 b4
+3AF6: A1          and  c		; a = b3&b7 b2&b6 b1&b5 b0&b4 b3&b7 b2&b6 b1&b5 b0&b4
+3AF7: E6 F0       and  $F0		; a = b3&b7 b2&b6 b1&b5 b0&b4 0 0 0 0
+3AF9: B2          or   d		; a = b3&b7 b2&b6 b1&b5 b0&b4 b3 b2 b1 b0
+3AFA: 02          ld   (bc),a	; write pixel i = (Pi1 Pi1&Pi0) (0->0, 1->0, 2->2, 3->3)
+
+3AFB: 04          inc  b		; point to the next table
+3AFC: 7B          ld   a,e		; a = b3 b2 b1 b0 b7 b6 b5 b4
+3AFD: A9          xor  c		; a = b3^b7 b2^b6 b1^b5 b0^b4 b7^b3 b6^b2 b5^b1 b4^b0
+3AFE: A1          and  c		; a = (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4 (b7^b3)&b3 (b6^b2)&b2 (b5^b1)&b1 (b4^b0)&b0
+3AFF: E6 F0       and  $F0		; a = (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4 0 0 0 0
+3B01: 57          ld   d,a		; d = (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4 0 0 0 0
+3B02: CB 3F       srl  a		; a = 0 (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4 0 0 0
+3B04: CB 3F       srl  a		; a = 0 0 (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4 0 0
+3B06: CB 3F       srl  a		; a = 0 0 0 (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4 0
+3B08: CB 3F       srl  a		; a = 0 0 0 0 (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4
+3B0A: B2          or   d		; a = (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4 (b3^b7)&b7 (b2^b6)&b6 (b1^b5)&b5 (b0^b4)&b4
+3B0B: 02          ld   (bc),a	; write pixel i = ((Pi1^Pi0)&Pi0 (Pi1^Pi0)&Pi0) (0->0, 1->3, 2->0, 3->0)
+
+3B0C: 05          dec  b		; point to the initial table
+3B0D: 05          dec  b
+3B0E: 05          dec  b
+3B0F: 0C          inc  c		; continue until completing the possible cases
+3B10: 20 C2       jr   nz,$3AD4
+3B12: C9          ret
+
+; prints a character in the scoreboard
+3B13: 0E FF       ld   c,$FF
+3B15: 18 02       jr   $3B19
+
+; prints the character passed in a on the screen
+;  uses the screen position at 0x2d97
+3B17: 0E 0F       ld   c,$0F		; c is used to adjust the color
+3B19: E6 7F       and  $7F			; ensures the character is between 0 and 127
+3B1B: FE 20       cp   $20
+3B1D: 11 E7 38    ld   de,$38E7		; de = address of the blank space
+3B20: 28 0E       jr   z,$3B30		; if the character to print is a space, jump
+3B22: D6 2D       sub  $2D          ; if the character to print is < 0x2d, it's not printable and exit
+3B24: D8          ret  c
+
+3B25: 6F          ld   l,a			; each character in the character table occupies 8 bytes
+3B26: 26 00       ld   h,$00		; hl = 8*(a - 0x2d)
+3B28: 29          add  hl,hl
+3B29: 29          add  hl,hl
+3B2A: 29          add  hl,hl
+3B2B: 11 00 B4    ld   de,$B400
+3B2E: 19          add  hl,de		; the character graphics table starts at 0xb400
+3B2F: EB          ex   de,hl		; de = character address
+3B30: 2A 97 2D    ld   hl,($2D97)	; read the screen address currently being written to (h = y in pixels, l = x in bytes)
+3B33: E5          push hl
+3B34: CD 42 3C    call $3C42		; convert hl to screen address
+3B37: 06 08       ld   b,$08		; 8 lines
+3B39: 1A          ld   a,(de)		; read a byte that forms the character
+3B3A: E6 F0       and  $F0			; keep the 4 upper bits (4 left pixels of the character)
+3B3C: A9          xor  c
+3B3D: 77          ld   (hl),a		; write the byte to screen
+3B3E: 1A          ld   a,(de)		; read the byte that forms the character
+3B3F: 87          add  a,a
+3B40: 87          add  a,a
+3B41: 87          add  a,a
+3B42: 87          add  a,a			; keep the 4 lower bits in the upper part (4 right pixels of the character)
+3B43: 23          inc  hl
+3B44: A9          xor  c
+3B45: 77          ld   (hl),a		; write the byte to screen
+3B46: 2B          dec  hl
+3B47: CD 4D 3A    call $3A4D		; go to the next screen line
+3B4A: 13          inc  de			; point to the next byte of the character
+3B4B: 10 EC       djnz $3B39		; repeat for 8 lines
+3B4D: E1          pop  hl
+3B4E: 2C          inc  l			; advance 8 pixels for the next execution
+3B4F: 2C          inc  l
+3B50: 22 97 2D    ld   ($2D97),hl	; save the new pointer
+3B53: C9          ret
+
+; -------------------------- code related to writing phrases on the scoreboard --------------------------------------
+; called from the interrupt
+3B54: F3          di
+3B55: 3A 9A 2D    ld   a,($2D9A)
+3B58: 3C          inc  a
+3B59: FE 2D       cp   $2D
+3B5B: 32 9A 2D    ld   ($2D9A),a		; if it's not 45 exit
+3B5E: C0          ret  nz
+
+3B5F: AF          xor  a				; keep between 0 and 44
+3B60: 32 9A 2D    ld   ($2D9A),a
+
+3B63: 3A A2 2D    ld   a,($2DA2)		; if not displaying a phrase, exit
+3B66: A7          and  a
+3B67: C8          ret  z
+
+3B68: DD E5       push ix
+3B6A: E5          push hl
+3B6B: 2A 97 2D    ld   hl,($2D97)		; save the value of this variable, as it will be modified
+3B6E: E5          push hl
+3B6F: D5          push de
+3B70: C5          push bc
+3B71: 08          ex   af,af'
+3B72: F5          push af
+3B73: CD 20 10    call $1020			; start music entry 3
+
+3B76: 3A A0 2D    ld   a,($2DA0)
+3B79: 3D          dec  a
+3B7A: 28 5B       jr   z,$3BD7			; if 0x2ad0 was 1, jump (a word has finished)
+
+3B7C: 2A 9C 2D    ld   hl,($2D9C)		; get the address of the text being placed in the scoreboard
+3B7F: CB 7E       bit  7,(hl)
+3B81: 28 05       jr   z,$3B88			; if bit 7 is not set, jump
+3B83: 3E 01       ld   a,$01
+3B85: 32 A0 2D    ld   ($2DA0),a		; indicate that the word has finished
+
+3B88: 7E          ld   a,(hl)
+3B89: E6 07       and  $07				; keep the 3 least significant bits of the current letter
+3B8B: 32 89 13    ld   ($1389),a		; modify the voice tones
+3B8E: 32 8F 13    ld   ($138F),a
+3B91: ED 44       neg
+3B93: 32 8C 13    ld   ($138C),a
+3B96: 7E          ld   a,(hl)			; get the 7 least significant bits of the current letter
+3B97: E6 7F       and  $7F
+3B99: 23          inc  hl
+3B9A: 22 9C 2D    ld   ($2D9C),hl		; update the pointer to the text data
+
+; scrolls the phrase part of the scoreboard and paints the character in a
+3B9D: F5          push af
+3B9E: 21 5A E6    ld   hl,$E65A		; hl points to the phrase screen area (104, 164)
+3BA1: 01 1E 08    ld   bc,$081E		; b = 8 lines, c = 30 bytes
+3BA4: E5          push hl
+3BA5: C5          push bc
+3BA6: 06 00       ld   b,$00
+3BA8: 54          ld   d,h			; de = hl
+3BA9: 5D          ld   e,l
+3BAA: 1B          dec  de
+3BAB: 1B          dec  de
+3BAC: ED B0       ldir				; perform scroll 30 bytes to the left
+3BAE: C1          pop  bc
+3BAF: E1          pop  hl
+3BB0: CD 4D 3A    call $3A4D		; go to the next line
+3BB3: 10 EF       djnz $3BA4		; complete the 8 lines
+
+3BB5: 21 2E A4    ld   hl,$A42E		; position (h = y in pixels, l = x in bytes) (184, 164)
+3BB8: 22 97 2D    ld   ($2D97),hl	; set the position where the character should be drawn (used by routine 0x3b13)
+3BBB: C1          pop  bc			; recover the parameter it was called with
+3BBC: 78          ld   a,b			; get the letter to place
+3BBD: FE 20       cp   $20			; is it a blank space?
+3BBF: 3E 06       ld   a,$06
+3BC1: 20 01       jr   nz,$3BC4
+3BC3: AF          xor  a			; if it's a blank space, set 0
+3BC4: 32 C2 13    ld   ($13C2),a	; modify the envelope and volume change table for the voice
+3BC7: 78          ld   a,b
+3BC8: CD 13 3B    call $3B13		; print a character in the scoreboard
+3BCB: F1          pop  af
+3BCC: 08          ex   af,af'
+3BCD: C1          pop  bc
+3BCE: D1          pop  de
+3BCF: E1          pop  hl
+3BD0: 22 97 2D    ld   ($2D97),hl	; restore the value of this variable, as it has been modified
+3BD3: E1          pop  hl
+3BD4: DD E1       pop  ix
+3BD6: C9          ret
+
+; arrives here if a word has finished (0x2da0 = 1)
+3BD7: 3A 9B 2D    ld   a,($2D9B)	; read the characters remaining to say
+3BDA: A7          and  a
+3BDB: 28 0F       jr   z,$3BEC		; if there are still many left to say, jump
+3BDD: 3D          dec  a
+3BDE: 32 9B 2D    ld   ($2D9B),a	; decrement the characters remaining to say
+3BE1: 3E 20       ld   a,$20
+3BE3: 20 B8       jr   nz,$3B9D		; scroll the phrase part of the scoreboard and paint a blank space
+
+3BE5: AF          xor  a			; if the phrase has finished (characters to say = 0), indicate it
+3BE6: 32 A2 2D    ld   ($2DA2),a
+3BE9: C3 CB 3B    jp   $3BCB		; restore the registers and exit
+
+; arrives here if there are still characters left to say
+3BEC: 32 A0 2D    ld   ($2DA0),a
+3BEF: 2A 9E 2D    ld   hl,($2D9E)	; get the pointer to the current voice data
+3BF2: 7E          ld   a,(hl)		; read a byte
+3BF3: FE FF       cp   $FF
+3BF5: 20 0C       jr   nz,$3C03		; if the voice data hasn't finished, jump
+3BF7: 3E 11       ld   a,$11
+3BF9: 32 9B 2D    ld   ($2D9B),a	; indicate that 11 characters remain to be displayed
+3BFC: 3E 01       ld   a,$01
+3BFE: 32 A0 2D    ld   ($2DA0),a	; indicate that the word has finished
+3C01: 18 D4       jr   $3BD7
+
+3C03: FE FA       cp   $FA			; if not >= 0xfa, continue
+3C05: 30 21       jr   nc,$3C28
+3C07: 23          inc  hl
+3C08: FE F9       cp   $F9
+3C0A: 0E 20       ld   c,$20		; c = blank space
+3C0C: 38 04       jr   c,$3C12		; if the value is < 0xf9, jump
+3C0E: 0E 00       ld   c,$00		; c = 00, no blank space
+3C10: 7E          ld   a,(hl)		; if the read value is 0xf9, the next word must be said following the current one
+3C11: 23          inc  hl
+
+3C12: 22 9E 2D    ld   ($2D9E),hl	; update the address of the voice data
+
+3C15: 21 80 B5    ld   hl,$B580		; point to the word table
+3C18: 47          ld   b,a
+3C19: A7          and  a
+3C1A: C4 3A 3C    call nz,$3C3A		; if the byte read was not 0, search for the corresponding entry in the word table
+3C1D: 22 9C 2D    ld   ($2D9C),hl	; save the word address
+3C20: 79          ld   a,c
+3C21: A7          and  a
+3C22: CA 76 3B    jp   z,$3B76		; depending on c, jump to scroll and paint the character, or return to the beginning to process the next character
+3C25: C3 9D 3B    jp   $3B9D		; scroll the phrase part of the scoreboard and paint the character in a
+
+; arrives here if the read value is greater than or equal to 0xfa
+3C28: D6 FA       sub  $FA
+3C2A: 23          inc  hl
+3C2B: 22 9E 2D    ld   ($2D9E),hl	; update the address of the phrase data
+3C2E: 21 E2 38    ld   hl,$38E2		; hl points to the punctuation marks table
+3C31: CD 2D 16    call $162D		; hl = hl + a
+3C34: 22 9C 2D    ld   ($2D9C),hl	; change the address of the text being placed in the scoreboard
+3C37: C3 76 3B    jp   $3B76
+
+; search for entry number b in the word table
+3C3A: CB 7E       bit  7,(hl)		; search for the end of the current word
+3C3C: 23          inc  hl
+3C3D: 28 FB       jr   z,$3C3A		; repeat until the current entry finishes
+3C3F: 10 F9       djnz $3C3A		; repeat until finding the entry
+3C41: C9          ret
+
+; given hl (Y,X coordinates), calculates the corresponding screen offset
+; the calculated value is added 32 pixels to the right (since the game area goes from x = 32 to x = 256 + 32 - 1
+; l = X coordinate (in bytes)
+; h = Y coordinate (in pixels)
+3C42: D5          push de
+3C43: 7D          ld   a,l
+3C44: 08          ex   af,af'
+3C45: 7C          ld   a,h
+3C46: E6 F8       and  $F8			; get the value to calculate the offset within the VRAM bank
+3C48: 6F          ld   l,a
+3C49: 7C          ld   a,h
+3C4A: 26 00       ld   h,$00
+3C4C: 29          add  hl,hl		; within each bank, the line to go to can be calculated as (y & 0xf8)*10
+3C4D: 54          ld   d,h			;  or what is the same, (y >> 3)*0x50
+3C4E: 5D          ld   e,l
+3C4F: 29          add  hl,hl
+3C50: 29          add  hl,hl
+3C51: 19          add  hl,de		; hl = offset within the bank
+3C52: E6 07       and  $07          ; a = 3 least significant bits in y (to calculate the VRAM bank it goes to)
+3C54: 87          add  a,a
+3C55: 87          add  a,a
+3C56: 87          add  a,a			; adjust the 3 bits
+3C57: B4          or   h			; complete the bank calculation
+3C58: F6 C0       or   $C0			; adjust so it's within 0xc000-0xffff
+3C5A: 67          ld   h,a
+3C5B: 08          ex   af,af'
+3C5C: 85          add  a,l			; add the offset in x
+3C5D: 6F          ld   l,a
+3C5E: 8C          adc  a,h
+3C5F: 95          sub  l
+3C60: 67          ld   h,a
+3C61: 11 08 00    ld   de,$0008		; adjust to be 32 pixels to the right
+3C64: 19          add  hl,de
+3C65: D1          pop  de
+3C66: C9          ret
+; ----------------------- end of code related to writing phrases on the scoreboard -----------------------------
+
+; table to modify room access according to the keys held. 6 entries (one per door) of 5 bytes
+; byte 0: room index in the ground floor room matrix
+; byte 1: permissions for that room
+; byte 2: room index in the ground floor room matrix
+; byte 3: permissions for that room
+; byte 4: 0xff
+3C67: 	35 01 36 04 FF	; between room (3, 5) = 0x3e and (3, 6) = 0x3d there is a door (the abbot's room)
+	1B 08 2B 02 FF	; between room (1, b) = 0x00 and (2, b) = 0x38 there is a door (the monks' room)
+	56 08 66 02 FF	; between room (5, 6) = 0x3d and (6, 6) = 0x3c there is a door (severino's room)
+	29 01 2A 04 FF	; between room (2, 9) = 0x29 and (2, a) = 0x37 there is a door (the exit from the rooms towards the church)
+	27 01 28 04 FF	; between room (2, 7) = 0x28 and (2, 8) = 0x26 there is a door (the passage behind the kitchen)
+	75 01 76 04 FF	; between room (7, 5) = 0x11 and (7, 6) = 0x12 there is a door (that blocks the way to the left part of the ground floor)
+
+; ----------------------- code related to the character behavior interpreter -----------------------------
+
+3C85-3CA5: variables related to the logic
+
+	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+	04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+	00
+
+; copied to 0x103-0x107. predefined positions of malaquias
+3CA6: EF 02
+	FA 00 00
+3CAB:
+	84 48 42 -> church
+	2F 37 02 -> refectory
+	37 38 4F -> position at the table at the entrance to the corridor to be able to go up to the library
+	3A 34 8F -> position to block the corridor leading to the library
+	5D 77 00 -> position to close the 2 doors of the left wing of the abbey
+	58 2A 00 -> position in front of the kitchen table in front of the passage
+	35 37 53 -> position where he leaves the key on the table at the entrance to the corridor to be able to go up to the library
+	BC 18 02 -> position in his cell
+	68 52 02 -> severino's cell
+
+; copied to 0x108-0x10a. predefined positions of the abbot
+3CC6: FA 00 00
+3CC9:
+	88 3C C4 -> position at the church altar
+	3D 37 82 -> position in the refectory
+	54 3C 02 -> position in his cell
+	88 84 C2 -> position at the abbey entrance
+	A4 58 40 -> position of the first stop during the welcome speech
+	A5 21 02 -> position for us to enter our cell
+	9C 2A 02 -> position at the monks' access door to the church
+	C7 27 00 -> position on the screen where he presents jorge
+

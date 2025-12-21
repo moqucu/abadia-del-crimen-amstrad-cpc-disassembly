@@ -1,0 +1,600 @@
+4852: 28 0D       jr   z,$4861		; if an iteration has not been completed, jump
+4854: AF          xor  a
+4855: 44          ld   b,h			; bc = hl
+4856: 4D          ld   c,l
+4857: ED 72       sbc  hl,sp		; check if all stack elements have been processed
+4859: 69          ld   l,c			; hl = bc
+485A: 60          ld   h,b
+485B: CA 75 45    jp   z,$4575		; if so, exit
+485E: D5          push de			; push -1 onto the stack
+485F: 18 EA       jr   $484B		; continue processing stack elements
+
+; here it arrives to process a stack element
+4861: E5          push hl
+4862: D5          push de
+4863: EB          ex   de,hl
+4864: CD B5 48    call $48B5		; given the most significant position of a character in hl, index into the floor table and return the entry in ix
+4867: D1          pop  de
+4868: E1          pop  hl
+4869: DD 23       inc  ix
+486B: 1C          inc  e			; move to position (x+1,y)
+486C: 01 04 02    ld   bc,$0204		; orientation = 2, try to exit through bit 2
+486F: CD 9B 48    call $489B		; check if the position passed in ix can be accessed, and if so, if it has already been explored before.
+									; if it hadn't been explored and was the one being searched for, exit the algorithm. Otherwise, push it onto the stack to explore from that position
+4872: 01 EF FF    ld   bc,$FFEF
+4875: DD 09       add  ix,bc		; move to position (x,y-1)
+4877: 01 08 03    ld   bc,$0308		; orientation = 3, try to exit through bit 3
+487A: 1D          dec  e
+487B: 15          dec  d
+487C: CD 9B 48    call $489B		; check if the position passed in ix can be accessed, and if so, if it has already been explored before.
+									; if it hadn't been explored and was the one being searched for, exit the algorithm. Otherwise, push it onto the stack to explore from that position
+487F: 01 0F 00    ld   bc,$000F
+4882: DD 09       add  ix,bc
+4884: 14          inc  d
+4885: 1D          dec  e
+4886: 01 01 00    ld   bc,$0001		; orientation = 0, try to enter through bit 1
+4889: CD 9B 48    call $489B		; check if the position passed in ix can be accessed, and if so, if it has already been explored before.
+									; if it hadn't been explored and was the one being searched for, exit the algorithm. Otherwise, push it onto the stack to explore from that position
+488C: 01 11 00    ld   bc,$0011
+488F: DD 09       add  ix,bc		; move to position (x,y+1)
+4891: 14          inc  d
+4892: 1C          inc  e
+4893: 01 02 01    ld   bc,$0102		; orientation = 1, try to exit through bit 2
+4896: CD 9B 48    call $489B		; check if the position passed in ix can be accessed, and if so, if it has already been explored before.
+									; if it hadn't been explored and was the one being searched for, exit the algorithm. Otherwise, push it onto the stack to explore from that position
+4899: 18 B0       jr   $484B		; continue trying stack combinations
+
+; check if the position passed in ix can be accessed, and if so, if it has already been explored before.
+; if it hadn't been explored and was the one being searched for, exit the algorithm. Otherwise, push it onto the stack to explore from that position
+; c = orientation through which to exit the room
+; b = orientation used to go from destination to origin
+489B: DD 7E 00    ld   a,(ix+$00)	; get room data
+489E: A1          and  c			; if unable to exit the room through the passed orientation, exit
+489F: C0          ret  nz
+
+48A0: 78          ld   a,b
+48A1: DD CB 00 76 bit  6,(ix+$00)	; instruction modified from outside by changing the bit number to check
+48A5: C2 6F 45    jp   nz,$456F		; if the searched bit is set, exit the algorithm saving the destination orientation and indicating the search was successful
+48A8: DD CB 00 7E bit  7,(ix+$00)	; otherwise, if the position has already been explored, exit
+48AC: C0          ret  nz
+
+48AD: DD CB 00 FE set  7,(ix+$00)	; if the position hadn't been explored, mark it as explored
+48B1: C1          pop  bc			; retrieve return address
+48B2: D5          push de			; push current position onto stack
+48B3: C5          push bc			; save return address again
+48B4: C9          ret
+
+; given the most significant position of a character in hl, index into the floor table and return the entry in ix
+48B5: 7C          ld   a,h
+48B6: 87          add  a,a
+48B7: 87          add  a,a
+48B8: 87          add  a,a
+48B9: 87          add  a,a			; h = h*16
+48BA: B5          or   l			; combine position into one byte
+48BB: 5F          ld   e,a
+48BC: 16 00       ld   d,$00		; de stores character position
+48BE: DD 2A 0A 44 ld   ix,($440A)
+48C2: DD 19       add  ix,de
+48C4: C9          ret
+; ------------- end of pathfinding code between screens ----------------------------------
+
+48C5: C3 9A 24    jp   $249A
+
+; ----------------------------- sprite drawing begins ------------------------------
+; table with monk robes data for orientations and/or steps
+48C8: 	ABDB -> 0x00
+	AB59 -> 0x01
+	ABDB -> 0x02
+	AC53 -> 0x03
+   	ADBB -> 0x04
+   	ACCB -> 0x05
+	ADBB -> 0x06
+	AD48 -> 0x07
+	B090 -> 0x08
+	AFA0 -> 0x09
+	B090 -> 0x0a
+	B01D -> 0x0b
+	AEB0 -> 0x0c
+	AE2E -> 0x0d
+	AEB0 -> 0x0e
+	AF28 -> 0x0f
+
+; table with light fill pattern
+48E8: 	00E0 -> 0x00
+	03F8 -> 0x01
+	07FC -> 0x02
+	07FC -> 0x03
+	0FFE -> 0x04
+	0FFE -> 0x05
+	1FFF -> 0x06
+	1FFF -> 0x07
+	1FFF -> 0x08
+	1FFF -> 0x09
+	0FFE -> 0x0a
+	0FFE -> 0x0b
+	07FC -> 0x0c
+	07FC -> 0x0d
+	03F8 -> 0x0e
+	00E0 -> 0x0f
+
+4908: 0000 ; sprite buffer pointer
+490A: 0000 ; original stack
+490C: 0000 ; stack when working with sprite buffer
+
+; delay until bc is 0
+490E: 0B          dec  bc
+490F: 78          ld   a,b
+4910: B1          or   c
+4911: 20 FB       jr   nz,$490E
+4913: C9          ret
+
+4914: ED 73 0A 49 ld   ($490A),sp	; save stack address
+4918: 21 00 95    ld   hl,$9500		; hl points to start of sprite buffer
+491B: 22 08 49    ld   ($4908),hl	; save sprite buffer pointer
+491E: 21 00 00    ld   hl,$0000
+4921: 4C          ld   c,h			; initially, no active entry (c = 0)
+4922: E5          push hl			; save a 0 (to indicate it's the last entry)
+4923: 21 17 2E    ld   hl,$2E17		; hl points to first sprite entry
+4926: 11 14 00    ld   de,$0014		; de = 20 bytes per entry
+
+4929: 7E          ld   a,(hl)		; read first byte of entry
+492A: FE FF       cp   $FF
+492C: 28 0D       jr   z,$493B		; if 0xff, jump (last entry)
+492E: FE FE       cp   $FE
+4930: 28 06       jr   z,$4938		; if 0xfe, advance to next entry
+4932: E5          push hl			;  otherwise, save entry address
+4933: CB 7F       bit  7,a			;  if sprite has changed, increment c
+4935: 28 01       jr   z,$4938
+4937: 0C          inc  c			; mark entry as active
+4938: 19          add  hl,de
+4939: 18 EE       jr   $4929
+
+; here it arrives once it has pushed entries to process onto the stack
+493B: ED 73 90 30 ld   ($3090),sp	; save stack address
+493F: F3          di
+4940: 79          ld   a,c
+4941: A7          and  a
+4942: 20 06       jr   nz,$494A		; if there was any active entry, jump
+4944: ED 7B 0A 49 ld   sp,($490A)	; retrieve stack address and exit
+4948: FB          ei
+4949: C9          ret
+
+; here it arrives if there was any entry that needed to be drawn
+; first entries are sorted by depth using improved bubble sort method
+494A: ED 7B 90 30 ld   sp,($3090)		; retrieve top of stack address
+494E: 06 00       ld   b,$00			; initially, 0 swaps
+
+4950: D1          pop  de				; retrieve last 2 stack entries
+4951: E1          pop  hl
+4952: 7D          ld   a,l
+4953: B4          or   h
+4954: 20 06       jr   nz,$495C			; if second entry is not 0 (end marker), jump
+4956: 78          ld   a,b
+4957: A7          and  a
+4958: 20 F0       jr   nz,$494A			; if reached beginning and there was any swap, process stack again
+495A: 18 13       jr   $496F			; if reached here, stack is sorted, so begin processing it
+
+; here it arrives when an entry that is not the last has been retrieved
+495C: 1A          ld   a,(de)
+495D: E6 3F       and  $3F
+495F: 4F          ld   c,a				; c = depth of last entry
+4960: 7E          ld   a,(hl)
+4961: E6 3F       and  $3F				; a = depth of second-to-last entry
+4963: B9          cp   c				; compare depth of 2 entries
+4964: 38 03       jr   c,$4969			; if (hl) < (de), perform a swap
+4966: E5          push hl				; otherwise, these elements are well ordered, discard last entry and check rest until stack is empty
+4967: 18 E7       jr   $4950
+
+4969: 04          inc  b				; indicate that 2 elements have been swapped
+496A: D5          push de				; swap entries
+496B: E5          push hl
+496C: E1          pop  hl				; last element is now sorted
+496D: 18 E1       jr   $4950			; process entries again
+
+; here it arrives once stack entries are sorted by depth
+496F: ED 7B 90 30 ld   sp,($3090)	; retrieve top of stack address
+4973: ED 73 92 30 ld   ($3092),sp	; save stack address pointing to object being processed
+
+4977: 21 00 00    ld   hl,$0000
+497A: 39          add  hl,sp		; hl points to stack
+497B: F3          di
+497C: ED 7B 92 30 ld   sp,($3092)	; get stack address
+4980: D1          pop  de			; retrieve first stack value
+4981: ED 73 92 30 ld   ($3092),sp	; save stack address
+4985: F9          ld   sp,hl		; restore stack address to not overwrite following values
+
+4986: FB          ei
+4987: 7B          ld   a,e
+4988: B2          or   d
+4989: CA DF 4B    jp   z,$4BDF		; if de was the last stack value, jump (post-process sprites)
+
+498C: D5          push de
+498D: DD E1       pop  ix			; ix = de (value read from stack)
+498F: DD CB 00 B6 res  6,(ix+$00)	; set bit 6 to 0
+4993: DD CB 00 7E bit  7,(ix+$00)
+4997: 28 DE       jr   z,$4977		; if sprite hasn't changed, continue processing rest of entries
+
+4999: DD 6E 01    ld   l,(ix+$01)	; get entry values (x1 pos in bytes, y1 pos in pixels, width in bytes, height in pixels)
+499C: DD 66 02    ld   h,(ix+$02)
+499F: DD 56 06    ld   d,(ix+$06)
+49A2: DD 5E 05    ld   e,(ix+$05)
+49A5: CB BB       res  7,e			; bit7 of position 5 is also used, so set it to 0 as it's not needed now
+49A7: CD 35 4D    call $4D35		; calculate tile position where sprite starts and expanded sprite dimensions (to cover all tiles where sprite will be drawn)
+49AA: ED 53 D7 2D ld   ($2DD7),de	; save expanded sprite dimensions
+49AE: 22 D5 2D    ld   ($2DD5),hl	; save tile position where sprite starts
+49B1: DD 6E 03    ld   l,(ix+$03)	; get entry values (x2 pos in bytes, y2 pos in pixels, width2 in bytes, height2 in pixels)
+49B4: DD 66 04    ld   h,(ix+$04)
+49B7: DD 56 0A    ld   d,(ix+$0a)
+49BA: DD 5E 09    ld   e,(ix+$09)
+49BD: CD BF 4C    call $4CBF		; check minimum sprite dimensions (to erase old sprite) and update 0x2dd5 and 0x2dd7
+49C0: 2A D5 2D    ld   hl,($2DD5)	; get initial tile position where sprite starts
+49C3: DD 75 0C    ld   (ix+$0c),l
+49C6: DD 74 0D    ld   (ix+$0d),h
+
+; given hl, calculate corresponding tile buffer coordinate (16x20 tile buffer, where each tile is 16x8)
+49C9: 7D          ld   a,l
+49CA: E6 FC       and  $FC
+49CC: 5F          ld   e,a			; e = initial tile x position where sprite starts (in bytes)
+49CD: CB 3F       srl  a			; a = e/2
+49CF: 83          add  a,e			; de = x + x/2 (since each byte has 4 pixels and each tile buffer entry is 6 bytes)
+49D0: 5F          ld   e,a
+49D1: 3E 00       ld   a,$00
+49D3: 8F          adc  a,a
+49D4: 57          ld   d,a
+49D5: D5          push de			; save x offset
+
+49D6: 6C          ld   l,h
+49D7: 26 00       ld   h,$00		; hl = initial y tile where sprite starts (in pixels)
+49D9: 29          add  hl,hl
+49DA: 29          add  hl,hl
+49DB: 5D          ld   e,l
+49DC: 54          ld   d,h
+49DD: 29          add  hl,hl
+49DE: 19          add  hl,de		; hl = hl*12
+49DF: D1          pop  de
+49E0: 19          add  hl,de		; hl points to corresponding line in tile buffer
+
+49E1: 11 94 8B    ld   de,$8B94		; index into tile buffer (0x8b94 corresponds to position X = -2, Y = -5 in tile buffer)
+49E4: 19          add  hl,de		;  which in pixels is: (X = -32, Y = -40), so first pixel of tile buffer in sprite coordinates is (32,40)
+49E5: 22 95 30    ld   ($3095),hl	; save current tile address in tile buffer
+49E8: 2A D7 2D    ld   hl,($2DD7)	; get sprite width and height
+49EB: DD 75 0E    ld   (ix+$0e),l
+49EE: DD 74 0F    ld   (ix+$0f),h
+49F1: 7C          ld   a,h			; a = sprite height
+49F2: 26 00       ld   h,$00		; hl = sprite width
+49F4: CD 24 4D    call $4D24		; de = sprite height*sprite width
+49F7: 2A 08 49    ld   hl,($4908)	; get sprite buffer address
+49FA: 22 FA 4A    ld   ($4AFA),hl	; modify an instruction
+49FD: DD 75 10    ld   (ix+$10),l	; save sprite buffer address
+4A00: DD 74 11    ld   (ix+$11),h
+4A03: 42          ld   b,d			; bc = de
+4A04: 4B          ld   c,e
+4A05: E5          push hl			; save obtained sprite buffer address
+4A06: 09          add  hl,bc
+4A07: 22 08 49    ld   ($4908),hl	; save free sprite buffer address
+4A0A: 11 FE 9C    ld   de,$9CFE		; de = sprite buffer limit
+4A0D: ED 52       sbc  hl,de		; hl = de - hl
+4A0F: D1          pop  de			; retrieve sprite buffer address
+4A10: D2 DF 4B    jp   nc,$4BDF		; if no room for sprite, jump to empty processed list and process rest
+
+; here it arrives if there's space to process sprite
+4A13: DD CB 00 F6 set  6,(ix+$00)	; mark sprite as processed
+4A17: 6B          ld   l,e			; hl = de = obtained sprite buffer address
+4A18: 62          ld   h,d
+4A19: 13          inc  de
+4A1A: 0B          dec  bc
+4A1B: 36 00       ld   (hl),$00
+4A1D: ED B0       ldir				; clear assigned sprite buffer area
+
+4A1F: 01 00 00    ld   bc,$0000
+4A22: ED 43 D9 4D ld   ($4DD9),bc	; modify an instruction (initially depth = 0)
+4A26: ED 7B 90 30 ld   sp,($3090)	; retrieve stack address of highest priority sprite (first on stack)
+4A2A: ED 73 0C 49 ld   ($490C),sp
+
+; here it arrives after drawing a sprite to continue drawing the next one
+4A2E: 21 00 00    ld   hl,$0000
+4A31: 39          add  hl,sp		; hl points to stack
+4A32: F3          di
+4A33: ED 7B 0C 49 ld   sp,($490C)	; get stack address
+4A37: D1          pop  de			; get sprite address to process
+4A38: ED 73 0C 49 ld   ($490C),sp	; save new stack address
+4A3C: F9          ld   sp,hl		; restore stack address to not overwrite following values
+4A3D: FB          ei
+4A3E: 7A          ld   a,d
+4A3F: B3          or   e
+4A40: C2 56 4A    jp   nz,$4A56		; if not last stack value, jump
+
+; here it arrives if all stack sprites have been processed (with respect to current sprite)
+4A43: 01 FC FC    ld   bc,$FCFC		; pass a very high depth value
+4A46: 3E 00       ld   a,$00
+4A48: 32 85 4D    ld   ($4D85),a	; change a ret to a nop
+4A4B: CD 9E 4D    call $4D9E		; draw tiles in sprite buffer that are in front of sprite
+4A4E: 3E C9       ld   a,$C9
+4A50: 32 85 4D    ld   ($4D85),a	; change a nop to a ret
+4A53: C3 77 49    jp   $4977		; jump until stack is empty
+
+; here it arrives if there was any sprite on stack (0x2dd5 and 0x2dd7 have been calculated for top stack sprite), but
+;  other sprites also arrive here
+4A56: D5          push de			; iy = de = sprite entry address
+4A57: FD E1       pop  iy
+4A59: FD CB 05 7E bit  7,(iy+$05)	; if sprite is going to disappear, skip to next sprite
+4A5D: 20 CF       jr   nz,$4A2E
+
+4A5F: 3A D5 2D    ld   a,($2DD5)
+4A62: 6F          ld   l,a			; l = initial x tile position where original sprite starts (in bytes)
+4A63: 3A D7 2D    ld   a,($2DD7)
+4A66: 5F          ld   e,a			; e = expanded width of original sprite (in bytes)
+4A67: FD 66 01    ld   h,(iy+$01)	; h = initial x position of current sprite
+4A6A: FD 56 05    ld   d,(iy+$05)	; d = width of current sprite
+4A6D: CD 54 4D    call $4D54		; check if current sprite can be seen in original sprite area. If not, skip
+									;  to another current sprite. Otherwise, clip in x the part of current sprite that can be seen
+									;  in original sprite
+; returns in a the length to draw of current sprite for passed coordinate
+; returns in h the distance from start of current sprite to start of original sprite (for passed coordinate)
+; returns in l the distance from start of original sprite to start of current sprite (for passed coordinate)
+4A70: 32 11 4B    ld   ($4B11),a	; modify some instructions with calculated data
+4A73: 7C          ld   a,h
+4A74: 32 E6 4A    ld   ($4AE6),a
+4A77: 32 4E 4B    ld   ($4B4E),a
+4A7A: 7D          ld   a,l
+4A7B: 32 FE 4A    ld   ($4AFE),a
+4A7E: 3A D6 2D    ld   a,($2DD6)
+4A81: 6F          ld   l,a			; l = initial y tile position where original sprite starts (in bytes)
+4A82: 3A D8 2D    ld   a,($2DD8)
+4A85: 5F          ld   e,a			; e = height of original sprite (in pixels)
+4A86: FD 66 02    ld   h,(iy+$02)	; h = initial y position of current sprite
+4A89: FD 56 06    ld   d,(iy+$06)	; d = height of current sprite
+4A8C: CD 54 4D    call $4D54		; check if current sprite can be seen in original sprite area. If not, skip
+									;  to another current sprite. Otherwise, clip in y the part of current sprite that can be seen
+									;  in original sprite
+; returns in a the length to draw of current sprite for passed coordinate
+; returns in h the distance from start of current sprite to start of original sprite (for passed coordinate)
+; returns in l the distance from start of original sprite to start of current sprite (for passed coordinate)
+4A8F: 32 0E 4B    ld   ($4B0E),a	; modify some instructions with calculated data
+4A92: 7C          ld   a,h
+4A93: 32 A5 4A    ld   ($4AA5),a
+4A96: 7D          ld   a,l
+4A97: 32 EE 4A    ld   ($4AEE),a
+
+4A9A: FD 4E 12    ld   c,(iy+$12)	; bc = get sprite position in camera coordinates
+4A9D: FD 46 13    ld   b,(iy+$13)
+4AA0: CD 9E 4D    call $4D9E		; copy tiles that are behind sprite into sprite buffer
+
+; when it arrives here it draws current sprite
+4AA3: D9          exx
+4AA4: 21 00 00    ld   hl,$0000		; instruction modified from outside (y distance from start of current sprite to start of original sprite)
+4AA7: 7D          ld   a,l
+4AA8: 32 0B 4B    ld   ($4B0B),a	; modify an instruction
+4AAB: FE 0A       cp   $0A
+4AAD: 38 26       jr   c,$4AD5		; if y distance from start of current sprite to start of original sprite < 10, jump
+4AAF: FD CB 0B 7E bit  7,(iy+$0b)
+4AB3: 20 20       jr   nz,$4AD5		; if not a monk, jump
+
+; if it arrives here it's because y distance from start of current sprite to start of original sprite is >= 10, so of current
+;  sprite (which is a monk), head has already passed. Therefore, get pointer to monk's robe
+4AB5: 7D          ld   a,l
+4AB6: D6 0A       sub  $0A
+4AB8: 6F          ld   l,a
+4AB9: FD 7E 05    ld   a,(iy+$05)	; read current sprite width
+4ABC: 32 30 4B    ld   ($4B30),a	; modify an instruction
+4ABF: CD 24 4D    call $4D24		; de = a*hl
+4AC2: FD 7E 0B    ld   a,(iy+$0b)	; a = monk robe animation
+4AC5: 21 C8 48    ld   hl,$48C8		; point to monk robes table
+4AC8: 87          add  a,a			; each entry is 2 bytes
+4AC9: 85          add  a,l			; hl = hl + a
+4ACA: 6F          ld   l,a
+4ACB: 8C          adc  a,h
+4ACC: 95          sub  l
+4ACD: 67          ld   h,a
+4ACE: 7E          ld   a,(hl)
+4ACF: 23          inc  hl
+4AD0: 66          ld   h,(hl)		; hl = [hl]
+4AD1: 6F          ld   l,a
+4AD2: 19          add  hl,de
+4AD3: 18 10       jr   $4AE5
+
+; calculate line at which to start drawing current sprite (skipping distance between start of current sprite and start of original sprite)
+4AD5: FD 7E 05    ld   a,(iy+$05)	; get current sprite width
+4AD8: 32 30 4B    ld   ($4B30),a	; modify an instruction
+4ADB: CD 24 4D    call $4D24		; de = a*hl
+4ADE: FD 6E 07    ld   l,(iy+$07)	; hl = sprite graphics data address
+4AE1: FD 66 08    ld   h,(iy+$08)
+
+4AE4: 19          add  hl,de		; hl = sprite graphics data address (skipping what doesn't overlap with original sprite area in y)
+4AE5: 3E 00       ld   a,$00		; instruction modified from outside (x distance from start of current sprite to start of original sprite)
+4AE7: 85          add  a,l			; hl = hl + a
+4AE8: 6F          ld   l,a
+4AE9: 8C          adc  a,h
+4AEA: 95          sub  l
+4AEB: 67          ld   h,a
+4AEC: E5          push hl			; save sprite graphics data address (skipping what's not in original sprite area in x and y)
+
+4AED: 21 00 00    ld   hl,$0000		; instruction modified from outside (y distance from start of original sprite to start of current sprite)
+4AF0: 3A D7 2D    ld   a,($2DD7)	; get expanded width of original sprite
+4AF3: 32 54 4B    ld   ($4B54),a	; modify an instruction
+4AF6: CD 24 4D    call $4D24		; de = a*hl
+4AF9: 21 00 95    ld   hl,$9500		; instruction modified from outside with initial sprite buffer position for this sprite
+4AFC: 19          add  hl,de		; hl = sprite buffer address for original sprite (skipping what current sprite can't overwrite in y)
+4AFD: 3E 00       ld   a,$00		; instruction modified from outside (x distance from start of original sprite to start of current sprite)
+4AFF: 85          add  a,l			; de = hl + a
+4B00: 5F          ld   e,a
+4B01: 8C          adc  a,h
+4B02: 93          sub  e
+4B03: 57          ld   d,a			; de = sprite buffer address for original sprite (skipping what current sprite can't overwrite in x and y)
+4B04: E1          pop  hl			; retrieve current sprite graphics data address that can match original sprite's
+
+4B05: 7C          ld   a,h			; if hl == 0 (it's the light sprite), jump
+4B06: B5          or   l
+4B07: CA 60 4B    jp   z,$4B60
+
+4B0A: 0E 00       ld   c,$00		; instruction modified from outside (y distance from start of current sprite to start of original sprite)
+4B0C: D9          exx
+4B0D: 06 00       ld   b,$00		; instruction modified from outside (height to draw of current sprite)
+4B0F: D9          exx
+4B10: 06 00       ld   b,$00		; instruction modified from outside (width to draw of current sprite)
+4B12: D5          push de			; save sprite buffer address
+4B13: E5          push hl			; save graphics data address
+4B14: 7E          ld   a,(hl)		; read a graphics byte
+4B15: A7          and  a
+4B16: 28 12       jr   z,$4B2A		; if 0, skip to next pixel
+4B18: D9          exx
+4B19: 6F          ld   l,a			; l = or mask
+4B1A: 0F          rrca				; a = b3 b2 b1 b0 b7 b6 b5 b4
+4B1B: 0F          rrca
+4B1C: 0F          rrca
+4B1D: 0F          rrca
+4B1E: B5          or   l			; a = b7|b3 b6|b2 b5|b1 b4|b0 b7|b3 b6|b2 b5|b1 b4|b0
+4B1F: 28 06       jr   z,$4B27		; if 0, jump (???, wouldn't it be 0 before too???)
+4B21: 2F          cpl				; 0->1
+4B22: 67          ld   h,a			; h = and mask (sprites use color 0 as transparent)
+4B23: D9          exx
+4B24: 1A          ld   a,(de)		; read a sprite buffer byte
+4B25: D9          exx
+4B26: A4          and  h
+4B27: B5          or   l			; combine read byte
+4B28: D9          exx
+4B29: 12          ld   (de),a		; write byte to sprite buffer after combining it
+4B2A: 13          inc  de			; advance to next x position in sprite buffer
+4B2B: 23          inc  hl			; advance to next x position in graphics
+4B2C: 10 E6       djnz $4B14		; repeat for width
+
+4B2E: E1          pop  hl
+4B2F: 11 00 00    ld   de,$0000		; modified with current sprite width
+4B32: 19          add  hl,de		; move to next sprite line
+4B33: D1          pop  de			; get sprite buffer pointer
+4B34: 0C          inc  c
+4B35: 79          ld   a,c
+4B36: FE 0A       cp   $0A			; if reaches 10, change source graphics data address, since it goes from drawing
+4B38: 20 19       jr   nz,$4B53		;  a monk's head to drawing his robe
+4B3A: FD 7E 0B    ld   a,(iy+$0b)	; if bit 7 is 1, jump (not a monk)
+4B3D: CB 7F       bit  7,a
+4B3F: 20 12       jr   nz,$4B53
+
+4B41: 21 C8 48    ld   hl,$48C8		; point to monk robe positions table
+4B44: 87          add  a,a
+4B45: 85          add  a,l
+4B46: 6F          ld   l,a
+4B47: 8C          adc  a,h
+4B48: 95          sub  l
+4B49: 67          ld   h,a			; hl = hl + a
+4B4A: 7E          ld   a,(hl)
+4B4B: 23          inc  hl
+4B4C: 66          ld   h,(hl)
+4B4D: C6 00       add  a,$00		; instruction modified from outside (x distance from start of current sprite to start of original sprite)
+4B4F: 6F          ld   l,a
+4B50: 8C          adc  a,h
+4B51: 95          sub  l
+4B52: 67          ld   h,a			; modify source graphics data address to point to monk robe animation
+
+4B53: 3E 00       ld   a,$00		; modified from outside (with expanded width of original sprite)
+4B55: 83          add  a,e			; de = de + a (move to next sprite buffer line)
+4B56: 5F          ld   e,a
+4B57: 8A          adc  a,d
+4B58: 93          sub  e
+4B59: 57          ld   d,a
+4B5A: D9          exx
+4B5B: 10 B2       djnz $4B0F		; repeat for height lines
+4B5D: C3 2E 4A    jp   $4A2E		; continue processing rest of stack sprites
+
+; here it arrives if sprite has graphics data pointer = 0 (it's the light sprite)
+4B60: DD E5       push ix
+4B62: 21 E8 48    ld   hl,$48E8		; hl points to light fill pattern table
+4B65: D5          push de
+4B66: D9          exx
+4B67: E1          pop  hl			; get original sprite buffer address
+4B68: 5D          ld   e,l			; de = hl
+4B69: 54          ld   d,h
+4B6A: 01 00 00    ld   bc,$0000		; this is modified from outside with 0x00ef or 0x009f
+4B6D: 36 FF       ld   (hl),$FF
+4B6F: 13          inc  de
+4B70: ED B0       ldir				; fill one tile or tile and a half with black (upper part of light sprite)
+4B72: D5          push de
+4B73: DD E1       pop  ix			; ix points to what's after tile buffer
+4B75: 11 50 00    ld   de,$0050		; de = 80 (half tile offset)
+4B78: D9          exx
+4B79: 06 0F       ld   b,$0F		; 15 times fill with 4x4 blocks
+
+4B7B: DD E5       push ix
+4B7D: 7E          ld   a,(hl)		; read a value from table
+4B7E: D9          exx
+4B7F: 67          ld   h,a
+4B80: D9          exx
+4B81: 23          inc  hl
+4B82: 7E          ld   a,(hl)		; read another value from table
+4B83: 23          inc  hl
+4B84: D9          exx
+4B85: 6F          ld   l,a			; hl = table value
+
+4B86: 3E FF       ld   a,$FF		; black fill
+4B88: 06 00       ld   b,$00		; modified from outside with adso sprite x position within tile
+4B8A: 04          inc  b
+4B8B: 05          dec  b
+4B8C: 28 10       jr   z,$4B9E		; complete the 16 pixel part that extends left according to x position expansion
+4B8E: DD 77 00    ld   (ix+$00),a
+4B91: DD 77 14    ld   (ix+$14),a
+4B94: DD 77 28    ld   (ix+$28),a
+4B97: DD 77 3C    ld   (ix+$3c),a
+4B9A: DD 23       inc  ix
+4B9C: 10 F0       djnz $4B8E		; complete left side fill
+
+; hl contains value read from table
+4B9E: 06 10       ld   b,$10		; 16 bits
+4BA0: 29          add  hl,hl		; 0x00 or 0x29 (if adso graphics are flipped or not)
+4BA1: 29          add  hl,hl
+4BA2: 38 0C       jr   c,$4BB0		; if most significant bit is 1, don't fill 4x4 block with black
+4BA4: DD 77 00    ld   (ix+$00),a	; fill a 4x4 block with black
+4BA7: DD 77 14    ld   (ix+$14),a
+4BAA: DD 77 28    ld   (ix+$28),a
+4BAD: DD 77 3C    ld   (ix+$3c),a
+4BB0: DD 23       inc  ix
+4BB2: 10 ED       djnz $4BA1		; complete 16 bits
+
+4BB4: 06 00       ld   b,$00		; modified from outside with 4 - (adso sprite x position & 0x03)
+4BB6: DD 77 00    ld   (ix+$00),a	; complete the 16 pixel part that extends right according to x position expansion
+4BB9: DD 77 14    ld   (ix+$14),a
+4BBC: DD 77 28    ld   (ix+$28),a
+4BBF: DD 77 3C    ld   (ix+$3c),a
+4BC2: DD 23       inc  ix
+4BC4: 10 F0       djnz $4BB6		; complete right side
+
+4BC6: DD E1       pop  ix
+4BC8: DD 19       add  ix,de		; move to next half tile
+4BCA: D9          exx
+4BCB: 10 AE       djnz $4B7B		; repeat until completing 15 blocks of 4 pixels high
+
+4BCD: DD E5       push ix
+4BCF: E1          pop  hl
+4BD0: 01 00 00    ld   bc,$0000		; this is modified from outside with 0x00ef or 0x009f
+4BD3: 5D          ld   e,l
+4BD4: 54          ld   d,h			; de = hl
+4BD5: 13          inc  de
+4BD6: 36 FF       ld   (hl),$FF		; fill one tile or tile and a half with black (lower part of light sprite)
+4BD8: ED B0       ldir
+4BDA: DD E1       pop  ix
+4BDC: C3 2E 4A    jp   $4A2E		; continue processing rest of stack sprites
+
+; here it arrives once it has processed all sprites that needed redrawing (or if there was no more space in sprite buffer)
+4BDF: DD 21 17 2E ld   ix,$2E17			; ix points to sprites
+4BE3: DD 7E 00    ld   a,(ix+$00)
+4BE6: FE FF       cp   $FF
+4BE8: 28 29       jr   z,$4C13			; when it finds the last one, exit
+4BEA: FE FE       cp   $FE
+4BEC: 28 1D       jr   z,$4C0B			; if inactive, go to next
+4BEE: E6 40       and  $40
+4BF0: 28 19       jr   z,$4C0B			; if bit 6 is not set, go to next
+; here it arrives if current sprite has bit 6 set to 1 (sprite has been processed)
+4BF2: CD 1A 4C    call $4C1A			; dump sprite buffer to screen, clipping what's not visible
+4BF5: DD CB 00 BE res  7,(ix+$00)		; clear bit 6 and 7 of byte 0
+4BF9: DD CB 00 B6 res  6,(ix+$00)
+4BFD: DD CB 05 7E bit  7,(ix+$05)
+4C01: 28 08       jr   z,$4C0B			; if bit 7 of byte 5 is 0, go to next sprite
+4C03: DD CB 05 BE res  7,(ix+$05)		; otherwise, clear it
+4C07: DD 36 00 FE ld   (ix+$00),$FE		; mark sprite as inactive
+4C0B: 01 14 00    ld   bc,$0014			; go to next sprite
+4C0E: DD 09       add  ix,bc
+4C10: C3 E3 4B    jp   $4BE3
+
+4C13: ED 7B 0A 49 ld   sp,($490A)		; retrieve original stack value
+4C17: C3 14 49    jp   $4914			; jump to process remaining objects
+
+; dump sprite buffer to screen

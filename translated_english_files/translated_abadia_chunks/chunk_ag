@@ -1,0 +1,600 @@
+F9 69
+FD
+F9 6A
+FA
+F7 6E 01 6E
+FB
+FA
+FF
+
+; characteristics of material 0x2c
+1AE9: 	16FC		; pointer to the tiles that form the block
+		E9			FlipX();
+		EA 1A9B 	ChangePC(0x1a9b)
+
+; characteristics of material 0x0b
+1AEF: 	16EA 			; pointer to the tiles that form the block
+
+// draws the stairs
+1AF1:
+						// depth x in the grid =  depth x in the grid - (param1*2 + 2);
+F7 70 02 6D 6D 84 70	actualizaRegistro(0x70, -(02 + valorRegistro(0x6d) + valorRegistro(0x6d)) + valorRegistro(0x70));
+
+						// depth y in the grid =  depth y in the grid- (param2*2 + 1);
+F7 71 01 6E 6E 84 71	actualizaRegistro(0x71, -(01 + valorRegistro(0x6e) + valorRegistro(0x6e)) + valorRegistro(0x71));
+
+EF						IncParam2();
+
+FD						while (param2 > 0){
+FC							pushTilePos();
+FC							pushTilePos();
+
+F9 61 80 65					pintaTile(61, decrementaTilePosYyDibujaUnoMas, 65);
+
+FB 							popTilePos();
+F3 							decTilePosX();
+
+FE 							while (param1 > 0){
+FC								pushTilePos();
+F9 62 80 66 80 67				pintaTile(62, decrementaTilePosYyDibujaUnoMas, 66, decrementaTilePosYyDibujaUnoMas, 67);
+FB 								popTilePos();
+
+F4 								decTilePosY();
+F3 								decTilePosX();
+
+								(param1--;)
+FA							}
+
+F9 63 80 68 80 69			pintaTile(63, decrementaTilePosYyDibujaUnoMas, 68, decrementaTilePosYyDibujaUnoMas, 69);
+FB 							popTilePos();
+F4 							decTilePosY();
+F4 							decTilePosY();
+F5 							incTilePosX();
+
+							(param2--;)
+FA 						}
+F3 						decTilePosX();
+
+F0						IncParam1();
+
+FE 						while (param1 > 0){
+F9 64						pintaTile(64, decrementaTilePosY);
+F3          				decTilePosX();
+
+							(param1--;)
+FA						}
+FF
+
+; characteristics of material 0x0c
+1B28: 	16F3		; pointer to the tiles that form the block
+		E9			FlipX();
+		EA F1		ChangePc(0x1af1)
+
+1B2E: 	EB EB EB					; skeleton remains???
+
+; data for the generation of materials
+1B31: 08 76 75 28 29 2B 2D 0A 09 	; solid block of thin brick parallel to the x axis
+1B3A: 08 75 76 2B 2D 28 29 09 0A	; solid block of thin brick parallel to the y axis
+1B43: 04 04 04						; floor of thick blue tiles
+1B46: 01 4E 4D    					; floor of red and blue tiles forming a checkerboard effect
+; floor of blue tiles (the following 3 bytes)
+1B49: 05 4F 59 28 29 2B 2D 0A 09 	; solid block of thin red and black brick, with blue tiles on top, parallel to the y axis
+1B52: 05 59 4F 2B 2D 28 29 09 0A	; solid block of thin red and black brick, with blue tiles on top, parallel to the x axis
+; floor of yellow tiles (the following 3 bytes)
+1B5B: 87 88 CF 28 29 2B 2D 0A 09	; solid block of thin red and black brick, with yellow and black tiles on top, parallel to the x axis
+1B64: 87 CF 88 2B 2D 28 29 09 0A	; solid block of thin red and black brick, with yellow and black tiles on top, parallel to the y axis
+1B6D: FF 45 44 28 29 2B 2D 0A 09	; solid block of thin red and black brick, with blue top, parallel to the y axis (also flat corner delimited with black line and with blue floor)
+1B76: FF 44 45 2B 2D 28 29 09 0A	; solid block of thin red and black brick, with blue top, parallel to the x axis
+1B7F: DB DA D4 D7 DD D8 DC D9 E2	; white table parallel to the y axis
+1B88: DB D4 DA D8 DC D7 DD E2 D9    ; white table parallel to the x axis	(also the work table)
+
+; characteristics of material 0x58
+1B91: 1B2E			; pointer to the tiles that form the block
+		EA 1BCF		ChangePc(0x1bcf)
+
+; characteristics of material 0x49
+1B96: 1B6D			; pointer to the tiles that form the block
+EA 1BCF				ChangePc(0x1bcf)
+
+; characteristics of material 0x1c
+1B9B: 	1B31		; pointer to the tiles that form the block
+		EA 1BCF		; ChangePC(0x1bcf);
+
+; characteristics of material 0x0d
+1BA0: 	1B43		; pointer to the tiles that form the block
+		EA 1BCF		; ChangePC(0x1bcf);
+
+; characteristics of material 0x0e
+1BA5: 	1B46		; pointer to the tiles that form the block
+		EA 1BCF		; ChangePC(0x1bcf);
+
+; characteristics of material 0x0f
+1BAA: 	1B49		; pointer to the tiles that form the block
+		EA 1BCF		; ChangePC(0x1bcf);
+
+; characteristics of material 0x10
+1BAF: 	1B5B		; pointer to the tiles that form the block
+		EA 1BCF		; ChangePC(0x1bcf);
+
+; characteristics of material 0x4e
+1BB4: 	1B88		; pointer to the tiles that form the block
+		EA 1BCF		; ChangePC(0x1bcf);
+
+; initiates the evaluation of the current block, but without modifying the tiles that form the block
+1BB9: C5          push bc
+1BBA: 18 0C       jr   $1BC8
+
+; initiates the buffer for the construction of the current block and evaluates the construction parameters of the block
+; a = 0xff if the entry is 3 bytes or the height otherwise
+; h = initial position of the block in y (tile buffer coordinate system)
+; l = initial position of the block in x (tile buffer coordinate system)
+; b = length of the element in y
+; c = length of the element in x
+; de = pointer to the tiles that form the block
+; sp = pointer to the construction data of the block
+1BBC: C5          push bc		; preserves the read parameters
+1BBD: E5          push hl
+1BBE: EB          ex   de,hl	; hl = pointer to the tiles that form the block
+1BBF: 11 CF 1F    ld   de,$1FCF	; de = destination buffer
+1BC2: 01 0C 00    ld   bc,$000C
+1BC5: ED B0       ldir			; copies the data of the tiles that form the block
+1BC7: E1          pop  hl
+1BC8: CD B8 1F    call $1FB8	; if the entry is 4 bytes, transforms the block position to grid coordinates
+1BCB: C1          pop  bc
+1BCC: C3 18 20    jp   $2018	; jumps to the block generator
+
+// draws a type of floor
+1BCF:
+
+F7 70 02 6E 6E 84 70 	UpdateReg(0x70, -(2 + 2*Param2) + reg(0x70));
+F7 71 03 6D 6D 84 71  	UpdateReg(0x71, -(3 + 2*Param1) + reg(0x71));
+
+ 						// at minimum paint tiles of 1x1
+E0 						IncParam1();
+EF 						IncParam2();
+
+						// parameter 2 indicates the number of rows to paint
+FD 						while (param2 > 0){
+							// saves the initial position
+FC 							PushTilePos();
+
+							// parameter 1 indicates the number of columns to paint
+FE 							while (param1 > 0){
+								// paint 2 rows with X-shaped tile
+F9 61 80 61 					DrawTileDecY(0x61, 0x80, 0x61);
+F5 								IncTilePosX();
+F6								IncTilePosY();
+
+FA 			 				(param1--;)
+							}
+
+							// draws a border next to the last painted column
+F9 61 80 62					DrawTileDecY(0x61, 0x80, 0x62);
+
+							// updates the position to draw the next block
+FB							PopTilePos();
+F4							DecTilePosY();
+F3							DecTilePosX();
+
+FA							(param2--;)
+						}
+F5 						IncTilePosX();
+F4 						DecTilePosY();
+
+						// draws the other border next to the first painted column
+FE 						while (param1 > 0){
+F9 63 						DrawTileDecY(0x63);
+F5							IncTilePosX();
+
+FA		 					(param1--;)
+						}
+FF
+
+; data for the generation of materials
+1BF9: D8 95 94 EA D0 DC DB 96 D7 DD DA		; bed
+1C04: A7 A5 A3 A1 9F 9D A6 A4 A2 A0 9E 00	; large blue and yellow windows parallel to the y axis
+1C10: 93 91 8F 8D 8B 89 92 90 8E 8C 8A 00	; large blue and yellow windows parallel to the x axis
+1C1C: 5F CB CD CA 46 						; candelabra with 2 candles parallel to the x axis
+1C21: 5F CB CD CA 46 						; candelabra with 2 candles parallel to the x axis (2)
+1C26: 5F CE CD CC 60						; candelabra with 2 candles parallel to the y axis
+1C2B: 6D CE CD CC 60						; candelabra with wall support and with 2 candles parallel to the y axis
+1C30: D6 D5 AB								; yellow rivet with support parallel to the y axis
+1C33: D2 D1 A8  							; yellow rivet with support parallel to the x axis
+1C36: 28 09 6E 6F 72 71 70 2B 0A 			; rounded hole to pass through with thin red and black bricks parallel to the x axis
+1C3F: 2B 0A 5A 5B 5E 5D 5C 28 09 			; rounded hole to pass through with thin red and black bricks parallel to the y axis
+1C48: C4 C3 C2 C0 C1 BF 9B BC BD BE			; block of arches that pass through pairs of columns parallel to the y axis
+1C52: F6 F5 F4 F2 F3 F1 9B EE EF F0			; block of arches that pass through pairs of columns parallel to the X axis
+1C5C: E3 									; plate
+1C5D: 9C 									; skull
+1C5E: 0D 0C 0B 								; cauldron
+1C61: 31 0F 0E								; bottles with handle
+1C64: 67 48 76 08 75 66 68 65 3B 64			; bench to sit on parallel to the y axis
+1C6E: 41 47 75 08 76 40 38 20 42 1F			; bench to sit on parallel to the x axis
+1C78: AA AB AB AA							; double yellow rivet on the brick parallel to the y axis
+1C7C: A9 A8 A8 A9							; double yellow rivet on the brick parallel to the x axis
+1C80: 3F 3E 3D 3C 3A 39 					; bookshelves parallel to the y axis
+
+; characteristics of material 0x33
+1C86: 1C30			; pointer to the tiles that form the block
+
+EC 1CA6		Call(0x1ca6);
+F7 6E 6D
+F7 6D 01
+F3
+EC 1EE3		Call(0x1ee3);
+FF
+
+; characteristics of material 0x34
+1C96: 1C78        ; pointer to the tiles that form the block
+EC 1CAF
+F7
+6E
+6D
+F7
+6D
+00
+F3
+EC 64 1F
+FF
+
+; characteristics of auxiliary material called from material 0x33
+1CA6: 1C30			; pointer to the tiles that form the block
+F7
+6D
+01 EC DE
+1E FF
+
+; characteristics of auxiliary material called from material 0x34
+1CAF: 1C78			; pointer to the tiles that form the block
+F7
+6D
+00
+EC 5F 1F
+FF
+
+; characteristics of material 0x11
+1CB8: 	1C48	; pointer to the tiles that form the block
+
+1CBA:
+F7 70 01 70		actualizaRegistro(0x70, 1 + valorRegistro(0x70));
+F7 71 01 71     actualizaRegistro(0x70, 1 + valorRegistro(0x71));
+
+F0				IncParam1();
+
+FE 				while (param1 > 0){
+F7 71 08 84 71		actualizaRegistro(0x71, -8 + valorRegistro(0x71));
+F9 67 80 82 FB 80 82 C8 80 82 C5 80 82 C6 80 82 C7	pintaTile(67, decrementaTilePosYyDibujaUnoMas, FB, decrementaTilePosYyDibujaUnoMas, C8, decrementaTilePosYyDibujaUnoMas, C5, decrementaTilePosYyDibujaUnoMas, C6, decrementaTilePosYyDibujaUnoMas, C7);
+
+1CDA:
+F5					IncTilePosX();
+F6 					IncTilePosY();
+F6					IncTilePosY();
+F6 					IncTilePosY();
+F9 61 80 62 80 63 80 64	pintaTile(61, decrementaTilePosYyDibujaUnoMas, 62, decrementaTilePosYyDibujaUnoMas, 63, decrementaTilePosYyDibujaUnoMas, 64);
+F5					IncTilePosX();
+F6 					IncTilePosY();
+F6					IncTilePosY();
+F9 65 80 66			pintaTile(65, decrementaTilePosYyDibujaUnoMas, 66);
+F5					IncTilePosX();
+F2 04 				UpdateTilePosY(4);
+F9 67 80 68 80 69 80 6A pintaTile(67, decrementaTilePosYyDibujaUnoMas, 68, decrementaTilePosYyDibujaUnoMas, 69, decrementaTilePosYyDibujaUnoMas, 6a);
+F5					IncTilePosX();
+F2 03 				UpdateTilePosY(3);
+
+					(param1--;)
+FA				}
+FF
+
+; characteristics of material 0x12
+1CFD: 	1C52		; pointer to the tiles that form the block
+		E9			; FlipX();
+F7 70 01 70 		actualizaRegistro(0x70, 1 + valorRegistro(0x70));
+F7 71 01 71 		actualizaRegistro(0x71, 1 + valorRegistro(0x71));
+
+F0 					IncParam1();
+
+FE 					while (param1 > 0){
+F7 71 08 84 71			actualizaRegistro(0x71, -8 + valorRegistro(0x71));
+F9 67 80 82 FB 80 82 F7 80 82 F8 80 82 F9 80 82 FA pintaTile(67, decrementaTilePosYyDibujaUnoMas, FB, decrementaTilePosYyDibujaUnoMas, F7, decrementaTilePosYyDibujaUnoMas, F8, decrementaTilePosYyDibujaUnoMas, F9, decrementaTilePosYyDibujaUnoMas, FA);
+
+EA 1CDA					ChangePC(0x1cda);
+
+; characteristics of material 0x13
+1D23: 	1C48		; pointer to the tiles that form the block
+
+1D25:
+FC				pushTilePos();
+
+F2 05 84		updateTilePosY(-5);
+F7 6F 0A 6F		actualizaRegistro(0x6f, 0x0a + valorRegistro(0x6f));
+EC 1CB8			call(0x1cb8);
+
+1D30:
+F7 6F 0A 84 6F	actualizaRegistro(0x6f, -0x0a + valorRegistro(0x6f));
+
+FB				popTilePos();
+F0				IncParam1();
+
+FE 				while (param1 > 0){
+EC 1D59				call(0x1d59)
+F4 					decTilePosY();
+F4 					decTilePosY();
+F4 					decTilePosY();
+F5 					incTilePosX();
+F5 					incTilePosX();
+F5 					incTilePosX();
+EC 1D59				call(0x1d59)
+F4 					decTilePosY();
+F5 					incTilePosX();
+
+					(param1--;)
+FA				}
+FF
+
+; characteristics of material 0x14
+1D48: 	1C52		; pointer to the tiles that form the block
+
+1D4A:
+FC 				pushTilePos();
+F2 05 84		updateTilePosY(-5);
+F7 6F 0A 6F		actualizaRegistro(0x6f, 0A + valorRegistro(0x6f));
+EC 1CFD			call(0x1cfd);
+E9				FlipX();
+EA 1D30			ChangePC(0x1d30);
+
+1D59: 16CA			; pointer to the tiles that form the block
+
+1D61:
+F7 71 01 84 71					actualizaRegistro(0x71, -01 + valorRegistro(0x71));
+F9 61 80 62 80 62 80 62 80 63	pintaTile(61, decrementaTilePosYyDibujaUnoMas, 62, decrementaTilePosYyDibujaUnoMas, 62, decrementaTilePosYyDibujaUnoMas, 62, decrementaTilePosYyDibujaUnoMas, 63);
+FF
+
+; characteristics of material 0x46
+1D6B: 1C64          ; pointer to the tiles that form the block
+F6
+F5
+FC
+F9 61 80 62 80 63
+FB
+F3
+F6
+FE
+FC
+F9 61 80 62 80 64 80 65
+FB
+F3
+F6
+FA
+FC
+F9 66 80 67 80 64 80 65
+FB
+F3
+F9 6A 80 68 80 69
+FF
+
+; characteristics of material 0x45
+1D99: 1C6E			; pointer to the tiles that form the block
+	E9          	FlipX();
+	EA 1D6D			ChangePc(0x1d6d);
+
+; characteristics of material 0x4a
+1D9F: 16DE			; pointer to the tiles that form the block
+E9
+F6
+F5
+FC
+F9 61 80 62 80 63 80 64
+FB
+F3
+F6
+FE
+FC
+F9 61 80 62 80 82 43 80 66 80 67
+FB
+F3
+F6
+FA
+FC
+F9 68 80 69 80 82 18 80 66 80 67
+FB
+F3
+F9 6A 80 6B 80 6C 80 65
+FF
+
+; characteristics of material 0x4b
+1DD8: 1C5C			; pointer to the tiles that form the block
+1DDA: EA 1DDF		ChangePC(0x1ddf);
+
+; characteristics of material 0x57
+1DDD: 1C5D			; pointer to the tiles that form the block
+1DDF:
+FC 					pushTilePos();
+F5 					IncTilePosX();
+F4     		 		IncTilePosY();
+E4 1DEF 			CallPreserve(0x1def);
+FB         			popTilePos();
+E9					FlipX();
+F7 6D 6E 01			actualizaRegistro(0x6d, valorRegistro(0x6e) + 01);
+E4 1DEF				CallPreserve(0x1def);
+FF
+
+; characteristics of auxiliary material called from material 0x57
+1DEF: 1C5C			; pointer to the tiles that form the block
+FE
+F9 61
+F7 71 02 84 71
+F5
+FA
+FF
+
+; characteristics of material 0x4c
+1DFC: 1C61			; pointer to the tiles that form the block
+1DFE: EA 1975     	ChangePc(0x1975);
+
+; characteristics of material 0x5b
+1E01: 1695			; pointer to the tiles that form the block
+	EA 1E08			ChangePc(0x1e08);
+
+; characteristics of material 0x4d
+1E06: 1C5E			; pointer to the tiles that form the block
+1E08:
+F9 61 80 62 80 63
+FF
+
+; characteristics of material 0x1d
+1E0F: 	1C80	; pointer to the tiles that form the block
+1E01:
+E9
+F0
+EF
+FC
+F9 61
+FE
+F9 62 80 63 80 61
+FA
+FB
+F6
+F5
+FD
+FC
+F9 64
+FE
+F9 65 80 66 80 64
+FA
+FB
+F6
+F5
+FA
+FF
+
+; characteristics of material 0x1e
+1E33: 	1BF9	; pointer to the tiles that form the block
+F7 71 04 84 71
+F7 70 01 84 70
+FC
+F9 69 80 6A 80 6B
+FB
+F5
+FC
+F9 61 80 66 80 67 80 68
+FB
+F5
+F4
+F9 61 80 62 80 63 80 64 80 65
+FF
+
+; characteristics of material 0x1f
+1E5F: 1C04		; pointer to the tiles that form the block
+1E61:
+F7 70 01 84 70
+F7 71 03 6D 6D 6D 6D 84 71
+F0
+EF
+FD
+FC
+FE
+FC
+F9 61 80 62 80 62 80 63 80 64 80 65 80 66
+FB
+F5
+F4
+FC
+F9 67 80 68 80 68 80 69 80 6A 80 6B
+FB
+F5
+F4
+FA
+FB
+F2 07 84
+FA
+FF
+
+; characteristics of material 0x20
+1E9D: 1C10		; pointer to the tiles that form the block
+	  E9		FlipX();
+	  EA 1E61	ChangePC(0x1e61);
+
+; characteristics of material 0x2c
+1EA3: 1C26		; pointer to the tiles that form the block
+1EA5:
+F7 71 01 6D 6D 84 71
+F0
+EF
+FD
+FC
+FE
+FC
+F9 61 80 62 80 63 80 64 80 65
+FB
+F5
+F4
+FA
+FB
+F2 05 84
+FA
+FF
+
+; characteristics of material 0x3b
+1EC6: 	1C21		; pointer to the tiles that form the block
+1EC8: 	E9          FlipX();
+		EA 1EA5		ChangePc(0x1ea5);
+
+; characteristics of material 0x21
+1ECC: 	1C1C 		; pointer to the tiles that form the block
+		EA 1EC8		ChangePc(0x1ec8);
+
+; characteristics of material 0x3d
+1ED1: 	1C2B   		; pointer to the tiles that form the block
+		EA 1EA5		ChangePc(0x1ea5);
+
+; characteristics of material 0x22
+1ED6: 	1C2B		; pointer to the tiles that form the block
+FF
+
+; characteristics of material 0x5d
+1ED9: 	169C    	; pointer to the tiles that form the block
+		EA 1975		ChangePc(0x1975);
+
+; characteristics of material 0x23
+1EDE: 	1C30		; pointer to the tiles that form the block
+		EA 1975		ChangePc(0x1975);
+
+; characteristics of material 0x25
+1EE3: 	1C33		; pointer to the tiles that form the block
+1EE5: 	EA 198C		ChangePc(0x198c);
+
+; characteristics of material 0x32
+1EE8: 	1C3F		; pointer to the tiles that form the block
+1EEA:
+F7 71 01 71
+F0
+F7 70 01 70
+FE
+FC
+F5
+F4
+F4
+E4 1F20			CallPreserve(0x1f20);
+FB
+F7 71 04 84 71
+F9 65 80 66 80 66 80 66 80 66 80 67 80 64
+F5
+F6
+F9 63 80 69
+F5
+F2 06
+FA
+FF
+
+; characteristics of material 0x27
+1F1A: 	1C36		; pointer to the tiles that form the block
+1F1C:
+		E9			FlipX();
+		EA 1EEA		ChangePc(0x1eea);
+
+; characteristics of auxiliary material called from material 0x32
+1F20: 1C3F          ; pointer to the tiles that form the block
+F7
+6D
+04
+F7
