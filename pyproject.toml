@@ -8,12 +8,10 @@ version = "0.1.0"
 description = "Tools and disassembly analysis for Abadía del Crimen"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {file = "LICENSE"}
-authors = [
-  {name = "Your Name", email = "your.email@example.com"},
-]
 dependencies = [
-    "click",  # Example dependency for CLI tools
+    "Pillow>=10.0.0",  # Image processing for sprite/tile extraction
+    "click>=8.0.0",    # CLI framework
+    "numpy>=1.24.0",   # Array operations
 ]
 
 [project.optional-dependencies]

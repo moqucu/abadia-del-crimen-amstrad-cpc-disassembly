@@ -16,56 +16,12 @@ The tile data is located in the .asm file at addresses 8300-A2FF (8192 bytes).
 import re
 import os
 from PIL import Image
+from abadia.cpc_palette import CpcPalette
 
-# Amstrad CPC hardware colors (27 colors, indexed 0-26)
-# Each color is defined by its RGB values
-CPC_HARDWARE_COLORS = [
-    (0x00, 0x00, 0x00),  # 0x00: Black
-    (0x00, 0x00, 0x80),  # 0x01: Blue
-    (0x00, 0x00, 0xFF),  # 0x02: Bright Blue
-    (0x80, 0x00, 0x00),  # 0x03: Red
-    (0x80, 0x00, 0x80),  # 0x04: Magenta
-    (0x80, 0x00, 0xFF),  # 0x05: Mauve
-    (0xFF, 0x00, 0x00),  # 0x06: Bright Red
-    (0xFF, 0x00, 0x80),  # 0x07: Purple
-    (0xFF, 0x00, 0xFF),  # 0x08: Bright Magenta
-    (0x00, 0x80, 0x00),  # 0x09: Green
-    (0x00, 0x80, 0x80),  # 0x0A: Cyan
-    (0x00, 0x80, 0xFF),  # 0x0B: Sky Blue
-    (0x80, 0x80, 0x00),  # 0x0C: Yellow
-    (0x80, 0x80, 0x80),  # 0x0D: White (Gray)
-    (0x80, 0x80, 0xFF),  # 0x0E: Pastel Blue
-    (0xFF, 0x80, 0x00),  # 0x0F: Orange
-    (0xFF, 0x80, 0x80),  # 0x10: Pink
-    (0xFF, 0x80, 0xFF),  # 0x11: Pastel Magenta
-    (0x00, 0xFF, 0x00),  # 0x12: Bright Green
-    (0x00, 0xFF, 0x80),  # 0x13: Sea Green
-    (0x00, 0xFF, 0xFF),  # 0x14: Bright Cyan
-    (0x80, 0xFF, 0x00),  # 0x15: Lime
-    (0x80, 0xFF, 0x80),  # 0x16: Pastel Green
-    (0x80, 0xFF, 0xFF),  # 0x17: Pastel Cyan
-    (0xFF, 0xFF, 0x00),  # 0x18: Bright Yellow
-    (0xFF, 0xFF, 0x80),  # 0x19: Pastel Yellow
-    (0xFF, 0xFF, 0xFF),  # 0x1A: Bright White
-]
-
-# Game palettes - only 2 palettes used: day and night
-# Colors matched from actual CPC game screenshots
-# Each palette defines 4 pens (pen 0-3) using CPC hardware color indices
-GAME_PALETTES = {
-    'day': {
-        'pen0': 0x00,  # Black (outlines, text)
-        'pen1': 0x14,  # Bright Cyan (floor/background)
-        'pen2': 0x0C,  # Yellow (appears orange on CPC - walls, bricks)
-        'pen3': 0x1A,  # Bright White (highlights)
-    },
-    'night': {
-        'pen0': 0x00,  # Black (outlines, text)
-        'pen1': 0x02,  # Bright Blue (floor/background)
-        'pen2': 0x08,  # Bright Magenta (walls, structures)
-        'pen3': 0x11,  # Pastel Magenta (highlights)
-    },
-}
+# Default paths
+DEFAULT_ASM_FILE = "translated_english_files/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
+DEFAULT_OUTPUT_DIR = "src/abadia/resources/tiles"
+DEFAULT_SHEET_PATH = "src/abadia/resources/abbey_tiles_spritesheet.png"
 
 def get_palette_colors(palette_name='day'):
     """
@@ -77,19 +33,8 @@ def get_palette_colors(palette_name='day'):
     Returns:
         List of 4 RGB tuples for pens 0-3
     """
-    palette = GAME_PALETTES.get(palette_name, GAME_PALETTES['day'])
-
-    # Convert hardware color indices to RGB
-    rgb_palette = []
-    for pen_num in range(4):
-        hw_color = palette[f'pen{pen_num}']
-        if hw_color < len(CPC_HARDWARE_COLORS):
-            rgb_palette.append(CPC_HARDWARE_COLORS[hw_color])
-        else:
-            # Fallback to black if invalid
-            rgb_palette.append((0x00, 0x00, 0x00))
-
-    return rgb_palette
+    # Use the 'visual' mode to match actual gameplay screenshots
+    return CpcPalette.get_palette_for_rendering(palette_name)
 
 def decode_cpc_mode1_byte(byte_val):
     """
@@ -281,28 +226,26 @@ def create_tile_sheet(asm_path, output_base_path, tiles_per_row=16):
 if __name__ == "__main__":
     import sys
 
-    # Check if the .asm file exists in current directory
-    asm_file = "abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
+    # Use default paths or environment overrides
+    asm_file = DEFAULT_ASM_FILE
+    output_dir = DEFAULT_OUTPUT_DIR
+    sheet_path = DEFAULT_SHEET_PATH
 
     if not os.path.exists(asm_file):
-        print(f"Error: {asm_file} not found in current directory")
-        print("\nUsage:")
-        print("  1. Ensure the disassembled .asm file is in the same directory as this script")
-        print("  2. Run: python3 extract_tiles.py")
-        print("\nThe script will extract tile graphics from addresses 8300-A2FF in the .asm file")
+        print(f"Error: {asm_file} not found")
         sys.exit(1)
 
     # Extract individual tiles
     print("=" * 60)
-    print("Extracting individual tiles from .asm file...")
+    print(f"Extracting individual tiles from {asm_file}...")
     print("=" * 60)
-    extract_all_tiles(asm_file, "tiles")
+    extract_all_tiles(asm_file, output_dir)
 
     # Create sprite sheets
     print("\n" + "=" * 60)
     print("Creating sprite sheets...")
     print("=" * 60)
-    create_tile_sheet(asm_file, "abbey_tiles_spritesheet.png", tiles_per_row=16)
+    create_tile_sheet(asm_file, sheet_path, tiles_per_row=16)
 
     print("\n" + "=" * 60)
     print("DONE!")
