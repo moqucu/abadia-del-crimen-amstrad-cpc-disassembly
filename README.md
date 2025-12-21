@@ -14,16 +14,19 @@ Python tools for reverse engineering and asset extraction:
 - **`visualize_palette.py`**: Utility to visualize the Amstrad CPC color palette.
 
 ### 📚 Documentation (`docs/`)
-Analysis reports and visual assets:
-- **`game_code_analysis.md`**: High-level analysis of the game's code structure.
+Comprehensive analysis of the game's internal systems:
+- **`game_code_analysis.md`**: The central hub and high-level overview of the codebase.
+- **`MEMORY_BANK_ANALYSIS.md`**: Details on memory banking (`abadia*.bin` files) and the "Windowing" technique.
+- **`GRAPHICS_ENGINE.md`**: Deep dive into the tile-based isometric engine, blocks, and rendering.
+- **`AI_PATHFINDING.md`**: Analysis of the Height Buffer, collision detection, and NPC navigation.
+- **`SCRIPTING_SYSTEM.md`**: Documentation of the custom bytecode interpreter (`RST 08h`/`10h`) used for game events.
 - **`SPRITE_*.md`**: Details on sprite formats and extraction results.
-- **`BLOCK_EXTRACTION_SUMMARY.md`**: Summary of block logic extraction.
-- **Screenshots**: Visual references (Day/Night modes, Palette).
 
 ### 📂 Disassembly Data
 - **`translated_english_files/`**: English translations of the assembly code and memory maps.
     - Includes `translated_abadia_chunks/` containing modularized code segments.
 - **`original_spanish_files/`**: The original Spanish assembly source and text files.
+- **`pirated_spanish_CPC_game_files/`**: The binary files (`abadia*.bin`) extracted from the "pirate" disk version, used as the reference for memory banking.
 
 ### ⚙️ Configuration
 - **`pyproject.toml`**: Project build and dependency configuration.
