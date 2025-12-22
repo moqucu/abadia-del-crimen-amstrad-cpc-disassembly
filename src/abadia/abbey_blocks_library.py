@@ -1,1960 +1,490 @@
-#!/usr/bin/env python3
 """
-Complete Library of 96 Building Block Functions for "La Abadía del Crimen"
+Abbey Blocks Library
 
-Auto-generated from the game's .asm file.
-Each function represents one of the 96 architectural building blocks.
-
-These blocks are NOT bitmaps - they are small programs (bytecode scripts)
-that tell the game engine how to compose base tiles into larger structures.
+Auto-generated from disassembled code.
+Contains the 96 building block scripts used by the game engine.
 """
 
-# This would import the canvas and tiles from abbey_architect.py
-# from abbey_architect import AbbeyCanvas, AbbeyTiles
-
-
-def block_00_nullempty_block(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x00 - (null/empty block)
-    Address: 0x0000
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x0000:
-    # (No script data extracted - may need manual implementation)
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_01_thin_black_brick_parallel_to_y(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x01 - Thin black brick parallel to y
-    Address: 0x1973
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1973:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-    # FB          					popTilePos();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_02_thin_red_brick_parallel_to_x(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x02 - Thin red brick parallel to x
-    Address: 0x196E
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x196E:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-    # FB          					popTilePos();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_03_thick_black_brick_parallel_to_y(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x03 - Thick black brick parallel to y
-    Address: 0x193C
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x193C:
-    # EF          				IncParam2();
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_04_thick_red_brick_parallel_to_x(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x04 - Thick red brick parallel to x
-    Address: 0x1941
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1941:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_05_small_windows_block_slightly_rounded_and(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x05 - Small windows block, slightly rounded and black parallel to y axis
-    Address: 0x1946
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1946:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_06_small_windows_block_slightly_rounded_and(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x06 - Small windows block, slightly rounded and red parallel to x axis
-    Address: 0x194B
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x194B:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_07_red_railing_parallel_to_y_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x07 - Red railing parallel to y axis
-    Address: 0x1950
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1950:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-    # FB          					popTilePos();
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_08_red_railing_parallel_to_x_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x08 - Red railing parallel to x axis
-    Address: 0x1955
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1955:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-    # FB          					popTilePos();
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_09_white_column_parallel_to_y_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x09 - White column parallel to y axis
-    Address: 0x195A
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x195A:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-    # FB          					popTilePos();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_0_white_column_parallel_to_x_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x0A - White column parallel to x axis
-    Address: 0x1969
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1969:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-    # FB          					popTilePos();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_0_stairs_with_black_brick_on_the_edge_para(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x0B - Stairs with black brick on the edge parallel to y axis
-    Address: 0x1AEF
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1AEF:
-    # EF						IncParam2();
-    # FD						while (param2 > 0){
-    # FC							pushTilePos();
-    # FC							pushTilePos();
-    # FB 							popTilePos();
-    # FE 							while (param1 > 0){
-    # FC								pushTilePos();
-    # FB 								popTilePos();
-    # FB 							popTilePos();
-    # F0						IncParam1();
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_0_stairs_with_red_brick_on_the_edge_parall(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x0C - Stairs with red brick on the edge parallel to x axis
-    Address: 0x1B28
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1B28:
-    # E9			FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_0_floor_of_thick_blue_tiles(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x0D - Floor of thick blue tiles
-    Address: 0x1BA0
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1BA0:
-    # E0 						IncParam1();
-    # EF 						IncParam2();
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_0_floor_of_red_and_blue_tiles_forming_a_ch(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x0E - Floor of red and blue tiles forming a checkerboard effect
-    Address: 0x1BA5
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1BA5:
-    # E0 						IncParam1();
-    # EF 						IncParam2();
-    # FD 						while (param2 > 0){
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_0_floor_of_blue_tiles(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x0F - Floor of blue tiles
-    Address: 0x1BAA
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1BAA:
-    # E0 						IncParam1();
-    # EF 						IncParam2();
-    # FD 						while (param2 > 0){
-    # FE 							while (param1 > 0){
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_10_floor_of_yellow_tiles(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x10 - Floor of yellow tiles
-    Address: 0x1BAF
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1BAF:
-    # E0 						IncParam1();
-    # EF 						IncParam2();
-    # FD 						while (param2 > 0){
-    # FE 							while (param1 > 0){
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_11_block_of_arches_passing_through_pairs_of(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x11 - Block of arches passing through pairs of columns parallel to y axis
-    Address: 0x1CB8
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1CB8:
-    # F0				IncParam1();
-    # FE 				while (param1 > 0){
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_12_block_of_arches_passing_through_pairs_of(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x12 - Block of arches passing through pairs of columns parallel to x axis
-    Address: 0x1CFD
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1CFD:
-    # E9			; FlipX();
-    # F0 					IncParam1();
-    # FE 					while (param1 > 0){
-    # FC				pushTilePos();
-    # FB				popTilePos();
-    # F0				IncParam1();
-    # FE 				while (param1 > 0){
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_13_block_of_arches_with_columns_parallel_to(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x13 - Block of arches with columns parallel to y axis
-    Address: 0x1D23
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1D23:
-    # FC				pushTilePos();
-    # FB				popTilePos();
-    # F0				IncParam1();
-    # FE 				while (param1 > 0){
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_14_block_of_arches_with_columns_parallel_to(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x14 - Block of arches with columns parallel to x axis
-    Address: 0x1D48
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1D48:
-    # FC 				pushTilePos();
-    # E9				FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_15_double_yellow_rivet_on_the_brick_paralle(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x15 - Double yellow rivet on the brick parallel to y axis
-    Address: 0x1F5F
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F5F:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_16_double_yellow_rivet_on_the_brick_paralle(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x16 - Double yellow rivet on the brick parallel to x axis
-    Address: 0x1F64
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F64:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_17_solid_block_of_thin_brick_parallel_to_x_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x17 - Solid block of thin brick parallel to x axis
-    Address: 0x17FE
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17FE:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_18_solid_block_of_thin_brick_parallel_to_y_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x18 - Solid block of thin brick parallel to y axis
-    Address: 0x18A6
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x18A6:
-    # 18AD: E9          	FlipX();
-    # 18AE: EA 1805 		ChangePC(0x1805);
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_19_white_table_parallel_to_x_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x19 - White table parallel to x axis
-    Address: 0x17F9
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17F9:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_1_white_table_parallel_to_y_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x1A - White table parallel to y axis
-    Address: 0x18A1
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x18A1:
-    # 18AD: E9          	FlipX();
-    # 18AE: EA 1805 		ChangePC(0x1805);
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_1_small_discharge_pillar_placed_next_to_a_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x1B - Small discharge pillar placed next to a wall on x axis
-    Address: 0x1932
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1932:
-    # (No script data extracted - may need manual implementation)
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_1_red_and_black_terrain_area(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x1C - Red and black terrain area
-    Address: 0x1B9B
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1B9B:
-    # (No script data extracted - may need manual implementation)
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_1_bookshelves_parallel_to_y_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x1D - Bookshelves parallel to y axis
-    Address: 0x1E0F
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1E0F:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_1_bed(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x1E - Bed
-    Address: 0x1E33
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1E33:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_1_large_blue_and_yellow_windows_parallel_t(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x1F - Large blue and yellow windows parallel to y axis
-    Address: 0x1E5F
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1E5F:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_20_large_blue_and_yellow_windows_parallel_t(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x20 - Large blue and yellow windows parallel to x axis
-    Address: 0x1E9D
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1E9D:
-    # E9		FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_21_candelabras_with_2_candles_parallel_to_x(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x21 - Candelabras with 2 candles parallel to x axis
-    Address: 0x1ECC
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1ECC:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_22_no_opempty(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x22 - (no-op/empty)
-    Address: 0x1ED6
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1ED6:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_23_yellow_rivet_with_support_parallel_to_y_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x23 - Yellow rivet with support parallel to y axis
-    Address: 0x1EDE
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1EDE:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_24_red_railing_corner(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x24 - Red railing corner
-    Address: 0x18DA
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x18DA:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_25_yellow_rivet_with_support_parallel_to_x_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x25 - Yellow rivet with support parallel to x axis
-    Address: 0x1EE3
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1EE3:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_26_red_railing_corner_variant_2(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x26 - Red railing corner (variant 2)
-    Address: 0x18EF
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x18EF:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_27_rounded_passage_hole_with_thin_red_and_b(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x27 - Rounded passage hole with thin red and black bricks parallel to x axis
-    Address: 0x1F1A
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F1A:
-    # E9			FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_28_small_windows_block_rectangular_and_blac(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x28 - Small windows block, rectangular and black parallel to y axis
-    Address: 0x192D
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x192D:
-    # (No script data extracted - may need manual implementation)
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_29_small_windows_block_rectangular_and_red_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x29 - Small windows block, rectangular and red parallel to x axis
-    Address: 0x1928
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1928:
-    # (No script data extracted - may need manual implementation)
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_2_1_bottle_and_a_jar(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x2A - 1 bottle and a jar
-    Address: 0x191E
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x191E:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_2_no_opempty(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x2B - (no-op/empty)
-    Address: 0x1925
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1925:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_2_stairs_with_black_brick_on_the_edge_para(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x2C - Stairs with black brick on the edge parallel to y axis (variant 2)
-    Address: 0x1AE9
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1AE9:
-    # E9			FlipX();
-    # EF						IncParam2();
-    # FD						while (param2 > 0){
-    # FC							pushTilePos();
-    # FC							pushTilePos();
-    # FB 							popTilePos();
-    # FE 							while (param1 > 0){
-    # FC								pushTilePos();
-    # FB 								popTilePos();
-    # FB 							popTilePos();
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_2_stairs_with_red_brick_on_the_edge_parall(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x2D - Stairs with red brick on the edge parallel to x axis (variant 2)
-    Address: 0x1A99
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1A99:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_2_rectangular_passage_hole_with_thin_black(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x2E - Rectangular passage hole with thin black bricks parallel to y axis
-    Address: 0x1726
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1726:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_2_rectangular_passage_hole_with_thin_red_b(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x2F - Rectangular passage hole with thin red bricks parallel to x axis
-    Address: 0x177C
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x177C:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_30_thin_black_and_red_brick_corner(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x30 - Thin black and red brick corner
-    Address: 0x17A4
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17A4:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_31_thick_black_and_red_brick_corner(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x31 - Thick black and red brick corner
-    Address: 0x17AE
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17AE:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_32_rounded_passage_hole_with_thin_black_and(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x32 - Rounded passage hole with thin black and red bricks parallel to y axis
-    Address: 0x1EE8
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1EE8:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_33_yellow_rivet_corner_with_support(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x33 - Yellow rivet corner with support
-    Address: 0x1C86
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1C86:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_34_yellow_rivet_corner(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x34 - Yellow rivet corner
-    Address: 0x1C96
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1C96:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_35_no_opempty(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x35 - (no-op/empty)
-    Address: 0x17B8
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17B8:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_36_red_railing_corner_variant_3(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x36 - Red railing corner (variant 3)
-    Address: 0x1903
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1903:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_37_thin_red_and_black_brick_pyramid(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x37 - Thin red and black brick pyramid
-    Address: 0x1F76
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F76:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_38_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x38 - Solid block of thin red and black brick, with yellow and black tiles on top, parallel to y axis
-    Address: 0x18AB
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x18AB:
-    # 18AD: E9          	FlipX();
-    # 18AE: EA 1805 		ChangePC(0x1805);
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_39_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x39 - Solid block of thin red and black brick, with yellow and black tiles on top, parallel to x axis
-    Address: 0x1803
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1803:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_3_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x3A - Solid block of thin red and black brick, with yellow and black tiles on top, that grows upwards
-    Address: 0x18CD
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x18CD:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_3_candelabras_with_2_candles_parallel_to_x(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x3B - Candelabras with 2 candles parallel to x axis (variant 2)
-    Address: 0x1EC6
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1EC6:
-    # 1EC8: 	E9          FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_3_candelabras_with_2_candles_parallel_to_y(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x3C - Candelabras with 2 candles parallel to y axis
-    Address: 0x1EA3
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1EA3:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_3_candelabras_with_wall_support_and_2_cand(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x3D - Candelabras with wall support and 2 candles parallel to y axis
-    Address: 0x1ED1
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1ED1:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_3_small_discharge_pillar_placed_next_to_a_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x3E - Small discharge pillar placed next to a wall on y axis
-    Address: 0x1937
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1937:
-    # (No script data extracted - may need manual implementation)
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_3_thin_black_and_red_brick_corner_variant_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x3F - Thin black and red brick corner (variant 2)
-    Address: 0x18B1
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x18B1:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_40_thin_black_and_red_brick_corner_variant_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x40 - Thin black and red brick corner (variant 3)
-    Address: 0x18BF
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x18BF:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_41_thin_red_brick_forming_a_right_triangle_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x41 - Thin red brick forming a right triangle parallel to x axis
-    Address: 0x1F80
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F80:
-    # E9 	FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_42_thin_black_brick_forming_a_right_triangl(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x42 - Thin black brick forming a right triangle parallel to y axis
-    Address: 0x1F86
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F86:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_43_rounded_passage_hole_with_thin_red_and_b(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x43 - Rounded passage hole with thin red and black bricks parallel to y axis, with thick pillars between holes
-    Address: 0x1F2B
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F2B:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_44_rounded_passage_hole_with_thin_red_and_b(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x44 - Rounded passage hole with thin red and black bricks parallel to x axis, with thick pillars between holes
-    Address: 0x1F59
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F59:
-    # 1F5B: E9        	FlipX();
-    # 1F5C: EA 1F2D		ChangePC(0x1f2d);
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_45_bench_to_sit_on_parallel_to_x_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x45 - Bench to sit on parallel to x axis
-    Address: 0x1D99
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1D99:
-    # E9          	FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_46_bench_to_sit_on_parallel_to_y_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x46 - Bench to sit on parallel to y axis
-    Address: 0x1D6B
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1D6B:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_47_very_low_thin_black_and_red_brick_corner(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x47 - Very low thin black and red brick corner
-    Address: 0x1797
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1797:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_48_very_low_thick_black_and_red_brick_corne(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x48 - Very low thick black and red brick corner
-    Address: 0x178A
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x178A:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_49_flat_corner_delimited_with_black_line_an(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x49 - Flat corner delimited with black line and blue floor
-    Address: 0x1B96
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1B96:
-    # (No script data extracted - may need manual implementation)
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_4_work_table(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x4A - Work table
-    Address: 0x1D9F
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1D9F:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_4_plates(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x4B - Plates
-    Address: 0x1DD8
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1DD8:
-    # 1DDA: EA 1DDF		ChangePC(0x1ddf);
-    # FC 					pushTilePos();
-    # FB         			popTilePos();
-    # E9					FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_4_bottles_with_handles(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x4C - Bottles with handles
-    Address: 0x1DFC
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1DFC:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_4_cauldron(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x4D - Cauldron
-    Address: 0x1E06
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1E06:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_4_flat_corner_delimited_with_black_line_an(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x4E - Flat corner delimited with black line and yellow floor
-    Address: 0x1BB4
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1BB4:
-    # E0 						IncParam1();
-    # EF 						IncParam2();
-    # FD 						while (param2 > 0){
-    # FE 							while (param1 > 0){
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_4_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x4F - Solid block of thin red and black brick, with blue tiles on top, parallel to y axis
-    Address: 0x17EF
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17EF:
-    # 17F1: EA 1805		; ChangePC(0x1805)
-    # 17F6: EA 1805		; ChangePC(0x1805)
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_50_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x50 - Solid block of thin red and black brick, with blue top, parallel to y axis
-    Address: 0x17F4
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17F4:
-    # 17F6: EA 1805		; ChangePC(0x1805)
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_51_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x51 - Solid block of thin red and black brick, with blue tiles on top, parallel to x axis
-    Address: 0x1897
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1897:
-    # 18AD: E9          	FlipX();
-    # 18AE: EA 1805 		ChangePC(0x1805);
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_52_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x52 - Solid block of thin red and black brick, with blue top, parallel to x axis
-    Address: 0x189C
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x189C:
-    # 18AD: E9          	FlipX();
-    # 18AE: EA 1805 		ChangePC(0x1805);
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_53_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x53 - Solid block of thin red and black brick, with blue tiles on top and stair-stepped, parallel to x axis
-    Address: 0x17BB
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17BB:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_54_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x54 - Solid block of thin red and black brick, with blue top and stair-stepped, parallel to x axis
-    Address: 0x17E7
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x17E7:
-    # 17F1: EA 1805		; ChangePC(0x1805)
-    # 17F6: EA 1805		; ChangePC(0x1805)
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_55_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x55 - Solid block of thin red and black brick, with blue tiles on top and stair-stepped, parallel to y axis
-    Address: 0x1841
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1841:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_56_solid_block_of_thin_red_and_black_brick_(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x56 - Solid block of thin red and black brick, with blue top and stair-stepped, parallel to y axis
-    Address: 0x186D
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x186D:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_57_human_skulls(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x57 - Human skulls
-    Address: 0x1DDD
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1DDD:
-    # FC 					pushTilePos();
-    # FB         			popTilePos();
-    # E9					FlipX();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_58_skeleton_remains(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x58 - Skeleton remains
-    Address: 0x1B91
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1B91:
-    # (No script data extracted - may need manual implementation)
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_59_monster_face_with_horns(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x59 - Monster face with horns
-    Address: 0x1914
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1914:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_5_support_with_cross(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x5A - Support with cross
-    Address: 0x1919
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1919:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_5_large_cross(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x5B - Large cross
-    Address: 0x1E01
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1E01:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_5_library_books_parallel_to_x_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x5C - Library books parallel to x axis
-    Address: 0x1F69
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1F69:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_5_library_books_parallel_to_y_axis(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x5D - Library books parallel to y axis
-    Address: 0x1ED9
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1ED9:
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_5_top_of_a_wall_with_small_slightly_rounde(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x5E - Top of a wall with small slightly rounded and black window parallel to y axis
-    Address: 0x195F
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x195F:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-    # FB          					popTilePos();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
-def block_5_top_of_a_wall_with_small_slightly_rounde(canvas, tiles, x, y, param1=1, param2=1):
-    """
-    Block 0x5F - Top of a wall with small slightly rounded and red window parallel to x axis
-    Address: 0x1964
-
-    Args:
-        canvas: AbbeyCanvas to draw on
-        tiles: AbbeyTiles library
-        x, y: Starting position (in tiles)
-        param1, param2: Block parameters (width/height)
-    """
-    # Script data from address 0x1964:
-    # EF          				IncParam2();
-    # FD 							while (param2 > 0){
-    # FC								pushTilePos();
-    # FE 								while (param1 > 0){
-    # FB          					popTilePos();
-    # FF  // End
-
-    # TODO: Implement bytecode interpreter for this block
-    # For now, using simplified placeholder
-    pass
-
-
+class BlockDef:
+    def __init__(self, block_id, description, address, tile_ptr, tile_data, bytecode):
+        self.block_id = block_id
+        self.description = description
+        self.address = address
+        self.tile_ptr = tile_ptr
+        self.tile_data = tile_data
+        self.bytecode = bytecode
+
+BLOCK_DEFINITIONS = {
+    0x01: BlockDef(
+        block_id=0x01,
+        description="thin black brick parallel to y",
+        address=0x1973,
+        tile_ptr=0xA216,
+        tile_data=[0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5F, 0xFF],
+        bytecode=[0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x02: BlockDef(
+        block_id=0x02,
+        description="thin red brick parallel to x",
+        address=0x196E,
+        tile_ptr=0xA616,
+        tile_data=[0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x32, 0xF1],
+        bytecode=[0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x03: BlockDef(
+        block_id=0x03,
+        description="thick black brick parallel to y",
+        address=0x193C,
+        tile_ptr=0xB216,
+        tile_data=[0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0xFE],
+        bytecode=[0xEA, 0x19, 0xAD, 0x16, 0xB6, 0xEA, 0x19, 0xC6, 0x16, 0xBA, 0xEA, 0x19, 0x90, 0x16, 0xBE, 0xEA, 0x19, 0xA9, 0x16, 0xC2, 0xEA, 0x19, 0xCA, 0x16, 0xC6, 0xEA, 0x19, 0xD4, 0x16, 0xCA, 0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x04: BlockDef(
+        block_id=0x04,
+        description="thick red brick parallel to x",
+        address=0x1941,
+        tile_ptr=0xB616,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEA, 0x19, 0xC6, 0x16, 0xBA, 0xEA, 0x19, 0x90, 0x16, 0xBE, 0xEA, 0x19, 0xA9, 0x16, 0xC2, 0xEA, 0x19, 0xCA, 0x16, 0xC6, 0xEA, 0x19, 0xD4, 0x16, 0xCA, 0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x05: BlockDef(
+        block_id=0x05,
+        description="small windows block, slightly rounded and black parallel to the y axis",
+        address=0x1946,
+        tile_ptr=0xBA16,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEA, 0x19, 0x90, 0x16, 0xBE, 0xEA, 0x19, 0xA9, 0x16, 0xC2, 0xEA, 0x19, 0xCA, 0x16, 0xC6, 0xEA, 0x19, 0xD4, 0x16, 0xCA, 0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x06: BlockDef(
+        block_id=0x06,
+        description="small windows block, slightly rounded and red parallel to the x axis",
+        address=0x194B,
+        tile_ptr=0xBE16,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEA, 0x19, 0xA9, 0x16, 0xC2, 0xEA, 0x19, 0xCA, 0x16, 0xC6, 0xEA, 0x19, 0xD4, 0x16, 0xCA, 0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x07: BlockDef(
+        block_id=0x07,
+        description="red railing parallel to the y axis",
+        address=0x1950,
+        tile_ptr=0xC216,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEA, 0x19, 0xCA, 0x16, 0xC6, 0xEA, 0x19, 0xD4, 0x16, 0xCA, 0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x08: BlockDef(
+        block_id=0x08,
+        description="red railing parallel to the x axis",
+        address=0x1955,
+        tile_ptr=0xC616,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEA, 0x19, 0xD4, 0x16, 0xCA, 0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x09: BlockDef(
+        block_id=0x09,
+        description="white column parallel to the y axis",
+        address=0x195A,
+        tile_ptr=0xCA16,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x10: BlockDef(
+        block_id=0x10,
+        description="floor of yellow tiles",
+        address=0x1BAF,
+        tile_ptr=0x5B1B,
+        tile_data=[0x02, 0x3D, 0x20, 0x06, 0xD7, 0xAE, 0xAE, 0x40, 0x80, 0x26, 0xD7, 0x92],
+        bytecode=[0xEA, 0x1B, 0xCF, 0x1B, 0x88, 0xEA, 0x1B, 0xCF, 0xC5, 0x18, 0x0C, 0xC5, 0xE5, 0xEB, 0x11, 0xCF, 0x1F, 0x01, 0x0C, 0x00, 0xED, 0xB0, 0xE1, 0xCD, 0xB8, 0x1F, 0xC1, 0xC3, 0x18, 0x20, 0xF7, 0x70, 0x02, 0x6E, 0x6E, 0x84, 0x70, 0xF7, 0x71, 0x03, 0x6D, 0x6D, 0x84, 0x71, 0xE0, 0xEF, 0xFD, 0xFC, 0xFE, 0xF9, 0x61, 0x80, 0x61, 0xF5, 0xF6, 0xFA, 0xF9, 0x61, 0x80, 0x62, 0xFB, 0xF4, 0xF3, 0xFA, 0xF5, 0xF4, 0xFE, 0xF9, 0x63, 0xF5, 0xFA, 0xFF]
+    ),
+    0x11: BlockDef(
+        block_id=0x11,
+        description="block of arches passing through pairs of columns parallel to the y axis",
+        address=0x1CB8,
+        tile_ptr=0x481C,
+        tile_data=[0x03, 0xFD, 0x36, 0x09, 0x00, 0xFD, 0x36, 0x0B, 0x00, 0xC9, 0x2A, 0xB4],
+        bytecode=[0xF7, 0x70, 0x01, 0x70, 0xF7, 0x71, 0x01, 0x71, 0xF0, 0xFE, 0xF7, 0x71, 0x08, 0x84, 0x71, 0xF9, 0x67, 0x80, 0x82, 0xFB, 0x80, 0x82, 0xC8, 0x80, 0x82, 0xC5, 0x80, 0x82, 0xC6, 0x80, 0x82, 0xC7, 0xF5, 0xF6, 0xF6, 0xF6, 0xF9, 0x61, 0x80, 0x62, 0x80, 0x63, 0x80, 0x64, 0xF5, 0xF6, 0xF6, 0xF9, 0x65, 0x80, 0x66, 0xF5, 0xF2, 0x04, 0xF9, 0x67, 0x80, 0x68, 0x80, 0x69, 0x80, 0x6A, 0xF5, 0xF2, 0x03, 0xFA, 0xFF]
+    ),
+    0x12: BlockDef(
+        block_id=0x12,
+        description="block of arches passing through pairs of columns parallel to the x axis",
+        address=0x1CFD,
+        tile_ptr=0x521C,
+        tile_data=[0x10, 0xCB, 0xC9, 0xDD, 0x46, 0x06, 0xDD, 0x4E, 0x05, 0xCB, 0xB9, 0xD5],
+        bytecode=[0xE9, 0xF7, 0x70, 0x01, 0x70, 0xF7, 0x71, 0x01, 0x71, 0xF0, 0xFE, 0xF7, 0x71, 0x08, 0x84, 0x71, 0xF9, 0x67, 0x80, 0x82, 0xFB, 0x80, 0x82, 0xF7, 0x80, 0x82, 0xF8, 0x80, 0x82, 0xF9, 0x80, 0x82, 0xFA, 0xEA, 0x1C, 0xDA, 0x1C, 0x48, 0xFC, 0xF2, 0x05, 0x84, 0xF7, 0x6F, 0x0A, 0x6F, 0xEC, 0x1C, 0xB8, 0xF7, 0x6F, 0x0A, 0x84, 0x6F, 0xFB, 0xF0, 0xFE, 0xEC, 0x1D, 0x59, 0xF4, 0xF4, 0xF4, 0xF5, 0xF5, 0xF5, 0xEC, 0x1D, 0x59, 0xF4, 0xF5, 0xFA, 0xFF]
+    ),
+    0x13: BlockDef(
+        block_id=0x13,
+        description="block of arches with columns parallel to the y axis",
+        address=0x1D23,
+        tile_ptr=0x481C,
+        tile_data=[0x03, 0xFD, 0x36, 0x09, 0x00, 0xFD, 0x36, 0x0B, 0x00, 0xC9, 0x2A, 0xB4],
+        bytecode=[0xFC, 0xF2, 0x05, 0x84, 0xF7, 0x6F, 0x0A, 0x6F, 0xEC, 0x1C, 0xB8, 0xF7, 0x6F, 0x0A, 0x84, 0x6F, 0xFB, 0xF0, 0xFE, 0xEC, 0x1D, 0x59, 0xF4, 0xF4, 0xF4, 0xF5, 0xF5, 0xF5, 0xEC, 0x1D, 0x59, 0xF4, 0xF5, 0xFA, 0xFF]
+    ),
+    0x14: BlockDef(
+        block_id=0x14,
+        description="block of arches with columns parallel to the x axis",
+        address=0x1D48,
+        tile_ptr=0x521C,
+        tile_data=[0x10, 0xCB, 0xC9, 0xDD, 0x46, 0x06, 0xDD, 0x4E, 0x05, 0xCB, 0xB9, 0xD5],
+        bytecode=[0xFC, 0xF2, 0x05, 0x84, 0xF7, 0x6F, 0x0A, 0x6F, 0xEC, 0x1C, 0xFD, 0xE9, 0xEA, 0x1D, 0x30, 0x16, 0xCA]
+    ),
+    0x15: BlockDef(
+        block_id=0x15,
+        description="double yellow rivet on the brick parallel to the y axis",
+        address=0x1F5F,
+        tile_ptr=0x781C,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x74, 0x6F, 0x72, 0x3A, 0x20, 0x0D, 0x20, 0x00],
+        bytecode=[0xEA, 0x19, 0xAD, 0x1C, 0x7C, 0xEA, 0x19, 0xC6, 0x16, 0x9F, 0xEA, 0x19, 0xC6, 0x2B, 0x0A, 0x49, 0x4A, 0x28, 0x09, 0x4C, 0x4B, 0x1F, 0x72, 0xEC, 0x1F, 0x86, 0xF3, 0xEC, 0x1F, 0x80, 0xFF]
+    ),
+    0x16: BlockDef(
+        block_id=0x16,
+        description="double yellow rivet on the brick parallel to the x axis",
+        address=0x1F64,
+        tile_ptr=0x7C1C,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0xE1, 0x00, 0xE1, 0x00, 0xE1, 0x00, 0xE1, 0x00],
+        bytecode=[0xEA, 0x19, 0xC6, 0x16, 0x9F, 0xEA, 0x19, 0xC6, 0x2B, 0x0A, 0x49, 0x4A, 0x28, 0x09, 0x4C, 0x4B, 0x1F, 0x72, 0xEC, 0x1F, 0x86, 0xF3, 0xEC, 0x1F, 0x80, 0xFF]
+    ),
+    0x17: BlockDef(
+        block_id=0x17,
+        description="solid block of thin brick parallel to the x axis",
+        address=0x17FE,
+        tile_ptr=0x311B,
+        tile_data=[0x00, 0xFE, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFE, 0x01, 0xFE, 0x00, 0xFC],
+        bytecode=[0xEA, 0x18, 0x05, 0x1B, 0x5B, 0xF7, 0x71, 0x71, 0x82, 0xFF]
+    ),
+    0x18: BlockDef(
+        block_id=0x18,
+        description="solid block of thin brick parallel to the y axis",
+        address=0x18A6,
+        tile_ptr=0x3A1B,
+        tile_data=[0x80, 0xD6, 0x18, 0x38, 0x04, 0xED, 0x44, 0x80, 0x47, 0x7D, 0x6C, 0x26],
+        bytecode=[0xEA, 0x18, 0xAD, 0x1B, 0x64, 0xE9, 0xEA, 0x18, 0x05, 0x16, 0xA6, 0xF5, 0xEC, 0x19, 0x73, 0xF3, 0xF7, 0x6E, 0x00, 0xEC, 0x19, 0x6E, 0xFF]
+    ),
+    0x19: BlockDef(
+        block_id=0x19,
+        description="white table parallel to the x axis",
+        address=0x17F9,
+        tile_ptr=0x881B,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x0F, 0x3C, 0x0F, 0x0F, 0x0F],
+        bytecode=[0xEA, 0x18, 0x05, 0x1B, 0x31, 0xEA, 0x18, 0x05, 0x1B, 0x5B, 0xF7, 0x71, 0x71, 0x82, 0xFF]
+    ),
+    0x20: BlockDef(
+        block_id=0x20,
+        description="large blue and yellow windows parallel to the x axis",
+        address=0x1E9D,
+        tile_ptr=0x101C,
+        tile_data=[0xE7, 0x14, 0x18, 0x25, 0x21, 0xB1, 0x14, 0x18, 0x26, 0x21, 0x9F, 0x14],
+        bytecode=[0xE9, 0xEA, 0x1E, 0x61, 0x1C, 0x26, 0xF7, 0x71, 0x01, 0x6D, 0x6D, 0x84, 0x71, 0xF0, 0xEF, 0xFD, 0xFC, 0xFE, 0xFC, 0xF9, 0x61, 0x80, 0x62, 0x80, 0x63, 0x80, 0x64, 0x80, 0x65, 0xFB, 0xF5, 0xF4, 0xFA, 0xFB, 0xF2, 0x05, 0x84, 0xFA, 0xFF]
+    ),
+    0x21: BlockDef(
+        block_id=0x21,
+        description="candelabras with 2 candles parallel to the x axis",
+        address=0x1ECC,
+        tile_ptr=0x1C1C,
+        tile_data=[0x5F, 0xCB, 0xCD, 0xCA, 0x46, 0x5F, 0xCB, 0xCD, 0xCA, 0x46, 0x5F, 0xCE],
+        bytecode=[0xEA, 0x1E, 0xC8, 0x1C, 0x2B, 0xEA, 0x1E, 0xA5, 0x1C, 0x2B, 0xFF]
+    ),
+    0x22: BlockDef(
+        block_id=0x22,
+        description="does nothing",
+        address=0x1ED6,
+        tile_ptr=0x2B1C,
+        tile_data=[0x94, 0x87, 0xC6, 0x50, 0xD6, 0x28, 0xD8, 0xFE, 0x50, 0xD0, 0x6F, 0x60],
+        bytecode=[0xFF]
+    ),
+    0x23: BlockDef(
+        block_id=0x23,
+        description="yellow rivet with support parallel to the y axis",
+        address=0x1EDE,
+        tile_ptr=0x301C,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEA, 0x19, 0x75, 0x1C, 0x33, 0xEA, 0x19, 0x8C, 0x1C, 0x3F, 0xF7, 0x71, 0x01, 0x71, 0xF0, 0xF7, 0x70, 0x01, 0x70, 0xFE, 0xFC, 0xF5, 0xF4, 0xF4, 0xE4, 0x1F, 0x20, 0xFB, 0xF7, 0x71, 0x04, 0x84, 0x71, 0xF9, 0x65, 0x80, 0x66, 0x80, 0x66, 0x80, 0x66, 0x80, 0x66, 0x80, 0x67, 0x80, 0x64, 0xF5, 0xF6, 0xF9, 0x63, 0x80, 0x69, 0xF5, 0xF2, 0x06, 0xFA, 0xFF]
+    ),
+    0x24: BlockDef(
+        block_id=0x24,
+        description="red railing corner",
+        address=0x18DA,
+        tile_ptr=0xC216,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEC, 0x18, 0xE7, 0xF7, 0x6E, 0x00, 0xF3, 0xEC, 0x19, 0x55, 0xFF]
+    ),
+    0x25: BlockDef(
+        block_id=0x25,
+        description="yellow rivet with support parallel to the x axis",
+        address=0x1EE3,
+        tile_ptr=0x331C,
+        tile_data=[0x2D, 0xA7, 0xC8, 0xCD, 0xF1, 0x33, 0x7B, 0xA7, 0xC8, 0x3A, 0xBC, 0x2D],
+        bytecode=[0xEA, 0x19, 0x8C, 0x1C, 0x3F, 0xF7, 0x71, 0x01, 0x71, 0xF0, 0xF7, 0x70, 0x01, 0x70, 0xFE, 0xFC, 0xF5, 0xF4, 0xF4, 0xE4, 0x1F, 0x20, 0xFB, 0xF7, 0x71, 0x04, 0x84, 0x71, 0xF9, 0x65, 0x80, 0x66, 0x80, 0x66, 0x80, 0x66, 0x80, 0x66, 0x80, 0x67, 0x80, 0x64, 0xF5, 0xF6, 0xF9, 0x63, 0x80, 0x69, 0xF5, 0xF2, 0x06, 0xFA, 0xFF]
+    ),
+    0x26: BlockDef(
+        block_id=0x26,
+        description="red railing corner (2)",
+        address=0x18EF,
+        tile_ptr=0xC216,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEC, 0x18, 0xE7, 0xF2, 0x6E, 0x84, 0x6D, 0xF1, 0x01, 0x6E, 0x6D, 0xF7, 0x6E, 0x00, 0xEC, 0x19, 0x55, 0xFF]
+    ),
+    0x27: BlockDef(
+        block_id=0x27,
+        description="rounded passage hole with thin red and black bricks parallel to the x axis",
+        address=0x1F1A,
+        tile_ptr=0x361C,
+        tile_data=[0x49, 0xC9, 0x00, 0x00, 0x3E, 0x15, 0xCD, 0x82, 0x34, 0xC4, 0xF2, 0x36],
+        bytecode=[0xE9, 0xEA, 0x1E, 0xEA, 0x1C, 0x3F, 0xF7, 0x6D, 0x04, 0xF7, 0x6E, 0x00, 0xEA, 0x8C, 0x19, 0x1C, 0x3F, 0xF7, 0x6E, 0x6D, 0x01, 0xF7, 0x71, 0x01, 0x71, 0xF7, 0x70, 0x02, 0x84, 0x70, 0xFD, 0xF7, 0x6D, 0x00, 0xE4, 0x1E, 0xE8, 0xF5, 0xF5, 0xF4, 0xF4, 0xFC, 0xF7, 0x71, 0x06, 0x84, 0x71, 0xF7, 0x6D, 0x06, 0xF9, 0x68, 0xFE, 0xF9, 0x69, 0xFA, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x28: BlockDef(
+        block_id=0x28,
+        description="small windows block, rectangular and black parallel to the y axis",
+        address=0x192D,
+        tile_ptr=0xAA16,
+        tile_data=[0xF6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3D, 0xED],
+        bytecode=[0xEA, 0x19, 0x90, 0x16, 0xD6, 0xEA, 0x19, 0x8C, 0x16, 0xDA, 0xEA, 0x19, 0x75, 0x16, 0xB2, 0xEA, 0x19, 0xAD, 0x16, 0xB6, 0xEA, 0x19, 0xC6, 0x16, 0xBA, 0xEA, 0x19, 0x90, 0x16, 0xBE, 0xEA, 0x19, 0xA9, 0x16, 0xC2, 0xEA, 0x19, 0xCA, 0x16, 0xC6, 0xEA, 0x19, 0xD4, 0x16, 0xCA, 0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x29: BlockDef(
+        block_id=0x29,
+        description="small windows block, rectangular and red parallel to the x axis",
+        address=0x1928,
+        tile_ptr=0xAE16,
+        tile_data=[0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFD],
+        bytecode=[0xEA, 0x19, 0xA9, 0x16, 0xAA, 0xEA, 0x19, 0x90, 0x16, 0xD6, 0xEA, 0x19, 0x8C, 0x16, 0xDA, 0xEA, 0x19, 0x75, 0x16, 0xB2, 0xEA, 0x19, 0xAD, 0x16, 0xB6, 0xEA, 0x19, 0xC6, 0x16, 0xBA, 0xEA, 0x19, 0x90, 0x16, 0xBE, 0xEA, 0x19, 0xA9, 0x16, 0xC2, 0xEA, 0x19, 0xCA, 0x16, 0xC6, 0xEA, 0x19, 0xD4, 0x16, 0xCA, 0xEA, 0x19, 0x90, 0x16, 0xCE, 0xEA, 0x19, 0x90, 0x16, 0xD2, 0xEA, 0x19, 0xA9, 0x16, 0xCA, 0xEA, 0x19, 0xA9, 0x16, 0xA6, 0xEA, 0x19, 0x8C, 0x16, 0xA2, 0xF7, 0x71, 0x01, 0x6E, 0x6E, 0x84, 0x71, 0xEF, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0xFA, 0xF9, 0x63, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x30: BlockDef(
+        block_id=0x30,
+        description="thin black and red brick corner",
+        address=0x17A4,
+        tile_ptr=0xA616,
+        tile_data=[0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x32, 0xF1],
+        bytecode=[0xEC, 0x19, 0x6E, 0x6E, 0x19, 0xF5, 0xEC, 0x19, 0x16, 0xB6, 0xEC, 0x19, 0x41, 0xF5, 0xEC, 0x19, 0x3C, 0xFF]
+    ),
+    0x31: BlockDef(
+        block_id=0x31,
+        description="thick black and red brick corner",
+        address=0x17AE,
+        tile_ptr=0xB616,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEC, 0x19, 0x41, 0xF5, 0xEC, 0x19, 0x3C, 0xFF]
+    ),
+    0x32: BlockDef(
+        block_id=0x32,
+        description="rounded passage hole with thin black and red bricks parallel to the y axis",
+        address=0x1EE8,
+        tile_ptr=0x3F1C,
+        tile_data=[0x7A, 0xB3, 0x28, 0x04, 0x10, 0xF6, 0xEB, 0xE9, 0xE5, 0xC9, 0x14, 0x14],
+        bytecode=[0xF7, 0x71, 0x01, 0x71, 0xF0, 0xF7, 0x70, 0x01, 0x70, 0xFE, 0xFC, 0xF5, 0xF4, 0xF4, 0xE4, 0x1F, 0x20, 0xFB, 0xF7, 0x71, 0x04, 0x84, 0x71, 0xF9, 0x65, 0x80, 0x66, 0x80, 0x66, 0x80, 0x66, 0x80, 0x66, 0x80, 0x67, 0x80, 0x64, 0xF5, 0xF6, 0xF9, 0x63, 0x80, 0x69, 0xF5, 0xF2, 0x06, 0xFA, 0xFF]
+    ),
+    0x33: BlockDef(
+        block_id=0x33,
+        description="yellow rivet corner with support",
+        address=0x1C86,
+        tile_ptr=0x301C,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEC, 0x1C, 0xA6, 0xF7, 0x6E, 0x6D, 0xF7, 0x6D, 0x01, 0xF3, 0xEC, 0x1E, 0xE3, 0xFF]
+    ),
+    0x34: BlockDef(
+        block_id=0x34,
+        description="yellow rivet corner",
+        address=0x1C96,
+        tile_ptr=0x781C,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x74, 0x6F, 0x72, 0x3A, 0x20, 0x0D, 0x20, 0x00],
+        bytecode=[0xEC, 0x1C, 0xAF, 0xF7, 0x6E, 0x6D, 0xF7, 0x6D, 0x00, 0xF3, 0xEC, 0x64, 0x1F, 0xFF]
+    ),
+    0x35: BlockDef(
+        block_id=0x35,
+        description="does nothing",
+        address=0x17B8,
+        tile_ptr=0x311B,
+        tile_data=[0x00, 0xFE, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFE, 0x01, 0xFE, 0x00, 0xFC],
+        bytecode=[0xFF]
+    ),
+    0x36: BlockDef(
+        block_id=0x36,
+        description="red railing corner (3)",
+        address=0x1903,
+        tile_ptr=0xC216,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEC, 0x18, 0xE7, 0xF2, 0x6D, 0x01, 0xF1, 0x6D, 0xF7, 0x6E, 0x00, 0xEC, 0x19, 0x55, 0xFF]
+    ),
+    0x37: BlockDef(
+        block_id=0x37,
+        description="thin red and black brick pyramid",
+        address=0x1F76,
+        tile_ptr=0x721F,
+        tile_data=[0x86, 0x96, 0x95, 0xA5, 0xA6, 0xB6, 0xB5, 0xC6, 0xB7, 0xF8, 0x50, 0x41],
+        bytecode=[0xEC, 0x1F, 0x86, 0xF3, 0xEC, 0x1F, 0x80, 0xFF]
+    ),
+    0x38: BlockDef(
+        block_id=0x38,
+        description="solid block of thin red and black brick, with yellow and black tiles on top, parallel to the y axis",
+        address=0x18AB,
+        tile_ptr=0x641B,
+        tile_data=[0x2A, 0x02, 0x2B, 0xC9, 0xC9, 0xCF, 0x8C, 0x0E, 0x3D, 0x20, 0x07, 0xCD],
+        bytecode=[0xE9, 0xEA, 0x18, 0x05, 0x16, 0xA6, 0xF5, 0xEC, 0x19, 0x73, 0xF3, 0xF7, 0x6E, 0x00, 0xEC, 0x19, 0x6E, 0xFF]
+    ),
+    0x39: BlockDef(
+        block_id=0x39,
+        description="solid block of thin red and black brick, with yellow and black tiles on top, parallel to the x axis",
+        address=0x1803,
+        tile_ptr=0x5B1B,
+        tile_data=[0x02, 0x3D, 0x20, 0x06, 0xD7, 0xAE, 0xAE, 0x40, 0x80, 0x26, 0xD7, 0x92],
+        bytecode=[0xF7, 0x71, 0x71, 0x82, 0xFF]
+    ),
+    0x40: BlockDef(
+        block_id=0x40,
+        description="thin black and red brick corner (3)",
+        address=0x18BF,
+        tile_ptr=0xA216,
+        tile_data=[0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5F, 0xFF],
+        bytecode=[0xF3, 0xEC, 0x19, 0x6E, 0xF5, 0xF7, 0x6E, 0x00, 0xEC, 0x19, 0x73, 0xFF]
+    ),
+    0x41: BlockDef(
+        block_id=0x41,
+        description="thin red brick forming a right triangle parallel to the x axis",
+        address=0x1F80,
+        tile_ptr=0x6E1F,
+        tile_data=[0xBA, 0xBB, 0xAC, 0xAB, 0xAA, 0x9A, 0x9B, 0x9C, 0x9D, 0x8C, 0x8B, 0x8A],
+        bytecode=[0xE9, 0xEA, 0x1F, 0x88, 0x1F, 0x72, 0xF7, 0x6D, 0x6E, 0x6D, 0xF7, 0x6E, 0x6D, 0x01, 0xF7, 0x71, 0x01, 0x6D, 0x6D, 0x84, 0x71, 0xF7, 0x70, 0x02, 0x6D, 0x6D, 0x84, 0x70, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0x80, 0x62, 0x80, 0x62, 0xFA, 0xF9, 0x63, 0x80, 0x64, 0xF7, 0x6D, 0x01, 0x84, 0x6D, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x42: BlockDef(
+        block_id=0x42,
+        description="thin black brick forming a right triangle parallel to the y axis",
+        address=0x1F86,
+        tile_ptr=0x721F,
+        tile_data=[0x86, 0x96, 0x95, 0xA5, 0xA6, 0xB6, 0xB5, 0xC6, 0xB7, 0xF8, 0x50, 0x41],
+        bytecode=[0xF7, 0x6D, 0x6E, 0x6D, 0xF7, 0x6E, 0x6D, 0x01, 0xF7, 0x71, 0x01, 0x6D, 0x6D, 0x84, 0x71, 0xF7, 0x70, 0x02, 0x6D, 0x6D, 0x84, 0x70, 0xFD, 0xFC, 0xF9, 0x61, 0xFE, 0xF9, 0x62, 0x80, 0x62, 0x80, 0x62, 0xFA, 0xF9, 0x63, 0x80, 0x64, 0xF7, 0x6D, 0x01, 0x84, 0x6D, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x43: BlockDef(
+        block_id=0x43,
+        description="rounded passage hole with thin red and black bricks parallel to the y axis, with thick pillars between the holes",
+        address=0x1F2B,
+        tile_ptr=0x3F1C,
+        tile_data=[0x7A, 0xB3, 0x28, 0x04, 0x10, 0xF6, 0xEB, 0xE9, 0xE5, 0xC9, 0x14, 0x14],
+        bytecode=[0xF7, 0x6E, 0x6D, 0x01, 0xF7, 0x71, 0x01, 0x71, 0xF7, 0x70, 0x02, 0x84, 0x70, 0xFD, 0xF7, 0x6D, 0x00, 0xE4, 0x1E, 0xE8, 0xF5, 0xF5, 0xF4, 0xF4, 0xFC, 0xF7, 0x71, 0x06, 0x84, 0x71, 0xF7, 0x6D, 0x06, 0xF9, 0x68, 0xFE, 0xF9, 0x69, 0xFA, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x44: BlockDef(
+        block_id=0x44,
+        description="rounded passage hole with thin red and black bricks parallel to the x axis, with thick pillars between the holes",
+        address=0x1F59,
+        tile_ptr=0x361C,
+        tile_data=[0x49, 0xC9, 0x00, 0x00, 0x3E, 0x15, 0xCD, 0x82, 0x34, 0xC4, 0xF2, 0x36],
+        bytecode=[0xE9, 0xEA, 0x1F, 0x2D, 0x1C, 0x78, 0xEA, 0x19, 0xAD, 0x1C, 0x7C, 0xEA, 0x19, 0xC6, 0x16, 0x9F, 0xEA, 0x19, 0xC6, 0x2B, 0x0A, 0x49, 0x4A, 0x28, 0x09, 0x4C, 0x4B, 0x1F, 0x72, 0xEC, 0x1F, 0x86, 0xF3, 0xEC, 0x1F, 0x80, 0xFF]
+    ),
+    0x45: BlockDef(
+        block_id=0x45,
+        description="bench to sit on parallel to the x axis",
+        address=0x1D99,
+        tile_ptr=0x6E1C,
+        tile_data=[0xD9, 0xC9, 0xCA, 0xBA, 0xBB, 0xAC, 0xAB, 0xAA, 0x9A, 0x9B, 0x9C, 0x9D],
+        bytecode=[0xE9, 0xEA, 0x1D, 0x6D, 0x16, 0xDE, 0xE9, 0xF6, 0xF5, 0xFC, 0xF9, 0x61, 0x80, 0x62, 0x80, 0x63, 0x80, 0x64, 0xFB, 0xF3, 0xF6, 0xFE, 0xFC, 0xF9, 0x61, 0x80, 0x62, 0x80, 0x82, 0x43, 0x80, 0x66, 0x80, 0x67, 0xFB, 0xF3, 0xF6, 0xFA, 0xFC, 0xF9, 0x68, 0x80, 0x69, 0x80, 0x82, 0x18, 0x80, 0x66, 0x80, 0x67, 0xFB, 0xF3, 0xF9, 0x6A, 0x80, 0x6B, 0x80, 0x6C, 0x80, 0x65, 0xFF]
+    ),
+    0x46: BlockDef(
+        block_id=0x46,
+        description="bench to sit on parallel to the y axis",
+        address=0x1D6B,
+        tile_ptr=0x641C,
+        tile_data=[0x02, 0x2B, 0xC9, 0xC9, 0xCF, 0x8C, 0x0E, 0x3D, 0x20, 0x07, 0xCD, 0x26],
+        bytecode=[0xF6, 0xF5, 0xFC, 0xF9, 0x61, 0x80, 0x62, 0x80, 0x63, 0xFB, 0xF3, 0xF6, 0xFE, 0xFC, 0xF9, 0x61, 0x80, 0x62, 0x80, 0x64, 0x80, 0x65, 0xFB, 0xF3, 0xF6, 0xFA, 0xFC, 0xF9, 0x66, 0x80, 0x67, 0x80, 0x64, 0x80, 0x65, 0xFB, 0xF3, 0xF9, 0x6A, 0x80, 0x68, 0x80, 0x69, 0xFF]
+    ),
+    0x47: BlockDef(
+        block_id=0x47,
+        description="very low thin black and red brick corner",
+        address=0x1797,
+        tile_ptr=0xA216,
+        tile_data=[0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5F, 0xFF],
+        bytecode=[0xEC, 0x19, 0x73, 0xF1, 0x6E, 0x6E, 0x01, 0xEC, 0x19, 0x6E, 0xFF]
+    ),
+    0x48: BlockDef(
+        block_id=0x48,
+        description="very low thick black and red brick corner",
+        address=0x178A,
+        tile_ptr=0xB216,
+        tile_data=[0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0xFE],
+        bytecode=[0xEC, 0x19, 0x3C, 0xF1, 0x6E, 0x6E, 0x01, 0xEC, 0x41, 0x19, 0xFF]
+    ),
+    0x49: BlockDef(
+        block_id=0x49,
+        description="flat corner delimited with black line and blue floor",
+        address=0x1B96,
+        tile_ptr=0x6D1B,
+        tile_data=[0x79, 0x89, 0x99, 0xA9, 0xB9, 0xC9, 0x1B, 0x2A, 0x2B, 0x2C, 0x3B, 0x3C],
+        bytecode=[0xEA, 0x1B, 0xCF, 0x1B, 0x31, 0xEA, 0x1B, 0xCF, 0x1B, 0x43, 0xEA, 0x1B, 0xCF, 0x1B, 0x46, 0xEA, 0x1B, 0xCF, 0x1B, 0x49, 0xEA, 0x1B, 0xCF, 0x1B, 0x5B, 0xEA, 0x1B, 0xCF, 0x1B, 0x88, 0xEA, 0x1B, 0xCF, 0xC5, 0x18, 0x0C, 0xC5, 0xE5, 0xEB, 0x11, 0xCF, 0x1F, 0x01, 0x0C, 0x00, 0xED, 0xB0, 0xE1, 0xCD, 0xB8, 0x1F, 0xC1, 0xC3, 0x18, 0x20, 0xF7, 0x70, 0x02, 0x6E, 0x6E, 0x84, 0x70, 0xF7, 0x71, 0x03, 0x6D, 0x6D, 0x84, 0x71, 0xE0, 0xEF, 0xFD, 0xFC, 0xFE, 0xF9, 0x61, 0x80, 0x61, 0xF5, 0xF6, 0xFA, 0xF9, 0x61, 0x80, 0x62, 0xFB, 0xF4, 0xF3, 0xFA, 0xF5, 0xF4, 0xFE, 0xF9, 0x63, 0xF5, 0xFA, 0xFF]
+    ),
+    0x50: BlockDef(
+        block_id=0x50,
+        description="solid block of thin red and black brick, with blue top, parallel to the y axis",
+        address=0x17F4,
+        tile_ptr=0x6D1B,
+        tile_data=[0x79, 0x89, 0x99, 0xA9, 0xB9, 0xC9, 0x1B, 0x2A, 0x2B, 0x2C, 0x3B, 0x3C],
+        bytecode=[0xEA, 0x18, 0x05, 0x1B, 0x88, 0xEA, 0x18, 0x05, 0x1B, 0x31, 0xEA, 0x18, 0x05, 0x1B, 0x5B, 0xF7, 0x71, 0x71, 0x82, 0xFF]
+    ),
+    0x51: BlockDef(
+        block_id=0x51,
+        description="solid block of thin red and black brick, with blue tiles on top, parallel to the x axis",
+        address=0x1897,
+        tile_ptr=0x521B,
+        tile_data=[0x23, 0x10, 0xCB, 0xC9, 0xDD, 0x46, 0x06, 0xDD, 0x4E, 0x05, 0xCB, 0xB9],
+        bytecode=[0xEA, 0x18, 0xAD, 0x1B, 0x76, 0xEA, 0x18, 0xAD, 0x1B, 0x7F, 0xEA, 0x18, 0xAD, 0x1B, 0x3A, 0xEA, 0x18, 0xAD, 0x1B, 0x64, 0xE9, 0xEA, 0x18, 0x05, 0x16, 0xA6, 0xF5, 0xEC, 0x19, 0x73, 0xF3, 0xF7, 0x6E, 0x00, 0xEC, 0x19, 0x6E, 0xFF]
+    ),
+    0x52: BlockDef(
+        block_id=0x52,
+        description="solid block of thin red and black brick, with blue top, parallel to the x axis",
+        address=0x189C,
+        tile_ptr=0x761B,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x61, 0x73, 0x2E, 0x20, 0x41, 0x73, 0x69],
+        bytecode=[0xEA, 0x18, 0xAD, 0x1B, 0x7F, 0xEA, 0x18, 0xAD, 0x1B, 0x3A, 0xEA, 0x18, 0xAD, 0x1B, 0x64, 0xE9, 0xEA, 0x18, 0x05, 0x16, 0xA6, 0xF5, 0xEC, 0x19, 0x73, 0xF3, 0xF7, 0x6E, 0x00, 0xEC, 0x19, 0x6E, 0xFF]
+    ),
+    0x53: BlockDef(
+        block_id=0x53,
+        description="solid block of thin red and black brick, with blue tiles on top and stair-stepped, parallel to the x axis",
+        address=0x17BB,
+        tile_ptr=0x491B,
+        tile_data=[0x22, 0x08, 0x49, 0x21, 0x00, 0x00, 0x4C, 0xE5, 0x21, 0x17, 0x2E, 0x11],
+        bytecode=[0xEC, 0x17, 0xEF, 0xF7, 0x70, 0x02, 0x84, 0x70, 0xF7, 0x71, 0x01, 0x84, 0x71, 0xF2, 0x6D, 0x01, 0x84, 0xF9, 0x61, 0xF1, 0x01, 0x84, 0x6D, 0xF2, 0x6D, 0x6D, 0x02, 0xEC, 0x18, 0x91, 0xF5, 0xF6, 0xF7, 0x6E, 0x6D, 0xF7, 0x6D, 0x00, 0xEC, 0x1B, 0x28, 0xFF]
+    ),
+    0x54: BlockDef(
+        block_id=0x54,
+        description="solid block of thin red and black brick, with blue top and stair-stepped, parallel to the x axis",
+        address=0x17E7,
+        tile_ptr=0x6D1B,
+        tile_data=[0x79, 0x89, 0x99, 0xA9, 0xB9, 0xC9, 0x1B, 0x2A, 0x2B, 0x2C, 0x3B, 0x3C],
+        bytecode=[0xEC, 0x17, 0xF4, 0xEA, 0x17, 0xC0, 0x1B, 0x49, 0xEA, 0x18, 0x05, 0x1B, 0x6D, 0xEA, 0x18, 0x05, 0x1B, 0x88, 0xEA, 0x18, 0x05, 0x1B, 0x31, 0xEA, 0x18, 0x05, 0x1B, 0x5B, 0xF7, 0x71, 0x71, 0x82, 0xFF]
+    ),
+    0x55: BlockDef(
+        block_id=0x55,
+        description="solid block of thin red and black brick, with blue tiles on top and stair-stepped, parallel to the y axis",
+        address=0x1841,
+        tile_ptr=0x521B,
+        tile_data=[0x23, 0x10, 0xCB, 0xC9, 0xDD, 0x46, 0x06, 0xDD, 0x4E, 0x05, 0xCB, 0xB9],
+        bytecode=[0xEC, 0x18, 0x97, 0xF7, 0x71, 0x02, 0x84, 0x71, 0xF7, 0x70, 0x01, 0x84, 0x70, 0xF2, 0x01, 0x6D, 0x84, 0xF9, 0x61, 0xF1, 0x6D, 0x84, 0x01, 0xF2, 0x6D, 0x6D, 0x02, 0xEC, 0x18, 0x75, 0xF3, 0xF6, 0xF7, 0x6E, 0x6D, 0xF7, 0x6D, 0x00, 0xEC, 0x1A, 0xEF, 0xFF]
+    ),
+    0x56: BlockDef(
+        block_id=0x56,
+        description="solid block of thin red and black brick, with blue top and stair-stepped, parallel to the y axis",
+        address=0x186D,
+        tile_ptr=0x761B,
+        tile_data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x61, 0x73, 0x2E, 0x20, 0x41, 0x73, 0x69],
+        bytecode=[0xEC, 0x18, 0x9C, 0xEA, 0x18, 0x46, 0x16, 0xA2, 0xF7, 0x71, 0x6D, 0x6D, 0x84, 0x71, 0xF7, 0x6E, 0x01, 0xFE, 0xFC, 0xF9, 0x61, 0xFD, 0xF9, 0x62, 0xFA, 0xF7, 0x6E, 0x01, 0x6E, 0xFB, 0xF5, 0xF4, 0xFA, 0xFF]
+    ),
+    0x57: BlockDef(
+        block_id=0x57,
+        description="human skulls",
+        address=0x1DDD,
+        tile_ptr=0x5D1C,
+        tile_data=[0xFF, 0x3C, 0x26, 0x20, 0x37, 0xCF, 0xAE, 0x04, 0x2A, 0x89, 0x26, 0x20],
+        bytecode=[0xFC, 0xF5, 0xF4, 0xE4, 0x1D, 0xEF, 0xFB, 0xE9, 0xF7, 0x6D, 0x6E, 0x01, 0xE4, 0x1D, 0xEF, 0xFF]
+    ),
+    0x58: BlockDef(
+        block_id=0x58,
+        description="skeleton remains???",
+        address=0x1B91,
+        tile_ptr=0x2E1B,
+        tile_data=[0x42, 0x05, 0x22, 0x38, 0xB4, 0x05, 0x22, 0x80, 0x00, 0x00, 0x00, 0x00],
+        bytecode=[0xEA, 0x1B, 0xCF, 0x1B, 0x6D, 0xEA, 0x1B, 0xCF, 0x1B, 0x31, 0xEA, 0x1B, 0xCF, 0x1B, 0x43, 0xEA, 0x1B, 0xCF, 0x1B, 0x46, 0xEA, 0x1B, 0xCF, 0x1B, 0x49, 0xEA, 0x1B, 0xCF, 0x1B, 0x5B, 0xEA, 0x1B, 0xCF, 0x1B, 0x88, 0xEA, 0x1B, 0xCF, 0xC5, 0x18, 0x0C, 0xC5, 0xE5, 0xEB, 0x11, 0xCF, 0x1F, 0x01, 0x0C, 0x00, 0xED, 0xB0, 0xE1, 0xCD, 0xB8, 0x1F, 0xC1, 0xC3, 0x18, 0x20, 0xF7, 0x70, 0x02, 0x6E, 0x6E, 0x84, 0x70, 0xF7, 0x71, 0x03, 0x6D, 0x6D, 0x84, 0x71, 0xE0, 0xEF, 0xFD, 0xFC, 0xFE, 0xF9, 0x61, 0x80, 0x61, 0xF5, 0xF6, 0xFA, 0xF9, 0x61, 0x80, 0x62, 0xFB, 0xF4, 0xF3, 0xFA, 0xF5, 0xF4, 0xFE, 0xF9, 0x63, 0xF5, 0xFA, 0xFF]
+    ),
+    0x59: BlockDef(
+        block_id=0x59,
+        description="monster face with horns",
+        address=0x1914,
+        tile_ptr=0x9816,
+        tile_data=[0x3F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCF, 0xFF],
+        bytecode=[0xEA, 0x19, 0x20, 0x16, 0x9A, 0xEA, 0x19, 0x20, 0x16, 0x93, 0xF9, 0x63, 0x80, 0x64, 0xFF]
+    ),
+}
