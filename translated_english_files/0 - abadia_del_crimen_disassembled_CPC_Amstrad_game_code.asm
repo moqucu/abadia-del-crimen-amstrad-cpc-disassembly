@@ -6741,6 +6741,26 @@ FF
 32B9: 32 09 33    ld   ($3309),a		; ensures that data is obtained from the buffer instead of from the keyboard
 
 ; reads the state of the keys and saves it in the keyboard buffers
+; This assembly routine is the low-level keyboard scanning driver for the Amstrad CPC. It interacts directly with the system's hardware (the
+; 8255 PPI chip and the AY-3-8912 PSG sound chip) to read the state of every key on the keyboard and update the game's internal buffers.
+;
+; High-Level Function
+; It performs a full sweep of the 10 rows of the keyboard matrix. For each row, it:
+;  1. Reads the raw state of the keys (which keys are pressed).
+;  2. Updates a buffer (0x33D3) that stores the current state of all keys.
+;  3. Updates a second buffer (0x33DD) that tracks changes (which keys were just pressed or released).
+;
+; Why this matters
+; This routine is the source of truth for all input in the game. When check_special_keys or any other logic asks "Is the Space bar pressed?",
+; it is checking the `0x33D3` buffer that this routine just populated. In our Python remake, pygame.event.pump() and pygame.key.get_pressed()
+; perform this exact same role: querying the hardware and updating the internal state list.
+
+;  1. Hardware Setup (`32BC - 32D4`):
+;      * `di`: Disables interrupts to ensure the scanning process isn't interrupted.
+;      * PPI & PSG Configuration: It sends commands to the 8255 PPI (Programmable Peripheral Interface) to configure Port A as an input (to
+;        read data) and Ports C as outputs (to control the PSG).
+;      * The keyboard on the CPC is connected to the PSG's I/O port (Register 14). The code selects Register 14 (0x0E) on the PSG.
+
 32BC: F3          di
 32BD: 01 0E F4    ld   bc,$F40E	; 1111 0100 0000 1110 (8255 PPI port A)
 32C0: ED 49       out  (c),c
@@ -6757,8 +6777,23 @@ FF
 32D2: ED 79       out  (c),a
 32D4: C5          push bc
 
+;  2. Buffer Setup (`32D5 - 32D8`):
+;      * `ld hl,$33D3`: Points HL to the "Current State" buffer.
+;      * `ld de,$33DD`: Points DE to the "State Change" buffer.
+
 32D5: 21 D3 33    ld   hl,$33D3	; points to the buffer to save the last press of each key
 32D8: 11 DD 33    ld   de,$33DD ; points to the buffer where changes in key press state are saved
+
+;  3. Scanning Loop (`32DB - 32FA`):
+;      * Read Row: It tells the PSG to read the data from the currently selected keyboard row (out (c),c / in a,(c)).
+;      * `call $3305`: A helper that likely filters or processes the raw byte (possibly handling ghosting or debounce).
+;      * Update Buffers:
+;          * It reads the old state from (HL).
+;          * It compares it with the new state to detect changes.
+;          * It saves the new state back to (HL) (at 32EC).
+;          * It saves the "change" information to (DE) (at 32F1).
+;      * Next Row: It increments the row counter (inc c).
+;      * Loop: It checks if it has scanned all 10 rows (cp $0A). If not, it jumps back to 32DB.
 
 32DB: CB F1       set  6,c		; PSG operation: read data from register
 32DD: 06 F6       ld   b,$F6
@@ -6783,14 +6818,46 @@ FF
 32F6: E6 0F       and  $0F
 32F8: FE 0A       cp   $0A
 32FA: 38 DF       jr   c,$32DB	; while not finished with the lines, continues processing
+
+;  4. Cleanup (`32FC - 3304`):
+;      * Reset PPI: It reconfigures the PPI back to its standard state (Port A: output) so the system can continue normal operation.
+;      * `ret`: Returns to the caller.
+
 32FC: C1          pop  bc
 32FD: 3E 82       ld   a,$82	; 1001 0010 (port A: output, port B: input, port C upper: output, port C lower: output)
 32FF: ED 79       out  (c),a
 3301: 05          dec  b
 3302: ED 49       out  (c),c	; PSG operation: inactive
 3304: C9          ret
+; **********************************************************************************************************************
 
 ; checks if keyboard presses are ignored and presses stored in a buffer are taken
+; This code is an Input Redirection Hook. It allows the game to bypass the physical keyboard and instead read input from a pre-recorded
+; sequence in memory. This is the core mechanism used for the game's Demo Mode.
+;
+; Technical Breakdown:
+;  1. `ld a,c` / `and $0F`: It retrieves the index of the current keyboard row being scanned (0-9) and ensures it's clean.
+;  2. `cp $00`: It compares the current row index against a threshold.
+;      * Crucial Note: The comment (this parameter is modified from outside) identifies this as Self-Modifying Code. A routine elsewhere in the
+;        game writes a value to address 0x3309 to turn the "playback" on or off.
+;  3. `ret nc`:
+;      * If the current row index is greater than or equal to the threshold (which is 0 by default), it simply returns. The game continues
+;        using the real keyboard data already stored in register B.
+;  4. `ld b,(iy+$00)` / `inc iy`:
+;      * If the threshold has been increased (e.g., to 10), this code executes.
+;      * It overwrites register B (the real keyboard state) with a byte from a buffer pointed to by register `IY`.
+;      * It then moves the IY pointer to the next byte in the recording.
+;
+; What this accomplishes:
+; This is essentially a Macro Player.
+;  * Normal Play: The threshold is 0. The game reads the physical keys.
+;  * Demo/Replay Mode: The game sets the threshold to 10, points IY to a recording of a previous game session, and "replays" the exact keyboard
+;    states row-by-row. Because the game's logic is deterministic, the characters on screen will perform the exact same actions as they did
+;    during the recording.
+;
+; In modern programming terms, this is a Mocking or Dependency Injection pattern, where the "Real Keyboard" dependency is swapped out for a
+; "Recorded Data" dependency.
+
 3305: 79          ld   a,c			; gets the keyboard line being processed
 3306: E6 0F       and  $0F
 3308: FE 00       cp   $00			; (this parameter is modified from outside)
@@ -6798,8 +6865,33 @@ FF
 330B: FD 46 00    ld   b,(iy+$00)	; gets the data from the buffer pointed to by iy instead of from the keyboard
 330E: FD 23       inc  iy
 3310: C9          ret
-
+; **********************************************************************************************************************
 ; checks if QR was pressed in the mirror room and acts accordingly
+; This assembly routine handles the "Secret Mirror" logic in the library. It determines whether the player has correctly solved the puzzle to
+; open the secret passage or if they have triggered a deadly trap.
+;
+; High-Level Logic
+;  1. Check Status: It first checks if the mirror is already open (ld a,($2D8C)). If so, it does nothing.
+;  2. Input Check: It calls a helper ($33F1) to see if the player is standing in front of the mirror and pressing Q + R.
+;  3. Validation: If the keys are pressed, it compares the current staircase identifier ($2DBC) with the required "key" value (e).
+;      * Success: If they match, the mirror opens ($334E). The height map is modified so the player can walk through, and the mirror's visual
+;        state is updated.
+;      * Failure: If they don't match, or if a specific error condition is met (cp $04), Guillermo triggers a trap ($3334). A trapdoor opens,
+;        Guillermo falls to his death, and the game displays the message: "ESTAIS MUERTO, FRAY GUILLERMO, HABEIS CAIDO EN LA TRAMPA" ("You are
+;        dead, Friar William, you have fallen into the trap").
+;
+; Detailed Breakdown
+;  * `3311 call $32BC`: Reads the keyboard state.
+;  * `331A ld a,($2D8C)`: Reads the mirror state variable. (Non-zero = Closed).
+;  * `331F call $33F1`: Checks position + Q + R. Returns result in E.
+;  * `3331 cp e`: Compares the expected correct staircase value (loaded from $2DBC) with the player's input value.
+;  * `3334 (Failure path)`: Sets the "Death" flag ($3C97) and changes Guillermo's state ($288F) to a falling/dying animation. It also visually
+;    modifies the floor block to show an open trapdoor.
+;  * `334E (Success path)`: Calls routines $3365 and $336F to modify the room's collision data (height map) and visual data, effectively
+;    "opening" the passage. It finally sets $2D8C to 0, marking the mirror as permanently open.
+;
+; This is the core implementation of one of the game's most famous puzzles.
+;
 3311: CD BC 32    call $32BC		; reads the state of the keys and saves it in the keyboard buffers
 3314: 01 C0 7F    ld   bc,$7FC0		; sets configuration 0 (0, 1, 2, 3)
 3317: ED 49       out  (c),c
@@ -6855,8 +6947,26 @@ FF
 336A: 2A D9 34    ld   hl,($34D9)
 336D: 77          ld   (hl),a
 336E: C9          ret
-
+; **********************************************************************************************************************
 ; saves a in the block that forms the mirror in the mirror room
+; This code is a Dynamic Map Modifier. Its purpose is to physically change the visual graphics of a room by overwriting its data in the game's
+; room database (abadia8.bin).
+;
+; Technical Breakdown:
+;  1. `ld hl,($34E0)`: It retrieves a pointer stored at 0x34E0. This pointer identifies the exact location in the room definition (inside
+;     abadia8.bin) where the "Mirror Block" or "Trapdoor Block" is defined.
+;  2. `ld bc,$7FC7` / `out (c),c`: It switches the Amstrad CPC's memory bank to Bank 7. This is where abadia8.bin (the room/screen database) is
+;     stored. Because this bank is normally read-only or hidden, the code must explicitly switch to it to make changes.
+;  3. `ld (hl),a`: It writes the value currently in register `A` into the room data.
+;      * If called from the "Success" path ($3354), A contains 0x51, which changes the mirror block to an "Open Passage" block.
+;      * If called from the "Failure" path ($333E), A contains 0x6B, which changes a floor block into an "Open Trapdoor" block.
+;  4. `ld bc,$7FC0` / `out (c),c`: It restores the standard memory configuration (Bank 0) so the main game logic can continue.
+;  5. `ret`: Returns to the caller.
+;
+; Significance:
+; This is a very sophisticated technique for an 8-bit game. Instead of simply having two versions of the room, the game edits the bytecode of
+; the room definition in real-time. This saves memory and allows the game's rendering engine (19D8) to naturally "see" the updated
+; architectural block the next time the screen is drawn.
 336F: 2A E0 34    ld   hl,($34E0)		; retrieves the address of the block that forms the mirror
 3372: 01 C7 7F    ld   bc,$7FC7
 3375: ED 49       out  (c),c			; puts abadia8
@@ -6864,7 +6974,7 @@ FF
 3378: 01 C0 7F    ld   bc,$7FC0			; restores the typical configuration
 337B: ED 49       out  (c),c
 337D: C9          ret
-
+; **********************************************************************************************************************
 ; checks if the keystroke buffer has finished. If so, exits with CF = 0. If not finished, loads abadia6.bin at 0x4000
 ; puts in iy the address of the keystroke buffer and exits with CF = 1
 337E: 2A D1 33    ld   hl,($33D1)		; gets the pointer to the demo keystroke buffer
@@ -6999,6 +7109,30 @@ FF
 3471: C9          ret
 
 ; checks if there has been a change in the state of the key with code a. If pressed, returns non-zero
+; This code is a Keyboard Event Processor. While the earlier routine (3482) checked if a key was held down, this routine checks if a key was
+; just pressed or released (a state change). Crucially, it also "acknowledges" or consumes the event so it isn't processed twice.
+;
+; Technical Breakdown:
+;  1. Input: Register `A` contains the code of the key to check.
+;  2. `ld de,$33DD`: Points DE to the "Keyboard State Change" buffer (populated by the scanning routine at 32BC).
+;  3. `call $3437`: Checks if the key in A has its "changed" bit set in the buffer.
+;  4. `push af`: Saves the result of the check (the Zero flag state).
+;  5. Consuming the event (`347B - 347D`):
+;      * It reads the current "changed" mask.
+;      * `or (hl)`: It performs a bitwise OR with the specific bit for this key.
+;      * `ld (de),a`: It writes the mask back.
+;      * Effect: By "ORing" the bit, it effectively ensures that specific bit is cleared/marked as handled in the state change buffer, so
+;        future calls to this routine for the same key within the same frame won't trigger again.
+;  6. `pop af`: Restores the original result of the check.
+;  7. `ret`: Returns.
+;
+; Summary of function:
+; This is an "Edge Trigger" check.
+;  * If you use 3482, the code will return true as long as the player holds the key.
+;  * If you use 3472 (this code), it returns true only on the exact frame the key is first pressed.
+;
+; In Python, this is equivalent to checking pygame.KEYDOWN versus pygame.key.get_pressed().
+;
 3472: E5          push hl
 3473: D5          push de
 3474: 11 DD 33    ld   de,$33DD		; de = keyboard press changes for each line
@@ -7012,7 +7146,22 @@ FF
 3480: E1          pop  hl
 3481: C9          ret
 
-; checks if the key with code a has been pressed. If pressed, returns non-zero
+;  checks if the key with code a has been pressed. If pressed, returns non-zero
+;  Technical Breakdown:
+;   1. Input: Register `A` contains the "Key Code" to be checked.
+;   2. `push hl` / `push de`: It saves the current values of registers HL and DE so they aren't lost (preserving the caller's state).
+;   3. `ld de,$33D3`: It sets DE to point to address `0x33D3`. Based on the memory map, this is the table where the game stores the status of
+;      the keyboard matrix (updated by the interrupt routine).
+;   4. `call $3437`: It calls a helper routine that does the actual work. It uses the key code in A to index into the table at DE and checks if
+;      the corresponding bit is set (indicating a press).
+;   5. `pop de` / `pop hl`: It restores the original values of the registers.
+;   6. `ret`: Returns to the main loop.
+;
+;  Result:
+;  After this code runs, the Zero Flag is affected:
+;   * If the key is pressed, the routine returns a non-zero value (Z flag is cleared).
+;   * If the key is NOT pressed, it returns zero (Z flag is set).
+
 3482: E5          push hl
 3483: D5          push de
 3484: 11 D3 33    ld   de,$33D3	; points to the table with the last key press
@@ -7020,7 +7169,7 @@ FF
 348A: D1          pop  de
 348B: E1          pop  hl
 348C: C9          ret
-
+; **********************************************************************************************************************
 ; checks if a key a was pressed using the keyboard buffer passed in de
 348D: 4F          ld   c,a		; c = what was in that position
 348E: CB 3F       srl  a		; c = c/8
