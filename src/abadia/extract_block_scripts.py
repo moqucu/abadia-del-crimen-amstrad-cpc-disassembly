@@ -100,7 +100,7 @@ def extract_block_definitions(memory, material_table_text):
     """
     blocks = {} 
     
-    arrow_re = re.compile(r'([0-9A-F]{4})\s*->\s*0x([0-9A-F]{2})\s*(?:\([^)]+\))?\s*->\s*(.*)')
+    arrow_re = re.compile(r'([0-9A-Fa-f]{4})\s*->\s*0x([0-9A-Fa-f]{2})\s*(?:\([^)]+\))?\s*->\s*(.*)')
     
     for line in material_table_text:
         match = arrow_re.search(line)
@@ -119,13 +119,19 @@ def extract_block_definitions(memory, material_table_text):
                 print(f"Warning: Block 0x{block_id:02X} at 0x{addr:04X} not found in parsed memory.")
                 continue
                 
-            tile_ptr_low = memory.get(addr, 0)
-            tile_ptr_high = memory.get(addr+1, 0)
-            tile_ptr = (tile_ptr_high << 8) | tile_ptr_low
+            # Read bytes as they appear in ASM file (already in display order)
+            byte0 = memory.get(addr, 0)
+            byte1 = memory.get(addr+1, 0)
+            tile_ptr = (byte0 << 8) | byte1
             
             bytecode = []
             pc = addr + 2
             while True:
+                # Patch for broken ASM at 0x1B28 (Block 0x0C)
+                # ASM shows "EA F1", should be "EA 1A F1" (ChangePC to 0x1AF1)
+                if pc == 0x1B2B and memory.get(pc) == 0xF1 and memory.get(pc-1) == 0xEA:
+                     bytecode.append(0x1A)
+
                 opcode = memory.get(pc)
                 if opcode is None:
                     print(f"Warning: Unexpected end of memory for block 0x{block_id:02X} at 0x{pc:04X}")
@@ -207,6 +213,14 @@ def main():
     print(f"Parsed {len(memory)} bytes of memory.")
     print(f"Found {len(material_table_text)} entries in Material Table.")
     
+    # Patch memory for broken Block 0x0C (Address 0x1B28)
+    # Original: 1B2B: EA F1 00 (ChangePC F100 - Broken)
+    # Patched:  1B2B: EA 1A F1 (ChangePC 1AF1 - Correct)
+    if memory.get(0x1B2B) == 0xEA and memory.get(0x1B2C) == 0xF1:
+        print("Patching Block 0x0C memory...")
+        memory[0x1B2C] = 0x1A
+        memory[0x1B2D] = 0xF1
+
     blocks = extract_block_definitions(memory, material_table_text)
     
     generate_python_file(blocks)

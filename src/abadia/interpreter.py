@@ -10,7 +10,7 @@ class AbadiaInterpreter:
     def __init__(self, tiles: AbbeyTiles, memory_file='src/abadia/resources/abbey_code.bin'):
         self.tiles = tiles
         self.canvas = None
-        
+
         # Load Memory
         self.memory = bytearray(65536)
         if os.path.exists(memory_file):
@@ -18,15 +18,23 @@ class AbadiaInterpreter:
                 self.memory = bytearray(f.read())
         else:
             print(f"Warning: Memory file {memory_file} not found.")
-        
+
         # State
         self.regs = [0] * 32  # Virtual registers (0x60 -> index 0)
-        self.stack = []
+        self.call_stack = []  # For 0xEC CallBlock / 0xEA ChangePC returns
+        self.pos_stack = []   # For 0xFC PushPos / 0xFB PopPos
+        self.loop_stack = []  # For 0xFE/0xFD loops
         self.pc = 0
         self.h = 0  # Y coordinate
         self.l = 0  # X coordinate
-        
+
         self.flip_x_mode = False # If true, IncX/DecX are swapped
+
+        # Safety limits
+        self.max_iterations = 50000  # Maximum opcodes per block
+        self.max_call_depth = 20     # Maximum nested calls
+        self.iteration_count = 0
+        self.call_depth = 0
         
     def execute(self, block_def, canvas: AbbeyCanvas, start_x, start_y, param1=1, param2=1):
         """
@@ -34,37 +42,44 @@ class AbadiaInterpreter:
         start_x, start_y: Grid coordinates.
         """
         self.canvas = canvas
-        
+
         # Start after the tile pointer (2 bytes)
         self.pc = block_def.address + 2
-        
-        self.stack = []
+
+        self.call_stack = []
+        self.pos_stack = []
+        self.loop_stack = []
         self.flip_x_mode = False
-        
+
+        # Reset safety counters
+        self.iteration_count = 0
+        self.call_depth = 0
+
         # Initialize coordinates
         self.h = start_y
         self.l = start_x
-        
+
         # Clear regs
         self.regs = [0] * 32
-        
+
         # Load Tile Data
+        # Tile data is accessed via registers 0x61-0x6C (indices 1-12)
         if hasattr(block_def, 'tile_data') and block_def.tile_data:
             for i, val in enumerate(block_def.tile_data):
                 if i < 12:
-                    self.regs[2 + i] = val # 0x62 is index 2
-        
+                    self.regs[1 + i] = val  # 0x61 is index 1
+
         # Set Parameters
         self.regs[13] = param2 # 0x6D
         self.regs[14] = param1 # 0x6E
-        
+
         # Execute Loop
         while True:
             # Safety check
             if self.pc >= len(self.memory):
-                print("PC out of bounds")
+                print(f"PC out of bounds: {self.pc:04X} >= {len(self.memory):04X}")
                 break
-                
+            
             opcode = self.memory[self.pc]
             self.pc += 1
             
@@ -75,12 +90,12 @@ class AbadiaInterpreter:
             elif opcode == 0xFD: # Loop Param2
                 self.op_loop(13)
             elif opcode == 0xFC: # PushPos
-                self.stack.append(self.l)
-                self.stack.append(self.h)
+                self.pos_stack.append(self.l)
+                self.pos_stack.append(self.h)
             elif opcode == 0xFB: # PopPos
-                if len(self.stack) >= 2:
-                    self.h = self.stack.pop()
-                    self.l = self.stack.pop()
+                if len(self.pos_stack) >= 2:
+                    self.h = self.pos_stack.pop()
+                    self.l = self.pos_stack.pop()
             elif opcode == 0xFA: # LoopEnd
                 self.op_loop_end()
             elif opcode == 0xF9: # PaintTile DecY
@@ -116,24 +131,25 @@ class AbadiaInterpreter:
                 high = self.read_byte()
                 low = self.read_byte()
                 addr = (high << 8) | low
-                
+
+                # Check call depth
+                self.call_depth += 1
+                if self.call_depth > self.max_call_depth:
+                    print(f"Warning: Max call depth ({self.max_call_depth}) exceeded")
+                    break
+
                 # Push return address
-                self.stack.append(self.pc)
+                self.call_stack.append(self.pc)
                 # Jump
                 self.pc = addr
-                
-                # Note: CallBlock normally sets up new tile regs?
-                # ASM 21B4 calls 1BBC logic.
-                # But here we assume it just jumps to code.
-                # If tiles change, we might need more logic.
-                pass
             elif opcode == 0xEB: # PaintTile DecX
                 self.op_paint_tile(dec_x=True)
-            elif opcode == 0xEA: # ChangePC
+            elif opcode == 0xEA: # ChangePC (jump without return)
                 # Reads 2 bytes addr (High, Low based on extraction analysis)
                 high = self.read_byte()
                 low = self.read_byte()
                 addr = (high << 8) | low
+                # This is a direct jump, not a call, so don't save return address
                 self.pc = addr
             elif opcode in [0xE9, 0xE8, 0xE7, 0xE6, 0xE5]: # FlipX
                 self.flip_x_mode = not self.flip_x_mode
@@ -142,18 +158,26 @@ class AbadiaInterpreter:
                 high = self.read_byte()
                 low = self.read_byte()
                 addr = (high << 8) | low
-                self.stack.append(self.pc)
+                self.call_stack.append(self.pc)
                 self.pc = addr
+            elif opcode < 0xE4:
+                # Opcodes below 0xE4 are not valid block interpreter opcodes
+                # This means we've jumped into Z80 assembly code
+                # Try to return from the call if we have a return address
+                if len(self.call_stack) > 0:
+                    # Return from call
+                    self.pc = self.call_stack.pop()
+                    self.call_depth = max(0, self.call_depth - 1)
+                else:
+                    # No return address - this might be end of block or data
+                    # Don't print warning for common Z80 opcodes
+                    if opcode not in [0x00, 0x16, 0x1C, 0x1B, 0x1F, 0x61, 0x71, 0x49, 0x80, 0xDB, 0xE0, 0xE1, 0xE2, 0xE3]:
+                        print(f"Unknown Opcode: {opcode:02X} at PC {self.pc-1:04X}")
+                    # Continue to next byte
+                    pass
             else:
-                # Handle return from CallBlock?
-                # There is no explicit RET opcode in the table.
-                # FF is End.
-                # If stack has return address?
-                # ASM 2032: FF -> pop ix. (Return).
-                # So FF acts as Return if stack has frames.
-                
-                # Check if this opcode is unexpected
-                print(f"Unknown Opcode: {opcode:02X} at PC {self.pc-1:04X}")
+                # This shouldn't happen - opcodes E4-FE are all handled above
+                print(f"Unhandled Opcode: {opcode:02X} at PC {self.pc-1:04X}")
                 break
                 
             # Handle implicit return on FF
@@ -201,7 +225,12 @@ class AbadiaInterpreter:
             else:
                 # peek is the value/reg
                 op_val = peek
-                if op_val >= 0x60: op_val = self.regs[op_val - 0x60]
+                if op_val >= 0x60:
+                    reg_idx = op_val - 0x60
+                    if reg_idx < len(self.regs):
+                        op_val = self.regs[reg_idx]
+                    else:
+                        op_val = 0  # Out of bounds register, use 0
                 val = (val + op_val) & 0xFF
         return val
 
@@ -216,9 +245,10 @@ class AbadiaInterpreter:
     def op_loop(self, reg_idx):
         count = self.regs[reg_idx]
         if count > 0:
-            self.stack.append(self.pc)
-            self.stack.append(reg_idx)
+            self.loop_stack.append(self.pc)
+            self.loop_stack.append(reg_idx)
         else:
+            # Skip to matching loop end
             depth = 1
             while self.pc < len(self.memory) and depth > 0:
                 op = self.memory[self.pc]
@@ -227,15 +257,15 @@ class AbadiaInterpreter:
                 elif op == 0xFA: depth -= 1
 
     def op_loop_end(self):
-        if len(self.stack) >= 2:
-            reg_idx = self.stack.pop()
-            saved_pc = self.stack.pop()
-            
+        if len(self.loop_stack) >= 2:
+            reg_idx = self.loop_stack.pop()
+            saved_pc = self.loop_stack.pop()
+
             self.regs[reg_idx] = (self.regs[reg_idx] - 1) & 0xFF
-            
+
             if self.regs[reg_idx] > 0:
-                self.stack.append(saved_pc)
-                self.stack.append(reg_idx)
+                self.loop_stack.append(saved_pc)
+                self.loop_stack.append(reg_idx)
                 self.pc = saved_pc
 
     def op_paint_tile(self, inc_x=False, dec_y=False, dec_x=False):
@@ -243,9 +273,13 @@ class AbadiaInterpreter:
         Handles F9, F8, EB.
         These opcodes enter a mode where they consume a sequence of tiles/modifiers.
         """
+        paint_count = 0
         while True:
             # Read Tile ID (val or reg)
             tile_id = self.read_val()
+            paint_count += 1
+            if paint_count > 100:  # Safety
+                break
             
             # Read Next Byte (Control/Count/Opcode)
             # We need to peek or read and unread?
@@ -310,5 +344,5 @@ class AbadiaInterpreter:
         # Wait, self.read_val() returns the value in the register (which IS the tile ID).
         # So we just use it.
         tile_img = self.tiles.get(tile_id)
-        if self.canvas:
+        if self.canvas and tile_img is not None:
             self.canvas.draw_tile(tile_img, self.l, self.h)
