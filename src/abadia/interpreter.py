@@ -75,11 +75,17 @@ class AbadiaInterpreter:
 
         # Execute Loop
         while True:
-            # Safety check
+            # Safety check for infinite loops
+            self.iteration_count += 1
+            if self.iteration_count > self.max_iterations:
+                print(f"Warning: Block 0x{block_def.block_id:02X} exceeded max iterations ({self.max_iterations})")
+                break
+
+            # Safety check for PC bounds
             if self.pc >= len(self.memory):
                 print(f"PC out of bounds: {self.pc:04X} >= {len(self.memory):04X}")
                 break
-            
+
             opcode = self.memory[self.pc]
             self.pc += 1
             

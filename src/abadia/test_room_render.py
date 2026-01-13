@@ -2,10 +2,15 @@
 """
 Test script for verifying Room 0 rendering.
 """
-from src.abadia.graphics import AbbeyTiles, AbbeyCanvas
-from src.abadia.interpreter import AbadiaInterpreter
-from src.abadia.abbey_blocks_library import BLOCK_DEFINITIONS
-from src.abadia.abbey_rooms_library import ROOM_DEFINITIONS
+import os
+import sys
+if os.path.exists('src'):
+    sys.path.insert(0, 'src')
+
+from abadia.graphics import AbbeyTiles, AbbeyCanvas
+from abadia.interpreter import AbadiaInterpreter
+from abadia.abbey_blocks_library import BLOCK_DEFINITIONS
+from abadia.abbey_rooms_library import ROOM_DEFINITIONS
 
 def test_room_00():
     print("Testing Room 00...")
