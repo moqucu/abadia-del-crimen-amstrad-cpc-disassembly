@@ -77,14 +77,55 @@ class AbadiaInterpreter:
 
         # Execute Loop
         while True:
-...
+            # Safety check for infinite loops
+            self.iteration_count += 1
+            if self.iteration_count > self.max_iterations:
+                print(f"Warning: Block 0x{block_def.block_id:02X} exceeded max iterations ({self.max_iterations})")
+                break
+
+            # Safety check for PC bounds
+            if self.pc >= len(self.memory):
+                print(f"PC out of bounds: {self.pc:04X} >= {len(self.memory):04X}")
+                break
+
+            opcode = self.memory[self.pc]
+            self.pc += 1
+            
             if opcode == 0xFF: # End
                 break
-            elif opcode == 0xFE: # Loop Param1
+            elif opcode == 0xFE: # Loop Param1 (0x6D / index 13)
                 self.op_loop(13)
-            elif opcode == 0xFD: # Loop Param2
+            elif opcode == 0xFD: # Loop Param2 (0x6E / index 14)
                 self.op_loop(14)
-...
+            elif opcode == 0xFC: # PushPos
+                self.pos_stack.append(self.l)
+                self.pos_stack.append(self.h)
+            elif opcode == 0xFB: # PopPos
+                if len(self.pos_stack) >= 2:
+                    self.h = self.pos_stack.pop()
+                    self.l = self.pos_stack.pop()
+            elif opcode == 0xFA: # LoopEnd
+                self.op_loop_end()
+            elif opcode == 0xF9: # PaintTile DecY
+                self.op_paint_tile(dec_y=True)
+            elif opcode == 0xF8: # PaintTile IncX
+                self.op_paint_tile(inc_x=True)
+            elif opcode == 0xF7: # UpdateReg
+                self.op_update_reg()
+            elif opcode == 0xF6: # IncY
+                self.h += 1
+            elif opcode == 0xF5: # IncX
+                self.inc_x()
+            elif opcode == 0xF4: # DecY
+                self.h -= 1
+            elif opcode == 0xF3: # DecX
+                self.dec_x()
+            elif opcode == 0xF2: # UpdateY
+                val = self.read_expr()
+                self.h += val 
+            elif opcode == 0xF1: # UpdateX
+                val = self.read_expr()
+                self.l += val
             elif opcode == 0xF0: # IncParam1 (0x6D)
                 self.regs[13] = (self.regs[13] + 1) & 0xFF
             elif opcode == 0xEF: # IncParam2 (0x6E)
@@ -131,37 +172,15 @@ class AbadiaInterpreter:
                 self.pc = addr
             elif opcode < 0xE4:
                 # Opcodes below 0xE4 are not valid block interpreter opcodes
-                # This means we've jumped into Z80 assembly code
-                # Try to return from the call if we have a return address
+                # This means we've jumped into Z80 assembly code or hit data
                 if len(self.call_stack) > 0:
-                    # Return from call
                     self.pc = self.call_stack.pop()
                     self.call_depth = max(0, self.call_depth - 1)
                 else:
-                    # No return address - this might be end of block or data
-                    # Don't print warning for common Z80 opcodes
-                    if opcode not in [0x00, 0x16, 0x1C, 0x1B, 0x1F, 0x61, 0x71, 0x49, 0x80, 0xDB, 0xE0, 0xE1, 0xE2, 0xE3]:
-                        print(f"Unknown Opcode: {opcode:02X} at PC {self.pc-1:04X}")
-                    # Continue to next byte
-                    pass
+                    break
             else:
-                # This shouldn't happen - opcodes E4-FE are all handled above
                 print(f"Unhandled Opcode: {opcode:02X} at PC {self.pc-1:04X}")
                 break
-                
-            # Handle implicit return on FF
-            if opcode == 0xFF:
-                # But we break on FF above.
-                # If we were called, we should return.
-                # Check stack?
-                # The stack mixes Pos and PC?
-                # No, we must be careful.
-                # We used stack for loops and calls.
-                # If stack top looks like PC (large number?), return?
-                # This is tricky.
-                # Let's handle Calls with a separate call stack?
-                # Or assume FF is always Stop for now.
-                pass
 
     def read_byte(self):
         if self.pc < len(self.memory):
@@ -252,12 +271,10 @@ class AbadiaInterpreter:
             # Read Tile ID (val or reg)
             tile_id = self.read_val()
             paint_count += 1
-            if paint_count > 100:  # Safety
+            if paint_count > 1000:  # Safety
                 break
             
             # Read Next Byte (Control/Count/Opcode)
-            # We need to peek or read and unread?
-            # ASM 2106 reads byte at IX.
             if self.pc >= len(self.memory): break
             ctrl = self.memory[self.pc]
             
@@ -285,14 +302,13 @@ class AbadiaInterpreter:
                 self.draw(tile_id)
                 # Continue loop
             else:
-                # Count
+                # Count - draw multiple times
                 count = ctrl
                 if ctrl >= 0x60:
                     reg_idx = ctrl - 0x60
                     if reg_idx < len(self.regs):
                         count = self.regs[reg_idx]
                     else:
-                        print(f"Error: Register {reg_idx} out of bounds")
                         count = 0
                 
                 for _ in range(count):
@@ -302,7 +318,6 @@ class AbadiaInterpreter:
                     if dec_x: self.dec_x()
                 
                 # Continue loop
-                # ASM 2138: jr 2103 (Loop)
 
     def op_update_reg(self):
         reg_byte = self.read_byte()
@@ -313,10 +328,6 @@ class AbadiaInterpreter:
                 self.regs[reg_idx] = val
 
     def draw(self, tile_id):
-        # tile_id is 0-255.
-        # But if it comes from regs, it's already resolved.
-        # Wait, self.read_val() returns the value in the register (which IS the tile ID).
-        # So we just use it.
         tile_img = self.tiles.get(tile_id)
         if self.canvas and tile_img is not None:
             self.canvas.draw_tile(tile_img, self.l, self.h)
