@@ -104,6 +104,10 @@ def extract_tile(data, tile_number, palette='day'):
 
     Returns:
         PIL Image object (16x8 pixels)
+
+    Note: Tiles >= 0x80 use different AND/OR lookup tables in the original game
+    (tables at 0x9F00/0xA000 vs 0x9D00/0x9E00). This swaps pen 1 and pen 3.
+    See assembly code at address 0x4E65 for the bit 7 check.
     """
     # Each tile is 32 bytes
     tile_offset = tile_number * 32
@@ -113,6 +117,17 @@ def extract_tile(data, tile_number, palette='day'):
 
     # Get the palette colors
     palette_colors = get_palette_colors(palette)
+
+    # Tiles >= 0x80 use different lookup tables that swap pen 1 and pen 3
+    # This is based on the bit 7 check at address 0x4E65 in the original code
+    if tile_number >= 0x80:
+        # Swap pen 1 (yellow) and pen 3 (black) for second half tiles
+        palette_colors = [
+            palette_colors[0],  # Pen 0 stays the same (cyan)
+            palette_colors[3],  # Pen 1 becomes pen 3 (black)
+            palette_colors[2],  # Pen 2 stays the same (orange)
+            palette_colors[1],  # Pen 3 becomes pen 1 (yellow)
+        ]
 
     # Create an image for this tile
     img = Image.new('RGB', (16, 8))

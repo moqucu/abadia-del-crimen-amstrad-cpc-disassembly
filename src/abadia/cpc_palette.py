@@ -80,10 +80,10 @@ class CpcPalette:
     # authentic look of the game running on a CPC 6128.
     VISUAL_PALETTES = {
         'day': {
-            3: HARDWARE_COLORS['Black'],   # Pen 3: 0x14
-            2: HARDWARE_COLORS['Orange'],        # Pen 2: 0x0F
-            1: HARDWARE_COLORS['Pastel Yellow'], # Pen 1: 0x19
-            0: HARDWARE_COLORS['Cyan'],          # Pen 0: 0x0A
+            3: HARDWARE_COLORS['Black'],         # Pen 3: outlines
+            2: HARDWARE_COLORS['Orange'],        # Pen 2: bricks/walls
+            1: HARDWARE_COLORS['Bright Yellow'], # Pen 1: highlights (was Pastel Yellow)
+            0: HARDWARE_COLORS['Bright Cyan'],   # Pen 0: floor/background (was Cyan)
         },
         'night': {
             3: HARDWARE_COLORS['Black'],   # Pen 3: 0x14

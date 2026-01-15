@@ -19,6 +19,36 @@ There are exactly **256 base tiles** (numbered `0x00` to `0xFF`).
 *   **Storage:** `abadia3.bin` (mapped to `0x6D00-0x8CFF`).
 *   **Format:** Amstrad CPC Mode 1 (4 colors, 2 bits per pixel).
 
+#### Tile Color Palette (Day Mode)
+*   **Pen 0:** Bright Cyan `(0, 255, 255)` - floor/background
+*   **Pen 1:** Bright Yellow `(255, 255, 0)` - highlights
+*   **Pen 2:** Orange `(255, 128, 0)` - bricks/walls
+*   **Pen 3:** Black `(0, 0, 0)` - outlines
+
+#### TODO: Selective Color Mapping by Tile Index
+The game uses **three different rendering paths** based on tile index, discovered in assembly at address `0x4E49`:
+
+```assembly
+4E59: cp   $0B        ; compare tile with 0x0B (11)
+4E5E: jr   c,$4E92    ; if tile < 11, jump to simple LDI path
+...
+4E65: bit  7,(ix+$02) ; check bit 7 of tile number
+4E6A: ld   h,$9D      ; tiles 11-127: use tables at 0x9D00/0x9E00
+4E6C: jr   z,$4E70
+4E6E: ld   h,$9F      ; tiles 128-255: use tables at 0x9F00/0xA000
+```
+
+**Three tile categories with different color handling:**
+1. **Tiles 0-10 (0x00-0x0A):** Direct LDI copy - raw pixel data used as-is
+2. **Tiles 11-127 (0x0B-0x7F):** Pixels transformed via lookup tables at `0x9D00`/`0x9E00`
+3. **Tiles 128-255 (0x80-0xFF):** Pixels transformed via lookup tables at `0x9F00`/`0xA000`
+
+The lookup tables are 256-byte AND/OR mask tables that remap input bytes to output screen bytes. This effectively swaps certain pen colors for different tile ranges.
+
+**Current implementation (`extract_tiles.py`):** Swaps Pen 1 and Pen 3 for tiles >= 0x80. This is approximate - a proper fix requires analyzing all 256 entries in each lookup table to determine the exact byte-to-byte color transformations.
+
+**Future work:** Parse the lookup tables from assembly addresses `0x9D00-0x9EFF` and `0x9F00-0xA0FF` to implement accurate per-tile-range color mapping.
+
 ### 2.2. Building Blocks (The Material Table)
 The game defines **96 building blocks** (indexed `0x00` to `0x5F`) in a table at `156Dh`.
 *   **Nature:** These are **NOT** large bitmaps. They are **scripts** (bytecode).
