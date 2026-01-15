@@ -70,72 +70,35 @@ class AbadiaInterpreter:
                     self.regs[1 + i] = val  # 0x61 is index 1
 
         # Set Parameters
-        self.regs[13] = param2 # 0x6D
-        self.regs[14] = param1 # 0x6E
+        # 0x6D = index 13 = PARAM1
+        # 0x6E = index 14 = PARAM2
+        self.regs[13] = param1 
+        self.regs[14] = param2 
 
         # Execute Loop
         while True:
-            # Safety check for infinite loops
-            self.iteration_count += 1
-            if self.iteration_count > self.max_iterations:
-                print(f"Warning: Block 0x{block_def.block_id:02X} exceeded max iterations ({self.max_iterations})")
-                break
-
-            # Safety check for PC bounds
-            if self.pc >= len(self.memory):
-                print(f"PC out of bounds: {self.pc:04X} >= {len(self.memory):04X}")
-                break
-
-            opcode = self.memory[self.pc]
-            self.pc += 1
-            
+...
             if opcode == 0xFF: # End
                 break
             elif opcode == 0xFE: # Loop Param1
-                self.op_loop(14)
-            elif opcode == 0xFD: # Loop Param2
                 self.op_loop(13)
-            elif opcode == 0xFC: # PushPos
-                self.pos_stack.append(self.l)
-                self.pos_stack.append(self.h)
-            elif opcode == 0xFB: # PopPos
-                if len(self.pos_stack) >= 2:
-                    self.h = self.pos_stack.pop()
-                    self.l = self.pos_stack.pop()
-            elif opcode == 0xFA: # LoopEnd
-                self.op_loop_end()
-            elif opcode == 0xF9: # PaintTile DecY
-                self.op_paint_tile(dec_y=True)
-            elif opcode == 0xF8: # PaintTile IncX
-                self.op_paint_tile(inc_x=True)
-            elif opcode == 0xF7: # UpdateReg
-                self.op_update_reg()
-            elif opcode == 0xF6: # IncY
-                self.h += 1
-            elif opcode == 0xF5: # IncX
-                self.inc_x()
-            elif opcode == 0xF4: # DecY
-                self.h -= 1
-            elif opcode == 0xF3: # DecX
-                self.dec_x()
-            elif opcode == 0xF2: # UpdateY
-                val = self.read_expr()
-                self.h += val 
-            elif opcode == 0xF1: # UpdateX
-                val = self.read_expr()
-                self.l += val
-            elif opcode == 0xF0: # IncParam1 (0x6E)
-                self.regs[14] = (self.regs[14] + 1) & 0xFF
-            elif opcode == 0xEF: # IncParam2 (0x6D)
+            elif opcode == 0xFD: # Loop Param2
+                self.op_loop(14)
+...
+            elif opcode == 0xF0: # IncParam1 (0x6D)
                 self.regs[13] = (self.regs[13] + 1) & 0xFF
-            elif opcode == 0xEE: # DecParam2
+            elif opcode == 0xEF: # IncParam2 (0x6E)
+                self.regs[14] = (self.regs[14] + 1) & 0xFF
+            elif opcode == 0xEE: # DecParam1 (0x6D)
                 self.regs[13] = (self.regs[13] - 1) & 0xFF
-            elif opcode == 0xED: # DecParam1
+            elif opcode == 0xED: # DecParam2 (0x6E)
                 self.regs[14] = (self.regs[14] - 1) & 0xFF
+            elif opcode == 0xE0: # NOP / Restart Fetch
+                continue
             elif opcode == 0xEC: # CallBlock
-                # Reads address (2 bytes, High Low?)
-                high = self.read_byte()
+                # Reads address (2 bytes, Little Endian)
                 low = self.read_byte()
+                high = self.read_byte()
                 addr = (high << 8) | low
 
                 # Check call depth
@@ -151,9 +114,9 @@ class AbadiaInterpreter:
             elif opcode == 0xEB: # PaintTile DecX
                 self.op_paint_tile(dec_x=True)
             elif opcode == 0xEA: # ChangePC (jump without return)
-                # Reads 2 bytes addr (High, Low based on extraction analysis)
-                high = self.read_byte()
+                # Reads 2 bytes addr (Little Endian)
                 low = self.read_byte()
+                high = self.read_byte()
                 addr = (high << 8) | low
                 # This is a direct jump, not a call, so don't save return address
                 self.pc = addr
@@ -161,8 +124,8 @@ class AbadiaInterpreter:
                 self.flip_x_mode = not self.flip_x_mode
             elif opcode == 0xE4: # CallBlock FlipX
                 self.flip_x_mode = not self.flip_x_mode
-                high = self.read_byte()
                 low = self.read_byte()
+                high = self.read_byte()
                 addr = (high << 8) | low
                 self.call_stack.append(self.pc)
                 self.pc = addr
@@ -209,6 +172,11 @@ class AbadiaInterpreter:
 
     def read_val(self):
         val = self.read_byte()
+        
+        # 0x82 is a literal escape prefix (from 0x2220)
+        if val == 0x82:
+            return self.read_byte()
+            
         if val >= 0x60:
             reg_idx = val - 0x60
             if reg_idx < len(self.regs):

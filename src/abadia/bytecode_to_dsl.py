@@ -33,12 +33,10 @@ class BytecodeToDSL:
         # Common subroutines (not blocks) - named SCRIPT96+ in reference DSL
         self.script_addresses = {
             # Subroutines 96-105 (commonly called routines)
-            0x18E3: 96,   # Common subroutine
-            0x18E7: 97,   # Common subroutine (floor pattern)
-            0x1CA6: 99,   # Common subroutine
-            0x1CAF: 100,  # Common subroutine
-            0x1CB4: 101,  # Common subroutine
-            0x1CBD: 102,  # Common subroutine
+            0x18E3: 96,   0x18E7: 97,
+            0x1D59: 96,   # Shared logic with SCRIPT96
+            0x1CA6: 99,   0x1CAF: 100,
+            0x1CB4: 101,  0x1CBD: 102,
             # Subroutines 106-113
             0x198C: 106,  # FLIP X then JMP SCRIPT1
             0x19AD: 107,  # Common column/window code
@@ -64,14 +62,19 @@ class BytecodeToDSL:
             return self.memory[self.pc]
         return 0
 
-    def emit(self, text: str):
-        """Emit a line of DSL with proper indentation."""
-        self.output_lines.append("  " * self.indent + text)
-
-    def read_value_str(self) -> str:
-        """Read a value/register and return DSL string representation."""
+    def read_operand(self) -> Tuple[int, str]:
+        """
+        Read an operand/value following the game's logic at 0x2214.
+        Returns (value, string_representation).
+        """
         val = self.read_byte()
-        if val >= 0x70:
+        
+        # 0x82 is a literal escape prefix
+        if val == 0x82:
+            literal = self.read_byte()
+            return literal, str(literal)
+            
+        if val >= 0x60:
             # Register reference
             reg_names = {
                 0x70: "DEPTHX", 0x71: "DEPTHY",
@@ -79,49 +82,30 @@ class BytecodeToDSL:
                 0x6D: "PARAM1", 0x6E: "PARAM2",
             }
             if val in reg_names:
-                return reg_names[val]
+                return 0, reg_names[val] # Value is unknown at disassembly time
             elif 0x61 <= val <= 0x6C:
-                return f"T{val - 0x61}"
+                return 0, f"T{val - 0x61}"
             else:
-                return f"REG{val:02X}"
-        elif val >= 0x60:
-            # Registers 0x60-0x6F
-            reg_names = {
-                0x70: "DEPTHX", 0x71: "DEPTHY",
-                0x6F: "HEIGHT", 0x72: "HEIGHT2",
-                0x6D: "PARAM1", 0x6E: "PARAM2",
-            }
-            if val in reg_names:
-                return reg_names[val]
-            elif 0x61 <= val <= 0x6C:
-                return f"T{val - 0x61}"
-            else:
-                return f"REG{val:02X}"
+                return 0, f"REG{val:02X}"
         else:
-            return str(val)
+            return val, str(val)
 
-    def read_expression_str(self) -> str:
+    def emit(self, text: str):
+        """Emit a line of DSL with proper indentation."""
+        self.output_lines.append("  " * self.indent + text)
+
+    def read_value_str(self) -> str:
+        """Read a value/register and return DSL string representation."""
+        _, s = self.read_operand()
+        return s
+
+    def read_expression_str(self, target_reg: Optional[str] = None) -> str:
         """Read an expression and return DSL string representation."""
         parts = []
-        first_val = self.read_byte()
-
-        # Register names matching reference DSL convention
-        reg_names = {
-            0x70: "DEPTHX", 0x71: "DEPTHY",
-            0x6F: "HEIGHT", 0x72: "HEIGHT2",
-            0x6D: "PARAM1", 0x6E: "PARAM2",  # Swapped to match reference
-        }
-
-        # First value
-        if first_val >= 0x60:
-            if first_val in reg_names:
-                parts.append(reg_names[first_val])
-            elif 0x61 <= first_val <= 0x6C:
-                parts.append(f"T{first_val - 0x61}")
-            else:
-                parts.append(f"REG{first_val:02X}")
-        else:
-            parts.append(str(first_val))
+        
+        # Read first term
+        _, s = self.read_operand()
+        parts.append(s)
 
         # Continue reading expression parts
         while self.pc < len(self.memory):
@@ -132,60 +116,39 @@ class BytecodeToDSL:
             self.pc += 1
 
             if peek == 0x84:
-                # Subtraction operator
-                # Check if next byte is an opcode - if so, 84 means "negate expression"
-                if self.pc < len(self.memory) and self.memory[self.pc] >= 0xC8:
-                    # Expression ends here - just negate what we have
-                    # Transform "a + b + c" to "-( a + b + c )"
+                # 0x84 is the SUB operator
+                # Check what follows
+                if self.peek_byte() >= 0xC8:
+                    # End of expression - negate everything so far
                     expr_so_far = "".join(parts)
-                    parts = [f"-( {expr_so_far} )"]
-                    break
-                next_val = self.read_byte()
-                if next_val >= 0x60:
-                    if next_val in reg_names:
-                        parts.append(f" - {reg_names[next_val]}")
-                    else:
-                        parts.append(f" - REG{next_val:02X}")
-                else:
-                    parts.append(f" - {next_val}")
-            elif peek >= 0x60:
-                # Register addition
-                if peek in reg_names:
-                    parts.append(f" + {reg_names[peek]}")
-                elif 0x61 <= peek <= 0x6C:
-                    parts.append(f" + T{peek - 0x61}")
-                else:
-                    parts.append(f" + REG{peek:02X}")
+                    return f"-( {expr_so_far} )"
+                
+                # Otherwise read next operand to subtract
+                _, next_s = self.read_operand()
+                
+                # Handle special pattern "-( operand ) + register" from "register 84 operand"
+                # Reference DSL represents "A - B" as "-( B ) + A" if A is a register?
+                # Actually, SCRIPT38 says "ADD Y, -( PARAM2 ) + PARAM1" for "F2 6E 84 6D"
+                # If 6E=PARAM1 and 6D=PARAM2, then "PARAM1 84 PARAM2" -> "-( PARAM2 ) + PARAM1"
+                if len(parts) == 1 and parts[0] != "0":
+                    return f"-( {next_s} ) + {parts[0]}"
+                
+                parts.append(f" - {next_s}")
             else:
-                # Literal addition
-                parts.append(f" + {peek}")
+                # Addition
+                self.pc -= 1 # Unread
+                _, s = self.read_operand()
+                parts.append(f" + {s}")
 
         return "".join(parts)
-
-    def format_expression_negative(self, expr_str: str, target_reg: str) -> str:
-        """Format expression for LD statement, handling negative patterns."""
-        # Try to detect patterns like "val + PARAM2 + PARAM2 - REG70" -> "-( val + PARAM2 + PARAM2 ) + DEPTHX"
-        # This is a simplification - the actual pattern matching would be more complex
-
-        if " - " in expr_str and target_reg in expr_str:
-            # Pattern: "X + Y - TARGET" becomes "-( X + Y ) + TARGET"
-            parts = expr_str.rsplit(" - ", 1)
-            if len(parts) == 2 and target_reg in parts[1]:
-                return f"-( {parts[0]} ) + {target_reg}"
-
-        return expr_str
 
     def disassemble_paint_tile(self, move_type: str) -> List[str]:
         """Disassemble F9/F8/EB paint tile sequence."""
         lines = []
 
         while True:
-            # Read tile ID
-            tile_val = self.read_byte()
-            if tile_val >= 0x61 and tile_val <= 0x6C:
-                tile_str = f"T{tile_val - 0x61}"
-            else:
-                tile_str = str(tile_val)
+            # Read tile ID (operand)
+            _, tile_str = self.read_operand()
 
             # Check control byte
             if self.pc >= len(self.memory):
@@ -223,20 +186,25 @@ class BytecodeToDSL:
                 # Continue loop
             else:
                 # Count - draw multiple times
-                if ctrl >= 0x60:
-                    count_str = f"REG{ctrl:02X}"
-                else:
-                    count_str = str(ctrl)
+                # Count is also an operand!
+                # We need to unread it and read it as operand
+                self.pc -= 1
+                count_val, count_str = self.read_operand()
 
-                # For simplicity, just note the count
                 lines.append(f"DRAWTILE {tile_str}  ; x{count_str}")
-                for _ in range(ctrl if ctrl < 0x60 else 1):
-                    if move_type == "DEC Y":
-                        lines.append("DEC Y")
-                    elif move_type == "INC X":
-                        lines.append("INC X")
-                    elif move_type == "DEC X":
-                        lines.append("DEC X")
+                
+                # If it's a literal count < 60, we can emit multiple movements
+                # Otherwise (register count), we just show the comment
+                if count_val < 0x60 and count_val > 0:
+                    for _ in range(count_val):
+                        if move_type == "DEC Y":
+                            lines.append("DEC Y")
+                        elif move_type == "INC X":
+                            lines.append("INC X")
+                        elif move_type == "DEC X":
+                            lines.append("DEC X")
+
+        return lines
 
         return lines
 
@@ -326,8 +294,7 @@ class BytecodeToDSL:
                     0x6D: "PARAM1", 0x6E: "PARAM2",
                 }
                 reg_name = reg_names.get(reg_byte, f"REG{reg_byte:02X}")
-                expr = self.read_expression_str()
-                formatted = self.format_expression_negative(expr, reg_name)
+                formatted = self.read_expression_str(reg_name)
                 self.emit(f"LD {reg_name}, {formatted}")
 
             elif opcode == 0xF6:  # INC Y
@@ -343,12 +310,12 @@ class BytecodeToDSL:
                 self.emit("DEC X")
 
             elif opcode == 0xF2:  # ADD Y, expr
-                expr = self.read_expression_str()
-                self.emit(f"ADD Y, {expr}")
+                formatted = self.read_expression_str("DEPTHY")
+                self.emit(f"ADD Y, {formatted}")
 
             elif opcode == 0xF1:  # ADD X, expr
-                expr = self.read_expression_str()
-                self.emit(f"ADD X, {expr}")
+                formatted = self.read_expression_str("DEPTHX")
+                self.emit(f"ADD X, {formatted}")
 
             elif opcode == 0xF0:  # INC PARAM1
                 self.emit("INC PARAM1")
@@ -363,23 +330,28 @@ class BytecodeToDSL:
                 self.emit("DEC PARAM1")
 
             elif opcode == 0xEC:  # CALL
-                high = self.read_byte()
                 low = self.read_byte()
+                high = self.read_byte()
                 addr = (high << 8) | low
-                # Try to resolve to script number
-                script_num = self.resolve_address_to_script(addr)
-                if script_num:
-                    self.emit(f"CALL SCRIPT{script_num}")
+                # Try to resolve to script number and offset
+                res = self.resolve_address_to_script_with_offset(addr)
+                if res:
+                    script_num, offset = res
+                    if offset > 0:
+                        self.emit(f"CALL SCRIPT{script_num}, {offset}")
+                    else:
+                        self.emit(f"CALL SCRIPT{script_num}")
                 else:
                     self.emit(f"CALL ${addr:04X}")
 
             elif opcode == 0xEA:  # JMP
-                high = self.read_byte()
                 low = self.read_byte()
+                high = self.read_byte()
                 addr = (high << 8) | low
-                script_num = self.resolve_address_to_script(addr)
-                if script_num:
-                    self.emit(f"JMP SCRIPT{script_num}, 0")
+                res = self.resolve_address_to_script_with_offset(addr)
+                if res:
+                    script_num, offset = res
+                    self.emit(f"JMP SCRIPT{script_num}, {offset}")
                 else:
                     self.emit(f"JMP ${addr:04X}, 0")
                 break  # JMP ends this script
@@ -389,12 +361,16 @@ class BytecodeToDSL:
 
             elif opcode == 0xE4:  # CALL with FLIP X
                 self.emit("FLIP X")
-                high = self.read_byte()
                 low = self.read_byte()
+                high = self.read_byte()
                 addr = (high << 8) | low
-                script_num = self.resolve_address_to_script(addr)
-                if script_num:
-                    self.emit(f"CALL SCRIPT{script_num}")
+                res = self.resolve_address_to_script_with_offset(addr)
+                if res:
+                    script_num, offset = res
+                    if offset > 0:
+                        self.emit(f"CALL SCRIPT{script_num}, {offset}")
+                    else:
+                        self.emit(f"CALL SCRIPT{script_num}")
                 else:
                     self.emit(f"CALL ${addr:04X}")
 
@@ -408,11 +384,37 @@ class BytecodeToDSL:
 
         return "\n".join(self.output_lines)
 
-    def resolve_address_to_script(self, addr: int) -> Optional[int]:
-        """Try to resolve an address to a script number."""
-        # This would need a mapping of known script addresses
-        # For now, return None
-        return self.script_addresses.get(addr)
+    def resolve_address_to_script_with_offset(self, addr: int) -> Optional[Tuple[int, int]]:
+        """Try to resolve an address to a (script_number, offset) tuple."""
+        # 1. Check exact matches in known script addresses (subroutines)
+        if addr in self.script_addresses:
+            return self.script_addresses[addr], 0
+            
+        # 2. Check blocks
+        # We need the block list sorted by address
+        from abadia.abbey_blocks_library import BLOCK_DEFINITIONS as BLOCK_LIBRARY
+        
+        # Build list if not cached? For now just iterate.
+        sorted_blocks = sorted(BLOCK_LIBRARY.values(), key=lambda b: b.address)
+        
+        # Find the block that contains this address
+        best_match = None
+        for b in sorted_blocks:
+            if b.address <= addr:
+                best_match = b
+            else:
+                break
+                
+        if best_match:
+            # Check if it's within a reasonable range (e.g. 256 bytes)
+            # Or just assume if it's after address, it belongs to this block
+            offset = addr - (best_match.address + 2) # Offset from bytecode start
+            if offset < 0:
+                # Target is the tile pointer or block start?
+                return best_match.block_id, 0
+            return best_match.block_id, offset
+            
+        return None
 
     def set_script_addresses(self, addresses: dict):
         """Set known script address mappings, preserving common subroutines."""

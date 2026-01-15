@@ -1,176 +1,95 @@
 #!/usr/bin/env python3
 """
-Extract Building Block Scripts from Disassembled Code.
+Extract Building Block Scripts from Binary Memory Dump.
 
-This script parses the '0 - abadia.asm' file to:
-1. Build a memory map of the game code.
-2. Parse the Material Table at 0x156D to find block definitions.
-3. Extract the bytecode for each of the 96 building blocks.
-4. Generate 'src/abadia/abbey_blocks_library.py'.
+Uses 'src/abadia/resources/abbey_code.bin' as the source of truth for bytes.
+Uses the ASM file only to find the Material Table mapping (ID -> Address).
 """
 
 import re
 import os
 
 ASM_FILE = "translated_english_files/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
+MEM_FILE = "src/abadia/resources/abbey_code.bin"
 OUTPUT_FILE = "src/abadia/abbey_blocks_library.py"
 
-def parse_asm_file(filepath):
-    """
-    Parses the ASM file to build a memory map and extract specific table text.
-    Returns (memory, material_table_lines)
-    """
-    memory = {} # Sparse memory map: addr -> byte
+def load_memory(filepath):
+    """Load the full 64KB memory dump."""
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"Memory file {filepath} not found. Run rebuild_abbey_code.py first.")
+    with open(filepath, 'rb') as f:
+        return bytearray(f.read())
+
+def parse_material_table(filepath):
+    """Extract the block ID -> address mapping from the ASM Material Table."""
     material_table_text = []
-    
-    current_addr = None
-    
-    # Regex for standard hex dump lines: "1234: AB CD EF  ; comment"
-    # We capture the address and the rest of the line
-    addr_line_re = re.compile(r'^\s*([0-9A-Fa-f]{4}):\s*(.*)$')
-    
-    # Regex for the specific arrow format in the material table: "1973 -> 0x01"
-    arrow_re = re.compile(r'([0-9A-Fa-f]{4})\s*->\s*0x([0-9A-Fa-f]{2})')
-
-    in_material_table = False
-
-    with open(filepath, 'r', encoding='latin-1') as f:
-        for line in f:
-            line = line.strip('\n') 
-            
-            # 1. Capture Material Table Text
-            if "156D:" in line:
-                in_material_table = True
-            
-            if in_material_table:
-                if arrow_re.search(line):
-                    material_table_text.append(line)
-            
-            # 2. Populate Memory
-            # Extract potential bytes string
-            bytes_text = ""
-            
-            match = addr_line_re.match(line)
-            if match:
-                addr_str = match.group(1)
-                bytes_text = match.group(2)
-                try:
-                    current_addr = int(addr_str, 16)
-                except ValueError:
-                    current_addr = None # Should not happen with regex
-            elif current_addr is not None and line.strip():
-                # Continuation line? Assumes indented or just data
-                # We simply try to parse the whole line as bytes if current_addr is set
-                bytes_text = line.strip()
-            
-            if current_addr is not None and bytes_text:
-                # Parse tokens until non-hex
-                # Handle comments starting with ;
-                if ';' in bytes_text:
-                    bytes_text = bytes_text.split(';')[0]
-                
-                tokens = bytes_text.split()
-                for token in tokens:
-                    # Clean token (though split handles whitespace)
-                    token = token.strip()
-                    if not token: continue
-                    
-                    # Check if valid hex
-                    if all(c in '0123456789ABCDEFabcdef' for c in token):
-                        # Handle grouped hex "16A2"
-                        if len(token) % 2 == 0:
-                            for i in range(0, len(token), 2):
-                                b_val = int(token[i:i+2], 16)
-                                memory[current_addr] = b_val
-                                current_addr += 1
-                        else:
-                            # Odd length hex string? Unlikely to be code bytes.
-                            # Treat as start of mnemonic/garbage
-                            break
-                    else:
-                        # Non-hex token encountered (e.g. "FlipX", "add", "ld")
-                        # Stop processing this line
-                        break
-
-    return memory, material_table_text
-
-def extract_block_definitions(memory, material_table_text):
-    """
-    Extracts block definitions based on the parsed table text.
-    """
-    blocks = {} 
-    
     arrow_re = re.compile(r'([0-9A-Fa-f]{4})\s*->\s*0x([0-9A-Fa-f]{2})\s*(?:\([^)]+\))?\s*->\s*(.*)')
     
-    for line in material_table_text:
-        match = arrow_re.search(line)
-        if match:
-            addr_str = match.group(1)
-            id_str = match.group(2)
-            desc = match.group(3).strip()
-            
-            addr = int(addr_str, 16)
-            block_id = int(id_str, 16)
-            
-            if addr == 0:
-                continue 
-                
-            if addr not in memory:
-                print(f"Warning: Block 0x{block_id:02X} at 0x{addr:04X} not found in parsed memory.")
-                continue
-                
-            # Read bytes as they appear in ASM file (already in display order)
-            byte0 = memory.get(addr, 0)
-            byte1 = memory.get(addr+1, 0)
-            tile_ptr = (byte0 << 8) | byte1
-            
-            bytecode = []
-            pc = addr + 2
-            while True:
-                # Patch for broken ASM at 0x1B28 (Block 0x0C)
-                # ASM shows "EA F1", should be "EA 1A F1" (ChangePC to 0x1AF1)
-                if pc == 0x1B2B and memory.get(pc) == 0xF1 and memory.get(pc-1) == 0xEA:
-                     bytecode.append(0x1A)
+    in_material_table = False
+    with open(filepath, 'r', encoding='latin-1') as f:
+        for line in f:
+            if "156D:" in line:
+                in_material_table = True
+            if in_material_table:
+                match = arrow_re.search(line)
+                if match:
+                    material_table_text.append({
+                        'addr': int(match.group(1), 16),
+                        'id': int(match.group(2), 16),
+                        'desc': match.group(3).strip()
+                    })
+    return material_table_text
 
-                opcode = memory.get(pc)
-                if opcode is None:
-                    print(f"Warning: Unexpected end of memory for block 0x{block_id:02X} at 0x{pc:04X}")
-                    break
+def extract_blocks(memory, mappings):
+    """Extract bytecode and tile data for each block."""
+    blocks = {}
+    for item in mappings:
+        addr = item['addr']
+        block_id = item['id']
+        
+        if addr == 0: continue
+        
+        # Read Tile Pointer (2 bytes, Little Endian)
+        ptr_low = memory[addr]
+        ptr_high = memory[addr+1]
+        tile_ptr = (ptr_high << 8) | ptr_low
+        
+        # Read Tile Data (12 bytes) from the tile_ptr address
+        tile_data = []
+        for i in range(12):
+            if tile_ptr + i < 65536:
+                tile_data.append(memory[tile_ptr + i])
+            else:
+                tile_data.append(0)
                 
-                bytecode.append(opcode)
-                pc += 1
+        # Read Bytecode (starting at addr + 2) until 0xFF
+        bytecode = []
+        pc = addr + 2
+        while pc < 65536:
+            opcode = memory[pc]
+            bytecode.append(opcode)
+            pc += 1
+            if opcode == 0xFF:
+                break
+            if len(bytecode) > 500: # Safety
+                break
                 
-                if opcode == 0xFF:
-                    break
-                    
-                if len(bytecode) > 200:
-                    print(f"Warning: Block 0x{block_id:02X} bytecode too long (>200 bytes). Truncating.")
-                    break
-            
-            # Read Tile Data (12 bytes)
-            tile_data = []
-            for i in range(12):
-                val = memory.get(tile_ptr + i, 0)
-                tile_data.append(val)
-
-            blocks[block_id] = {
-                'address': addr,
-                'tile_ptr': tile_ptr,
-                'tile_data': tile_data,
-                'bytecode': bytecode,
-                'description': desc
-            }
-            
+        blocks[block_id] = {
+            'address': addr,
+            'tile_ptr': tile_ptr,
+            'tile_data': tile_data,
+            'bytecode': bytecode,
+            'description': item['desc']
+        }
     return blocks
 
 def generate_python_file(blocks):
     """Generates the output Python file."""
-    
     content = [
         '"""',
         'Abbey Blocks Library',
         '',
-        'Auto-generated from disassembled code.',
+        'Auto-generated from binary memory dump.',
         'Contains the 96 building block scripts used by the game engine.',
         '"""',
         '',
@@ -198,44 +117,27 @@ def generate_python_file(blocks):
         content.append(f"        tile_ptr=0x{b['tile_ptr']:04X},")
         content.append(f"        tile_data=[{tile_data_hex}],")
         content.append(f"        bytecode=[{bytecode_hex}]")
-        content.append(f"    ),")
+        content.append(f"    ), ")
         
     content.append("}")
     
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write("\n".join(content))
-        
     print(f"Generated {OUTPUT_FILE} with {len(blocks)} blocks.")
 
 def main():
-    print("Parsing ASM file...")
-    memory, material_table_text = parse_asm_file(ASM_FILE)
-    print(f"Parsed {len(memory)} bytes of memory.")
-    print(f"Found {len(material_table_text)} entries in Material Table.")
+    print("Loading memory dump...")
+    memory = load_memory(MEM_FILE)
     
-    # Patch memory for broken Block 0x0C (Address 0x1B28)
-    # Original: 1B2B: EA F1 00 (ChangePC F100 - Broken)
-    # Patched:  1B2B: EA 1A F1 (ChangePC 1AF1 - Correct)
-    if memory.get(0x1B2B) == 0xEA and memory.get(0x1B2C) == 0xF1:
-        print("Patching Block 0x0C memory...")
-        memory[0x1B2C] = 0x1A
-        memory[0x1B2D] = 0xF1
-
-    blocks = extract_block_definitions(memory, material_table_text)
+    print("Parsing material table from ASM...")
+    mappings = parse_material_table(ASM_FILE)
+    print(f"Found {len(mappings)} entries.")
     
+    print("Extracting blocks...")
+    blocks = extract_blocks(memory, mappings)
+    
+    print("Generating library...")
     generate_python_file(blocks)
-    
-    # Save memory map
-    print("Saving memory map...")
-    mem_bytes = bytearray(65536)
-    for addr, val in memory.items():
-        if 0 <= addr < 65536:
-            mem_bytes[addr] = val
-            
-    os.makedirs('src/abadia/resources', exist_ok=True)
-    with open('src/abadia/resources/abbey_code.bin', 'wb') as f:
-        f.write(mem_bytes)
-    print("Saved src/abadia/resources/abbey_code.bin")
 
 if __name__ == "__main__":
     main()
