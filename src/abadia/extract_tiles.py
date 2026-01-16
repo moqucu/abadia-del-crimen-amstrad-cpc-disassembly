@@ -11,6 +11,31 @@ Each tile is 32 bytes:
 - Total: 256 tiles (0x00 to 0xFF)
 
 The tile data is located in the .asm file at addresses 8300-A2FF (8192 bytes).
+
+CONGRUENCE WITH ORIGINAL ASSEMBLY CODE:
+--------------------------------------
+This script implements a 3-tier tile rendering logic that is functionally congruent with 
+the original Z80 assembly code found at address 0x4E49.
+
+1. **Tier 1 (Tiles 0-10):**
+   - **Assembly:** Checks if TileID < 0x0B. If so, uses direct LDI copy (no table lookup).
+   - **Python:** `if tile_number < 11`: Renders as Opaque Cyan background.
+   - **Logic:** These are base tiles (floor) that do not require masking.
+
+2. **Tier 2 (Tiles 11-127):**
+   - **Assembly:** Checks if Bit 7 is clear. If so, uses Lookup Tables 1 & 2 at 0x9D00.
+   - **Python:** `if 11 <= tile_number < 128`: Applies specific bit-to-color mapping.
+   - **Logic:** The lookup tables perform masking/transparency. We emulate this by 
+     mapping Bit 1 to Transparent and correcting color assignments (e.g., Bit 3 -> Black).
+
+3. **Tier 3 (Tiles 128-255):**
+   - **Assembly:** If Bit 7 is set, uses Lookup Tables 3 & 4 at 0x9F00.
+   - **Python:** `if tile_number >= 128`: Applies a different bit-to-color mapping.
+   - **Logic:** High-ID tiles use a different color encoding in the raw binary. 
+     We emulate the lookup table's result by mapping Bit 2 to Transparent and Bit 1 to Yellow.
+
+This implementation effectively "patches" the raw pixel data to match the visual output 
+of the game's runtime masking engine, providing a valid study of the game's graphics architecture.
 """
 
 import re
