@@ -87,9 +87,9 @@ class CpcPalette:
         },
         'night': {
             3: HARDWARE_COLORS['Black'],   # Pen 3: 0x14
-            2: HARDWARE_COLORS['Bright Magenta'],# Pen 2: 0x08
-            1: HARDWARE_COLORS['Bright White'],  # Pen 1: 0x1A
-            0: HARDWARE_COLORS['Bright Blue'],   # Pen 0: 0x02
+            2: HARDWARE_COLORS['Mauve'],   # Pen 2: 0x05
+            1: HARDWARE_COLORS['White'],   # Pen 1: 0x0D (was Bright White)
+            0: HARDWARE_COLORS['Blue'],    # Pen 0: 0x01
         }
     }
 
