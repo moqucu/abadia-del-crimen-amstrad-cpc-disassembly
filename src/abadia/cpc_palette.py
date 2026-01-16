@@ -82,8 +82,8 @@ class CpcPalette:
         'day': {
             3: HARDWARE_COLORS['Black'],         # Pen 3: outlines
             2: HARDWARE_COLORS['Orange'],        # Pen 2: bricks/walls
-            1: HARDWARE_COLORS['Bright Yellow'], # Pen 1: highlights (was Pastel Yellow)
-            0: HARDWARE_COLORS['Bright Cyan'],   # Pen 0: floor/background (was Cyan)
+            1: HARDWARE_COLORS['Pastel Yellow'], # Pen 1: highlights (was Bright Yellow)
+            0: HARDWARE_COLORS['Cyan'],          # Pen 0: floor/background (was Bright Cyan)
         },
         'night': {
             3: HARDWARE_COLORS['Black'],   # Pen 3: 0x14

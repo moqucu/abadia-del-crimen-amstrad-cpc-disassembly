@@ -42,7 +42,10 @@ class AbbeyCanvas:
         # Bounds check
         if 0 <= x_pixel < self.image.width and 0 <= y_pixel < self.image.height:
             try:
-                self.image.paste(tile_img, (x_pixel, y_pixel))
+                if tile_img.mode == 'RGBA':
+                    self.image.paste(tile_img, (x_pixel, y_pixel), tile_img)
+                else:
+                    self.image.paste(tile_img, (x_pixel, y_pixel))
             except:
                 pass
 

@@ -118,19 +118,34 @@ def extract_tile(data, tile_number, palette='day'):
     # Get the palette colors
     palette_colors = get_palette_colors(palette)
 
-    # Tiles >= 0x80 use different lookup tables that swap pen 1 and pen 3
-    # This is based on the bit 7 check at address 0x4E65 in the original code
-    if tile_number >= 0x80:
-        # Swap pen 1 (yellow) and pen 3 (black) for second half tiles
+    # Tiles >= 11 use masking tables and have different color mappings
+    if 11 <= tile_number < 128:
+        # Mapping for 11-127:
+        # Bit 0 -> Cyan (P0) Opaque
+        # Bit 1 -> Transparent
+        # Bit 2 -> Orange (P2)
+        # Bit 3 -> Black (P3)
         palette_colors = [
-            palette_colors[0],  # Pen 0 stays the same (cyan)
-            palette_colors[3],  # Pen 1 becomes pen 3 (black)
-            palette_colors[2],  # Pen 2 stays the same (orange)
-            palette_colors[1],  # Pen 3 becomes pen 1 (yellow)
+            palette_colors[0],  # 0 -> Cyan
+            palette_colors[0],  # 1 -> Transparent
+            palette_colors[2],  # 2 -> Orange
+            palette_colors[3],  # 3 -> Black
+        ]
+    elif tile_number >= 128:
+        # Mapping for 128-255:
+        # Bit 0 -> Cyan (P0) Opaque ["0 is cyan"]
+        # Bit 1 -> Yellow (P1)      ["1 is yellow"]
+        # Bit 2 -> Transparent (P0) ["2 needs to be transparent... I don't see any orange"]
+        # Bit 3 -> Black (P3)       ["3 is black"]
+        palette_colors = [
+            palette_colors[0],  # 0 -> Cyan
+            palette_colors[1],  # 1 -> Yellow
+            palette_colors[0],  # 2 -> Transparent
+            palette_colors[3],  # 3 -> Black
         ]
 
-    # Create an image for this tile
-    img = Image.new('RGB', (16, 8))
+    # Create an image for this tile (RGBA for transparency)
+    img = Image.new('RGBA', (16, 8))
     pixels = img.load()
 
     # Decode each scanline (8 scanlines total)
@@ -145,7 +160,26 @@ def extract_tile(data, tile_number, palette='day'):
             # Write the 4 pixels
             for i, pv in enumerate(pixel_values):
                 x = x_byte * 4 + i
-                pixels[x, y] = palette_colors[pv]
+                
+                # Get RGB color
+                color = palette_colors[pv]
+                
+                # Handle transparency logic
+                if 11 <= tile_number < 128:
+                    # 11-127: Only Bit 1 is transparent
+                    if pv == 1:
+                        pixels[x, y] = (color[0], color[1], color[2], 0)
+                    else:
+                        pixels[x, y] = (color[0], color[1], color[2], 255)
+                elif tile_number >= 128:
+                    # 128-255: Only Bit 2 is transparent
+                    if pv == 2:
+                        pixels[x, y] = (color[0], color[1], color[2], 0)
+                    else:
+                        pixels[x, y] = (color[0], color[1], color[2], 255)
+                else:
+                    # 0-10: Fully opaque background (Pen 0 is visible Cyan)
+                    pixels[x, y] = (color[0], color[1], color[2], 255)
 
     return img
 
@@ -215,8 +249,8 @@ def create_tile_sheet(asm_path, output_base_path, tiles_per_row=16):
         sheet_width = tiles_per_row * 17  # 16 pixels + 1 spacing
         sheet_height = rows * 9  # 8 pixels + 1 spacing
 
-        # Create sprite sheet
-        sheet = Image.new('RGB', (sheet_width, sheet_height), (0x40, 0x40, 0x40))
+        # Create sprite sheet (RGBA)
+        sheet = Image.new('RGBA', (sheet_width, sheet_height), (0, 0, 0, 0))
 
         for tile_num in range(total_tiles):
             tile_img = extract_tile(graphics_data, tile_num, palette=palette_name)
@@ -227,7 +261,7 @@ def create_tile_sheet(asm_path, output_base_path, tiles_per_row=16):
             x = col * 17
             y = row * 9
 
-            # Paste tile into sheet
+            # Paste tile into sheet (using alpha compositing)
             sheet.paste(tile_img, (x, y))
 
             if tile_num % 64 == 0:
@@ -273,13 +307,13 @@ if __name__ == "__main__":
     print(f"  ./abbey_tiles_spritesheet_night.png")
     print("\nPalette colors matched from CPC game screenshots:")
     print("  Day palette:")
-    print("    Pen 0: Black (outlines, text)")
-    print("    Pen 1: Bright Cyan (floor/background)")
-    print("    Pen 2: Yellow/Orange (walls, bricks)")
-    print("    Pen 3: Bright White (highlights)")
+    print("    Pen 0: Bright Cyan (floor/background)")
+    print("    Pen 1: Bright Yellow (highlights)")
+    print("    Pen 2: Orange (walls, bricks)")
+    print("    Pen 3: Black (outlines, text)")
     print("  Night palette:")
-    print("    Pen 0: Black (outlines, text)")
-    print("    Pen 1: Bright Blue (floor/background)")
+    print("    Pen 0: Bright Blue (floor/background)")
+    print("    Pen 1: Bright White (highlights)")
     print("    Pen 2: Bright Magenta (walls, structures)")
-    print("    Pen 3: Pastel Magenta (highlights)")
+    print("    Pen 3: Black (outlines, text)")
     print("\nTile data extracted from addresses 8300-A2FF in the .asm file")
