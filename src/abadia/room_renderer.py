@@ -15,7 +15,7 @@ import sys
 if os.path.exists('src'):
     sys.path.insert(0, 'src')
 
-from abadia.graphics import AbbeyTiles, AbbeyCanvas
+from abadia.graphics import AbbeyTiles, AbbeyCanvas, BufferedCanvas
 from abadia.interpreter import AbadiaInterpreter
 from abadia.abbey_blocks_library import BLOCK_DEFINITIONS
 from abadia.abbey_rooms_library import ROOM_DEFINITIONS
@@ -44,7 +44,7 @@ class RoomRenderer:
             output_path: Optional output file path. If None, auto-generates name.
 
         Returns:
-            AbbeyCanvas with the rendered room
+            BufferedCanvas with the rendered room
         """
         # Get room definition
         if room_id not in ROOM_DEFINITIONS:
@@ -55,9 +55,9 @@ class RoomRenderer:
         print(f"  Offset: 0x{room.file_offset:04X}")
         print(f"  Blocks: {len(room.blocks)}")
 
-        # Create canvas - use 40x40 tiles to accommodate all positions
-        # Each tile is 16x8 pixels, so this is 640x320 pixels
-        canvas = AbbeyCanvas(40, 40, bg_color=(0, 0, 0))
+        # Create buffered canvas for proper isometric rendering with depth sorting
+        # Uses 16x20 tile buffer matching the original game
+        canvas = BufferedCanvas(self.tiles, bg_color=(0, 0, 0))
 
         # Render each block in the room
         for i, block_entry in enumerate(room.blocks):
@@ -72,6 +72,9 @@ class RoomRenderer:
 
             # Execute the block script at the specified position
             # The x_length and y_length from the room data are the param1/param2
+            # extra_param is usually the height
+            height = block_entry.extra_param if block_entry.extra_param is not None else 0
+            
             try:
                 self.interpreter.execute(
                     block_def,
@@ -79,7 +82,9 @@ class RoomRenderer:
                     start_x=block_entry.x_pos,
                     start_y=block_entry.y_pos,
                     param1=block_entry.x_length if block_entry.x_length > 0 else 1,
-                    param2=block_entry.y_length if block_entry.y_length > 0 else 1
+                    param2=block_entry.y_length if block_entry.y_length > 0 else 1,
+                    height=height,
+                    prio=i
                 )
 
                 if (i + 1) % 5 == 0:
@@ -90,6 +95,9 @@ class RoomRenderer:
                 continue
 
         print(f"  Completed rendering {len(room.blocks)} blocks")
+
+        # Render the buffer with depth sorting to produce final image
+        canvas.render()
 
         # Save the result
         if output_path is None:

@@ -1,6 +1,46 @@
 import os
 from .graphics import AbbeyCanvas, AbbeyTiles
 
+OPCODE_NAMES = {
+    0xFF: "END",
+    0xFE: "WHILE PARAM1",
+    0xFD: "WHILE PARAM2",
+    0xFC: "PUSH POS",
+    0xFB: "POP POS",
+    0xFA: "ENDWHILE",
+    0xF9: "DRAWTILE DEC_Y",
+    0xF8: "DRAWTILE INC_X",
+    0xF7: "LD",
+    0xF6: "INC Y",
+    0xF5: "INC X",
+    0xF4: "DEC Y",
+    0xF3: "DEC X",
+    0xF2: "ADD Y",
+    0xF1: "ADD X",
+    0xF0: "INC PARAM1",
+    0xEF: "INC PARAM2",
+    0xEE: "DEC PARAM1",
+    0xED: "DEC PARAM2",
+    0xE0: "NOP",
+    0xEC: "CALL",
+    0xEB: "DRAWTILE DEC_X",
+    0xEA: "JMP",
+    0xE9: "FLIP X",
+    0xE8: "FLIP X", 0xE7: "FLIP X", 0xE6: "FLIP X", 0xE5: "FLIP X", # Variants
+    0xE4: "CALL FLIP",
+    0xC2: "SKIP_2", 0xC6: "SKIP_2", 0xB6: "SKIP_2", 0xBA: "SKIP_2"
+}
+
+REG_NAMES = {
+    0x6D: "PARAM1",
+    0x6E: "PARAM2",
+    0x70: "DEPTHX",
+    0x71: "DEPTHY"
+}
+# Add T0-T11
+for i in range(12):
+    REG_NAMES[0x61 + i] = f"T{i}"
+
 class AbadiaInterpreter:
     """
     Bytecode interpreter for La Abadía del Crimen building blocks.
@@ -27,8 +67,14 @@ class AbadiaInterpreter:
         self.pc = 0
         self.h = 0  # Y coordinate
         self.l = 0  # X coordinate
+        self.current_depth = 0 # Calculated depth for the current block
+        self.prio = 0 # Current priority (block index)
 
         self.flip_x_mode = False # If true, IncX/DecX are swapped
+        
+        self.trace_enabled = False
+        self.trace_log = []
+        self.start_address = 0
 
         # Safety limits
         self.max_iterations = 50000  # Maximum opcodes per block
@@ -36,14 +82,20 @@ class AbadiaInterpreter:
         self.iteration_count = 0
         self.call_depth = 0
         
-    def execute(self, block_def, canvas: AbbeyCanvas, start_x, start_y, param1=1, param2=1):
+    def execute(self, block_def, canvas: AbbeyCanvas, start_x, start_y, param1=1, param2=1, height=0, prio=0, trace=False):
         """
         Execute a block script.
         start_x, start_y: Grid coordinates.
+        height: Block height for depth calculation.
+        prio: Priority (usually block index) for tracing/ordering.
+        trace: Boolean to enable execution tracing.
         """
         self.canvas = canvas
-
+        self.trace_enabled = trace
+        self.trace_log = []
+        
         # Start after the tile pointer (2 bytes)
+        self.start_address = block_def.address
         self.pc = block_def.address + 2
 
         self.call_stack = []
@@ -58,9 +110,21 @@ class AbadiaInterpreter:
         # Initialize coordinates
         self.h = start_y
         self.l = start_x
+        
+        self.prio = prio
+
+        # Calculate depth for the block
+        # Formula derived from trace analysis: Depth = X + Y + H - 46
+        self.current_depth = start_x + start_y + height - 46
 
         # Clear regs
         self.regs = [0] * 32
+        
+        # Initialize Depth registers (DEPTHX=16, DEPTHY=17)
+        # Based on trace analysis, they include position and height.
+        # Approximation: val = pos + height + 3 (Matches Block 2 trace)
+        self.regs[16] = (start_x + height + 3) & 0xFF
+        self.regs[17] = (start_y + height + 3) & 0xFF
 
         # Load Tile Data
         # Tile data is accessed via registers 0x61-0x6C (indices 1-12)
@@ -74,22 +138,32 @@ class AbadiaInterpreter:
         # 0x6E = index 14 = PARAM2
         self.regs[13] = param1 
         self.regs[14] = param2 
+        
+        if self.trace_enabled:
+            self.log(f"=== TRACE START: Block Type {block_def.block_id} ===")
+            self.log(f"Source: Block Index {prio} (x={start_x}, y={start_y}, h={height}, p1={param1}, p2={param2})")
 
         # Execute Loop
         while True:
             # Safety check for infinite loops
             self.iteration_count += 1
             if self.iteration_count > self.max_iterations:
-                print(f"Warning: Block 0x{block_def.block_id:02X} exceeded max iterations ({self.max_iterations})")
+                self.log(f"Warning: Block 0x{block_def.block_id:02X} exceeded max iterations ({self.max_iterations})")
                 break
 
             # Safety check for PC bounds
             if self.pc >= len(self.memory):
-                print(f"PC out of bounds: {self.pc:04X} >= {len(self.memory):04X}")
+                self.log(f"PC out of bounds: {self.pc:04X} >= {len(self.memory):04X}")
                 break
 
             opcode = self.memory[self.pc]
+            current_pc = self.pc
             self.pc += 1
+            
+            if self.trace_enabled:
+                offset = current_pc - self.start_address
+                op_name = OPCODE_NAMES.get(opcode, f"UNK_{opcode:02X}")
+                self.log(f"[{offset:4d}] {op_name}")
             
             if opcode == 0xFF: # End
                 break
@@ -145,7 +219,7 @@ class AbadiaInterpreter:
                 # Check call depth
                 self.call_depth += 1
                 if self.call_depth > self.max_call_depth:
-                    print(f"Warning: Max call depth ({self.max_call_depth}) exceeded")
+                    self.log(f"Warning: Max call depth ({self.max_call_depth}) exceeded")
                     break
 
                 # Push return address
@@ -170,17 +244,34 @@ class AbadiaInterpreter:
                 addr = (high << 8) | low
                 self.call_stack.append(self.pc)
                 self.pc = addr
-            elif opcode < 0xE4:
-                # Opcodes below 0xE4 are not valid block interpreter opcodes
-                # This means we've jumped into Z80 assembly code or hit data
-                if len(self.call_stack) > 0:
-                    self.pc = self.call_stack.pop()
-                    self.call_depth = max(0, self.call_depth - 1)
+            elif opcode < 0xE0:
+                # Implicit "Load Tileset" header (2 bytes = Address)
+                # The code jumps to an address that starts with a pointer to tile data.
+                # We must load that data into regs 1-12 and continue.
+                low = opcode
+                high = self.read_byte()
+                tile_ptr = (high << 8) | low
+                self.log(f"  -> Implicit Load Tileset from 0x{tile_ptr:04X}")
+                
+                # Load 12 bytes from tile_ptr
+                if tile_ptr < len(self.memory) - 12:
+                    for i in range(12):
+                        val = self.memory[tile_ptr + i]
+                        self.regs[1 + i] = val
+                        # self.log(f"    T{i} = {val:02X}")
                 else:
-                    break
+                    self.log("    Error: Tile pointer out of bounds")
+            
             else:
-                print(f"Unhandled Opcode: {opcode:02X} at PC {self.pc-1:04X}")
+                self.log(f"Unhandled Opcode: {opcode:02X} at PC {self.pc-1:04X}")
                 break
+
+    def log(self, msg):
+        if self.trace_enabled:
+            self.trace_log.append(msg)
+
+    def get_trace_log(self):
+        return self.trace_log
 
     def read_byte(self):
         if self.pc < len(self.memory):
@@ -198,6 +289,12 @@ class AbadiaInterpreter:
             
         if val >= 0x60:
             reg_idx = val - 0x60
+            
+            # Handle FlipX swapping for DEPTHX/DEPTHY
+            if self.flip_x_mode:
+                if reg_idx == 16: reg_idx = 17 # 0x70 -> 0x71
+                elif reg_idx == 17: reg_idx = 16 # 0x71 -> 0x70
+                
             if reg_idx < len(self.regs):
                 return self.regs[reg_idx]
             return 0
@@ -214,12 +311,19 @@ class AbadiaInterpreter:
             self.pc += 1
             if peek == 0x84:
                 val2 = self.read_val()
-                val = (val - val2) & 0xFF
+                # 0x84 seems to be Reverse Subtract (val2 - val) based on trace analysis
+                val = (val2 - val) & 0xFF
             else:
                 # peek is the value/reg
                 op_val = peek
                 if op_val >= 0x60:
                     reg_idx = op_val - 0x60
+                    
+                    # Handle FlipX swapping for DEPTHX/DEPTHY
+                    if self.flip_x_mode:
+                        if reg_idx == 16: reg_idx = 17
+                        elif reg_idx == 17: reg_idx = 16
+                        
                     if reg_idx < len(self.regs):
                         op_val = self.regs[reg_idx]
                     else:
@@ -236,10 +340,17 @@ class AbadiaInterpreter:
         else: self.l -= 1
 
     def op_loop(self, reg_idx):
+        """
+        WHILE loop implementation.
+
+        Key insight from reference: The loop counter VALUE is pushed onto the stack,
+        NOT the register index. This preserves the original register value so nested
+        loops work correctly across outer loop iterations.
+        """
         count = self.regs[reg_idx]
         if count > 0:
-            self.loop_stack.append(self.pc)
-            self.loop_stack.append(reg_idx)
+            self.loop_stack.append(self.pc)      # Save return address
+            self.loop_stack.append(count)        # Push the VALUE, not reg_idx!
         else:
             # Skip to matching loop end
             depth = 1
@@ -250,15 +361,21 @@ class AbadiaInterpreter:
                 elif op == 0xFA: depth -= 1
 
     def op_loop_end(self):
+        """
+        ENDWHILE loop implementation.
+
+        Decrements the counter on the stack (not the register).
+        If counter > 0, loop back; otherwise exit.
+        """
         if len(self.loop_stack) >= 2:
-            reg_idx = self.loop_stack.pop()
+            count = self.loop_stack.pop()        # Pop the counter VALUE
             saved_pc = self.loop_stack.pop()
 
-            self.regs[reg_idx] = (self.regs[reg_idx] - 1) & 0xFF
+            count = (count - 1) & 0xFF           # Decrement the counter
 
-            if self.regs[reg_idx] > 0:
+            if count > 0:
                 self.loop_stack.append(saved_pc)
-                self.loop_stack.append(reg_idx)
+                self.loop_stack.append(count)    # Push decremented value back
                 self.pc = saved_pc
 
     def op_paint_tile(self, inc_x=False, dec_y=False, dec_x=False):
@@ -321,13 +438,47 @@ class AbadiaInterpreter:
 
     def op_update_reg(self):
         reg_byte = self.read_byte()
+        val = 0
         if reg_byte >= 0x60:
             reg_idx = reg_byte - 0x60
+            
+            # Handle FlipX swapping for DEPTHX/DEPTHY
+            if self.flip_x_mode:
+                if reg_idx == 16: reg_idx = 17
+                elif reg_idx == 17: reg_idx = 16
+            
             val = self.read_expr()
             if reg_idx < len(self.regs):
                 self.regs[reg_idx] = val
+                reg_name = REG_NAMES.get(reg_byte, f"R{reg_idx}")
+                # Log the actual register being set
+                if self.flip_x_mode and (reg_byte == 0x70 or reg_byte == 0x71):
+                     # If we swapped, log the swapped name
+                     actual_reg_byte = 0x71 if reg_byte == 0x70 else 0x70
+                     reg_name = REG_NAMES.get(actual_reg_byte, f"R{reg_idx}")
+                
+                self.log(f"  -> Set {reg_name} = {val}")
 
-    def draw(self, tile_id):
-        tile_img = self.tiles.get(tile_id)
-        if self.canvas and tile_img is not None:
-            self.canvas.draw_tile(tile_img, self.l, self.h)
+    def draw(self, tile_id, tile_depth=None):
+        if self.canvas:
+            # Prefer buffered drawing if available (for proper depth sorting)
+            if hasattr(self.canvas, 'draw_tile_by_id'):
+                depth_x = self.regs[16]
+                depth_y = self.regs[17]
+                
+                # Use calculated depth based on registers
+                # Formula: depth = depthX + depthY - 16
+                depth = depth_x + depth_y - 16
+                
+                # Allow override if provided (though mostly unused now)
+                if tile_depth is not None:
+                    depth = tile_depth
+
+                self.canvas.draw_tile_by_id(tile_id, self.l, self.h, depth, self.prio)
+                self.log(f"  -> DRAWTILE ID {tile_id} @ ({self.l}, {self.h}) Depth({depth_x}, {depth_y})")
+            else:
+                # Fallback to direct drawing
+                tile_img = self.tiles.get(tile_id)
+                if tile_img is not None:
+                    self.canvas.draw_tile(tile_img, self.l, self.h)
+
