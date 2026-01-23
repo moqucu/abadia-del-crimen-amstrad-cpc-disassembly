@@ -1,0 +1,388 @@
+Room 0:
+  Tile: 5   | Grid: ( 0,  5) | Screen: ( 32,  40) | Depth: -25 | Prio: 0
+  Tile: 5   | Grid: ( 0,  4) | Screen: ( 32,  32) | Depth: -25 | Prio: 0
+  Tile: 5   | Grid: ( 1,  4) | Screen: ( 48,  32) | Depth: -25 | Prio: 0
+  Tile: 79  | Grid: ( 1,  3) | Screen: ( 48,  24) | Depth: -25 | Prio: 0
+  Tile: 5   | Grid: ( 0,  3) | Screen: ( 32,  24) | Depth: -25 | Prio: 0
+  Tile: 79  | Grid: ( 0,  2) | Screen: ( 32,  16) | Depth: -25 | Prio: 0
+  Tile: 1   | Grid: ( 7,  9) | Screen: (144,  72) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 7,  8) | Screen: (144,  64) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 8,  8) | Screen: (160,  64) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 8,  7) | Screen: (160,  56) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 9,  7) | Screen: (176,  56) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 9,  6) | Screen: (176,  48) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: (10,  6) | Screen: (192,  48) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: (10,  5) | Screen: (192,  40) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: (11,  5) | Screen: (208,  40) | Depth: -14 | Prio: 1
+  Tile: 78  | Grid: (11,  4) | Screen: (208,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  8) | Screen: (128,  64) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  7) | Screen: (128,  56) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 7,  7) | Screen: (144,  56) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 7,  6) | Screen: (144,  48) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 8,  6) | Screen: (160,  48) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 8,  5) | Screen: (160,  40) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 9,  5) | Screen: (176,  40) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 9,  4) | Screen: (176,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: (10,  4) | Screen: (192,  32) | Depth: -14 | Prio: 1
+  Tile: 78  | Grid: (10,  3) | Screen: (192,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 5,  7) | Screen: (112,  56) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 5,  6) | Screen: (112,  48) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  6) | Screen: (128,  48) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  5) | Screen: (128,  40) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 7,  5) | Screen: (144,  40) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 7,  4) | Screen: (144,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 8,  4) | Screen: (160,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 8,  3) | Screen: (160,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 9,  3) | Screen: (176,  24) | Depth: -14 | Prio: 1
+  Tile: 78  | Grid: ( 9,  2) | Screen: (176,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 4,  6) | Screen: ( 96,  48) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 4,  5) | Screen: ( 96,  40) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 5,  5) | Screen: (112,  40) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 5,  4) | Screen: (112,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  4) | Screen: (128,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  3) | Screen: (128,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 7,  3) | Screen: (144,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 7,  2) | Screen: (144,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 8,  2) | Screen: (160,  16) | Depth: -14 | Prio: 1
+  Tile: 78  | Grid: ( 8,  1) | Screen: (160,   8) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 3,  5) | Screen: ( 80,  40) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 3,  4) | Screen: ( 80,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 4,  4) | Screen: ( 96,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 4,  3) | Screen: ( 96,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 5,  3) | Screen: (112,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 5,  2) | Screen: (112,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  2) | Screen: (128,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  1) | Screen: (128,   8) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 7,  1) | Screen: (144,   8) | Depth: -14 | Prio: 1
+  Tile: 78  | Grid: ( 7,  0) | Screen: (144,   0) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 2,  4) | Screen: ( 64,  32) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 2,  3) | Screen: ( 64,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 3,  3) | Screen: ( 80,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 3,  2) | Screen: ( 80,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 4,  2) | Screen: ( 96,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 4,  1) | Screen: ( 96,   8) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 5,  1) | Screen: (112,   8) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 5,  0) | Screen: (112,   0) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 6,  0) | Screen: (128,   0) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 1,  3) | Screen: ( 48,  24) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 1,  2) | Screen: ( 48,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 2,  2) | Screen: ( 64,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 2,  1) | Screen: ( 64,   8) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 3,  1) | Screen: ( 80,   8) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 3,  0) | Screen: ( 80,   0) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 4,  0) | Screen: ( 96,   0) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 0,  2) | Screen: ( 32,  16) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 0,  1) | Screen: ( 32,   8) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 1,  1) | Screen: ( 48,   8) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 1,  0) | Screen: ( 48,   0) | Depth: -14 | Prio: 1
+  Tile: 1   | Grid: ( 2,  0) | Screen: ( 64,   0) | Depth: -14 | Prio: 1
+  Tile: 77  | Grid: ( 0,  0) | Screen: ( 32,   0) | Depth: -14 | Prio: 1
+  Tile: 5   | Grid: (10, 13) | Screen: (192, 104) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (10, 12) | Screen: (192,  96) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (11, 12) | Screen: (208,  96) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (11, 11) | Screen: (208,  88) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (12, 11) | Screen: (224,  88) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (12, 10) | Screen: (224,  80) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (13, 10) | Screen: (240,  80) | Depth:  -7 | Prio: 2
+  Tile: 79  | Grid: (13,  9) | Screen: (240,  72) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 9, 12) | Screen: (176,  96) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 9, 11) | Screen: (176,  88) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (10, 11) | Screen: (192,  88) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (10, 10) | Screen: (192,  80) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (11, 10) | Screen: (208,  80) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (11,  9) | Screen: (208,  72) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (12,  9) | Screen: (224,  72) | Depth:  -7 | Prio: 2
+  Tile: 79  | Grid: (12,  8) | Screen: (224,  64) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 8, 11) | Screen: (160,  88) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 8, 10) | Screen: (160,  80) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 9, 10) | Screen: (176,  80) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 9,  9) | Screen: (176,  72) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (10,  9) | Screen: (192,  72) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (10,  8) | Screen: (192,  64) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (11,  8) | Screen: (208,  64) | Depth:  -7 | Prio: 2
+  Tile: 79  | Grid: (11,  7) | Screen: (208,  56) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 7, 10) | Screen: (144,  80) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 7,  9) | Screen: (144,  72) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 8,  9) | Screen: (160,  72) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 8,  8) | Screen: (160,  64) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 9,  8) | Screen: (176,  64) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 9,  7) | Screen: (176,  56) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: (10,  7) | Screen: (192,  56) | Depth:  -7 | Prio: 2
+  Tile: 79  | Grid: (10,  6) | Screen: (192,  48) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 6,  9) | Screen: (128,  72) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 6,  8) | Screen: (128,  64) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 7,  8) | Screen: (144,  64) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 7,  7) | Screen: (144,  56) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 8,  7) | Screen: (160,  56) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 8,  6) | Screen: (160,  48) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 9,  6) | Screen: (176,  48) | Depth:  -7 | Prio: 2
+  Tile: 79  | Grid: ( 9,  5) | Screen: (176,  40) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 5,  8) | Screen: (112,  64) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 5,  7) | Screen: (112,  56) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 6,  7) | Screen: (128,  56) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 6,  6) | Screen: (128,  48) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 7,  6) | Screen: (144,  48) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 7,  5) | Screen: (144,  40) | Depth:  -7 | Prio: 2
+  Tile: 5   | Grid: ( 8,  5) | Screen: (160,  40) | Depth:  -7 | Prio: 2
+  Tile: 79  | Grid: ( 8,  4) | Screen: (160,  32) | Depth:  -7 | Prio: 2
+  Tile: 89  | Grid: ( 5,  6) | Screen: (112,  48) | Depth:  -7 | Prio: 2
+  Tile: 89  | Grid: ( 6,  5) | Screen: (128,  40) | Depth:  -7 | Prio: 2
+  Tile: 89  | Grid: ( 7,  4) | Screen: (144,  32) | Depth:  -7 | Prio: 2
+  Tile: 38  | Grid: (13,  5) | Screen: (240,  40) | Depth: -12 | Prio: 3
+  Tile: 37  | Grid: (13,  4) | Screen: (240,  32) | Depth: -12 | Prio: 3
+  Tile: 39  | Grid: (13,  3) | Screen: (240,  24) | Depth: -12 | Prio: 3
+  Tile: 45  | Grid: (13,  2) | Screen: (240,  16) | Depth: -12 | Prio: 3
+  Tile: 38  | Grid: (12,  4) | Screen: (224,  32) | Depth: -12 | Prio: 3
+  Tile: 37  | Grid: (12,  3) | Screen: (224,  24) | Depth: -12 | Prio: 3
+  Tile: 39  | Grid: (12,  2) | Screen: (224,  16) | Depth: -12 | Prio: 3
+  Tile: 45  | Grid: (12,  1) | Screen: (224,   8) | Depth: -12 | Prio: 3
+  Tile: 7   | Grid: ( 4, 19) | Screen: ( 96, 152) | Depth:  17 | Prio: 4
+  Tile: 116 | Grid: ( 4, 18) | Screen: ( 96, 144) | Depth:  17 | Prio: 4
+  Tile: 6   | Grid: ( 3, 19) | Screen: ( 80, 152) | Depth:  17 | Prio: 4
+  Tile: 7   | Grid: ( 3, 18) | Screen: ( 80, 144) | Depth:  17 | Prio: 4
+  Tile: 116 | Grid: ( 3, 17) | Screen: ( 80, 136) | Depth:  17 | Prio: 4
+  Tile: 7   | Grid: ( 2, 19) | Screen: ( 64, 152) | Depth:  17 | Prio: 4
+  Tile: 6   | Grid: ( 2, 18) | Screen: ( 64, 144) | Depth:  17 | Prio: 4
+  Tile: 7   | Grid: ( 2, 17) | Screen: ( 64, 136) | Depth:  17 | Prio: 4
+  Tile: 116 | Grid: ( 2, 16) | Screen: ( 64, 128) | Depth:  17 | Prio: 4
+  Tile: 6   | Grid: ( 1, 19) | Screen: ( 48, 152) | Depth:  17 | Prio: 4
+  Tile: 7   | Grid: ( 1, 18) | Screen: ( 48, 144) | Depth:  17 | Prio: 4
+  Tile: 6   | Grid: ( 1, 17) | Screen: ( 48, 136) | Depth:  17 | Prio: 4
+  Tile: 7   | Grid: ( 1, 16) | Screen: ( 48, 128) | Depth:  17 | Prio: 4
+  Tile: 116 | Grid: ( 1, 15) | Screen: ( 48, 120) | Depth:  17 | Prio: 4
+  Tile: 106 | Grid: ( 0, 19) | Screen: ( 32, 152) | Depth:  17 | Prio: 4
+  Tile: 6   | Grid: ( 0, 18) | Screen: ( 32, 144) | Depth:  17 | Prio: 4
+  Tile: 7   | Grid: ( 0, 17) | Screen: ( 32, 136) | Depth:  17 | Prio: 4
+  Tile: 6   | Grid: ( 0, 16) | Screen: ( 32, 128) | Depth:  17 | Prio: 4
+  Tile: 7   | Grid: ( 0, 15) | Screen: ( 32, 120) | Depth:  17 | Prio: 4
+  Tile: 116 | Grid: ( 0, 14) | Screen: ( 32, 112) | Depth:  17 | Prio: 4
+  Tile: 45  | Grid: ( 9, 19) | Screen: (176, 152) | Depth:  22 | Prio: 5
+  Tile: 36  | Grid: ( 8, 19) | Screen: (160, 152) | Depth:  22 | Prio: 5
+  Tile: 45  | Grid: ( 8, 18) | Screen: (160, 144) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 7, 19) | Screen: (144, 152) | Depth:  22 | Prio: 5
+  Tile: 36  | Grid: ( 7, 18) | Screen: (144, 144) | Depth:  22 | Prio: 5
+  Tile: 45  | Grid: ( 7, 17) | Screen: (144, 136) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 6, 19) | Screen: (128, 152) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 6, 18) | Screen: (128, 144) | Depth:  22 | Prio: 5
+  Tile: 36  | Grid: ( 6, 17) | Screen: (128, 136) | Depth:  22 | Prio: 5
+  Tile: 45  | Grid: ( 6, 16) | Screen: (128, 128) | Depth:  22 | Prio: 5
+  Tile: 38  | Grid: ( 5, 19) | Screen: (112, 152) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 5, 18) | Screen: (112, 144) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 5, 17) | Screen: (112, 136) | Depth:  22 | Prio: 5
+  Tile: 36  | Grid: ( 5, 16) | Screen: (112, 128) | Depth:  22 | Prio: 5
+  Tile: 45  | Grid: ( 5, 15) | Screen: (112, 120) | Depth:  22 | Prio: 5
+  Tile: 38  | Grid: ( 4, 18) | Screen: ( 96, 144) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 4, 17) | Screen: ( 96, 136) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 4, 16) | Screen: ( 96, 128) | Depth:  22 | Prio: 5
+  Tile: 36  | Grid: ( 4, 15) | Screen: ( 96, 120) | Depth:  22 | Prio: 5
+  Tile: 45  | Grid: ( 4, 14) | Screen: ( 96, 112) | Depth:  22 | Prio: 5
+  Tile: 38  | Grid: ( 3, 17) | Screen: ( 80, 136) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 3, 16) | Screen: ( 80, 128) | Depth:  22 | Prio: 5
+  Tile: 37  | Grid: ( 3, 15) | Screen: ( 80, 120) | Depth:  22 | Prio: 5
+  Tile: 36  | Grid: ( 3, 14) | Screen: ( 80, 112) | Depth:  22 | Prio: 5
+  Tile: 45  | Grid: ( 3, 13) | Screen: ( 80, 104) | Depth:  22 | Prio: 5
+  Tile: 43  | Grid: ( 1, 11) | Screen: ( 48,  88) | Depth: -18 | Prio: 11
+  Tile: 10  | Grid: ( 2, 11) | Screen: ( 64,  88) | Depth: -18 | Prio: 11
+  Tile: 107 | Grid: ( 1, 10) | Screen: ( 48,  80) | Depth: -18 | Prio: 11
+  Tile: 105 | Grid: ( 2, 10) | Screen: ( 64,  80) | Depth: -18 | Prio: 11
+  Tile: 108 | Grid: ( 3, 10) | Screen: ( 80,  80) | Depth: -18 | Prio: 11
+  Tile: 172 | Grid: ( 1,  9) | Screen: ( 48,  72) | Depth: -18 | Prio: 11
+  Tile: 176 | Grid: ( 2,  9) | Screen: ( 64,  72) | Depth: -18 | Prio: 11
+  Tile: 173 | Grid: ( 3,  9) | Screen: ( 80,  72) | Depth: -18 | Prio: 11
+  Tile: 108 | Grid: ( 4,  9) | Screen: ( 96,  72) | Depth: -18 | Prio: 11
+  Tile: 172 | Grid: ( 2,  8) | Screen: ( 64,  64) | Depth: -18 | Prio: 11
+  Tile: 175 | Grid: ( 3,  8) | Screen: ( 80,  64) | Depth: -18 | Prio: 11
+  Tile: 174 | Grid: ( 4,  8) | Screen: ( 96,  64) | Depth: -18 | Prio: 11
+  Tile: 43  | Grid: ( 2, 12) | Screen: ( 64,  96) | Depth: -18 | Prio: 11
+  Tile: 2   | Grid: ( 2, 19) | Screen: ( 64, 152) | Depth:  12 | Prio: 12
+  Tile: 3   | Grid: ( 2, 18) | Screen: ( 64, 144) | Depth:  12 | Prio: 12
+  Tile: 2   | Grid: ( 2, 17) | Screen: ( 64, 136) | Depth:  12 | Prio: 12
+  Tile: 3   | Grid: ( 2, 16) | Screen: ( 64, 128) | Depth:  12 | Prio: 12
+  Tile: 99  | Grid: ( 2, 15) | Screen: ( 64, 120) | Depth:  12 | Prio: 12
+  Tile: 98  | Grid: ( 3, 19) | Screen: ( 80, 152) | Depth:  12 | Prio: 12
+  Tile: 2   | Grid: ( 3, 18) | Screen: ( 80, 144) | Depth:  12 | Prio: 12
+  Tile: 3   | Grid: ( 3, 17) | Screen: ( 80, 136) | Depth:  12 | Prio: 12
+  Tile: 2   | Grid: ( 3, 16) | Screen: ( 80, 128) | Depth:  12 | Prio: 12
+  Tile: 3   | Grid: ( 3, 15) | Screen: ( 80, 120) | Depth:  12 | Prio: 12
+  Tile: 99  | Grid: ( 3, 14) | Screen: ( 80, 112) | Depth:  12 | Prio: 12
+  Tile: 10  | Grid: (10, 19) | Screen: (192, 152) | Depth:  20 | Prio: 13
+  Tile: 45  | Grid: (10, 18) | Screen: (192, 144) | Depth:  20 | Prio: 13
+  Tile: 43  | Grid: ( 9, 19) | Screen: (176, 152) | Depth:  20 | Prio: 13
+  Tile: 10  | Grid: ( 9, 18) | Screen: (176, 144) | Depth:  20 | Prio: 13
+  Tile: 45  | Grid: ( 9, 17) | Screen: (176, 136) | Depth:  20 | Prio: 13
+  Tile: 43  | Grid: ( 8, 18) | Screen: (160, 144) | Depth:  20 | Prio: 13
+  Tile: 10  | Grid: ( 8, 17) | Screen: (160, 136) | Depth:  20 | Prio: 13
+  Tile: 45  | Grid: ( 8, 16) | Screen: (160, 128) | Depth:  20 | Prio: 13
+  Tile: 43  | Grid: ( 7, 17) | Screen: (144, 136) | Depth:  20 | Prio: 13
+  Tile: 10  | Grid: ( 7, 16) | Screen: (144, 128) | Depth:  20 | Prio: 13
+  Tile: 45  | Grid: ( 7, 15) | Screen: (144, 120) | Depth:  20 | Prio: 13
+  Tile: 43  | Grid: ( 6, 16) | Screen: (128, 128) | Depth:  20 | Prio: 13
+  Tile: 10  | Grid: ( 6, 15) | Screen: (128, 120) | Depth:  20 | Prio: 13
+  Tile: 45  | Grid: ( 6, 14) | Screen: (128, 112) | Depth:  20 | Prio: 13
+  Tile: 43  | Grid: ( 5, 15) | Screen: (112, 120) | Depth:  20 | Prio: 13
+  Tile: 10  | Grid: ( 5, 14) | Screen: (112, 112) | Depth:  20 | Prio: 13
+  Tile: 45  | Grid: ( 5, 13) | Screen: (112, 104) | Depth:  20 | Prio: 13
+  Tile: 43  | Grid: ( 4, 14) | Screen: ( 96, 112) | Depth:  20 | Prio: 13
+  Tile: 10  | Grid: ( 4, 13) | Screen: ( 96, 104) | Depth:  20 | Prio: 13
+  Tile: 45  | Grid: ( 4, 12) | Screen: ( 96,  96) | Depth:  20 | Prio: 13
+  Tile: 43  | Grid: ( 3, 13) | Screen: ( 80, 104) | Depth:  20 | Prio: 13
+  Tile: 10  | Grid: ( 3, 12) | Screen: ( 80,  96) | Depth:  20 | Prio: 13
+  Tile: 45  | Grid: ( 3, 11) | Screen: ( 80,  88) | Depth:  20 | Prio: 13
+  Tile: 5   | Grid: (14, 10) | Screen: (256,  80) | Depth:  -6 | Prio: 14
+  Tile: 5   | Grid: (14,  9) | Screen: (256,  72) | Depth:  -6 | Prio: 14
+  Tile: 5   | Grid: (15,  9) | Screen: (272,  72) | Depth:  -6 | Prio: 14
+  Tile: 5   | Grid: (15,  8) | Screen: (272,  64) | Depth:  -6 | Prio: 14
+  Tile: 5   | Grid: (13,  9) | Screen: (240,  72) | Depth:  -6 | Prio: 14
+  Tile: 5   | Grid: (13,  8) | Screen: (240,  64) | Depth:  -6 | Prio: 14
+  Tile: 5   | Grid: (14,  8) | Screen: (256,  64) | Depth:  -6 | Prio: 14
+  Tile: 5   | Grid: (14,  7) | Screen: (256,  56) | Depth:  -6 | Prio: 14
+  Tile: 5   | Grid: (15,  7) | Screen: (272,  56) | Depth:  -6 | Prio: 14
+  Tile: 79  | Grid: (15,  6) | Screen: (272,  48) | Depth:  -6 | Prio: 14
+  Tile: 89  | Grid: (13,  7) | Screen: (240,  56) | Depth:  -6 | Prio: 14
+  Tile: 89  | Grid: (14,  6) | Screen: (256,  48) | Depth:  -6 | Prio: 14
+  Tile: 43  | Grid: (14, 11) | Screen: (256,  88) | Depth:  -3 | Prio: 15
+  Tile: 10  | Grid: (14, 10) | Screen: (256,  80) | Depth:  -3 | Prio: 15
+  Tile: 45  | Grid: (14,  9) | Screen: (256,  72) | Depth:  -3 | Prio: 15
+  Tile: 43  | Grid: (13, 10) | Screen: (240,  80) | Depth:  -3 | Prio: 15
+  Tile: 10  | Grid: (13,  9) | Screen: (240,  72) | Depth:  -3 | Prio: 15
+  Tile: 45  | Grid: (13,  8) | Screen: (240,  64) | Depth:  -3 | Prio: 15
+  Tile: 40  | Grid: (15, 11) | Screen: (272,  88) | Depth:  -4 | Prio: 16
+  Tile: 9   | Grid: (15, 10) | Screen: (272,  80) | Depth:  -4 | Prio: 16
+  Tile: 41  | Grid: (15,  9) | Screen: (272,  72) | Depth:  -4 | Prio: 16
+  Tile: 43  | Grid: (12,  9) | Screen: (224,  72) | Depth:  -7 | Prio: 17
+  Tile: 10  | Grid: (13,  9) | Screen: (240,  72) | Depth:  -7 | Prio: 17
+  Tile: 107 | Grid: (12,  8) | Screen: (224,  64) | Depth:  -7 | Prio: 17
+  Tile: 105 | Grid: (13,  8) | Screen: (240,  64) | Depth:  -7 | Prio: 17
+  Tile: 108 | Grid: (14,  8) | Screen: (256,  64) | Depth:  -7 | Prio: 17
+  Tile: 172 | Grid: (12,  7) | Screen: (224,  56) | Depth:  -7 | Prio: 17
+  Tile: 176 | Grid: (13,  7) | Screen: (240,  56) | Depth:  -7 | Prio: 17
+  Tile: 173 | Grid: (14,  7) | Screen: (256,  56) | Depth:  -7 | Prio: 17
+  Tile: 108 | Grid: (15,  7) | Screen: (272,  56) | Depth:  -7 | Prio: 17
+  Tile: 172 | Grid: (13,  6) | Screen: (240,  48) | Depth:  -7 | Prio: 17
+  Tile: 175 | Grid: (14,  6) | Screen: (256,  48) | Depth:  -7 | Prio: 17
+  Tile: 174 | Grid: (15,  6) | Screen: (272,  48) | Depth:  -7 | Prio: 17
+  Tile: 43  | Grid: (13, 10) | Screen: (240,  80) | Depth:  -7 | Prio: 17
+  Tile: 38  | Grid: (13,  3) | Screen: (240,  24) | Depth:  -2 | Prio: 18
+  Tile: 37  | Grid: (13,  2) | Screen: (240,  16) | Depth:  -2 | Prio: 18
+  Tile: 37  | Grid: (13,  1) | Screen: (240,   8) | Depth:  -2 | Prio: 18
+  Tile: 36  | Grid: (13,  0) | Screen: (240,   0) | Depth:  -2 | Prio: 18
+  Tile: 38  | Grid: (12,  2) | Screen: (224,  16) | Depth:  -2 | Prio: 18
+  Tile: 37  | Grid: (12,  1) | Screen: (224,   8) | Depth:  -2 | Prio: 18
+  Tile: 37  | Grid: (12,  0) | Screen: (224,   0) | Depth:  -2 | Prio: 18
+  Tile: 255 | Grid: ( 9, 16) | Screen: (176, 128) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 9, 15) | Screen: (176, 120) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: (10, 15) | Screen: (192, 120) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: (10, 14) | Screen: (192, 112) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: (11, 14) | Screen: (208, 112) | Depth:   1 | Prio: 19
+  Tile: 69  | Grid: (11, 13) | Screen: (208, 104) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 8, 15) | Screen: (160, 120) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 8, 14) | Screen: (160, 112) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 9, 14) | Screen: (176, 112) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 9, 13) | Screen: (176, 104) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: (10, 13) | Screen: (192, 104) | Depth:   1 | Prio: 19
+  Tile: 69  | Grid: (10, 12) | Screen: (192,  96) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 7, 14) | Screen: (144, 112) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 7, 13) | Screen: (144, 104) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 8, 13) | Screen: (160, 104) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 8, 12) | Screen: (160,  96) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 9, 12) | Screen: (176,  96) | Depth:   1 | Prio: 19
+  Tile: 69  | Grid: ( 9, 11) | Screen: (176,  88) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 6, 13) | Screen: (128, 104) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 6, 12) | Screen: (128,  96) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 7, 12) | Screen: (144,  96) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 7, 11) | Screen: (144,  88) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 8, 11) | Screen: (160,  88) | Depth:   1 | Prio: 19
+  Tile: 69  | Grid: ( 8, 10) | Screen: (160,  80) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 5, 12) | Screen: (112,  96) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 5, 11) | Screen: (112,  88) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 6, 11) | Screen: (128,  88) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 6, 10) | Screen: (128,  80) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 7, 10) | Screen: (144,  80) | Depth:   1 | Prio: 19
+  Tile: 69  | Grid: ( 7,  9) | Screen: (144,  72) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 4, 11) | Screen: ( 96,  88) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 4, 10) | Screen: ( 96,  80) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 5, 10) | Screen: (112,  80) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 5,  9) | Screen: (112,  72) | Depth:   1 | Prio: 19
+  Tile: 255 | Grid: ( 6,  9) | Screen: (128,  72) | Depth:   1 | Prio: 19
+  Tile: 69  | Grid: ( 6,  8) | Screen: (128,  64) | Depth:   1 | Prio: 19
+  Tile: 68  | Grid: ( 4,  9) | Screen: ( 96,  72) | Depth:   1 | Prio: 19
+  Tile: 68  | Grid: ( 5,  8) | Screen: (112,  64) | Depth:   1 | Prio: 19
+  Tile: 52  | Grid: (15, 13) | Screen: (272, 104) | Depth:   4 | Prio: 20
+  Tile: 51  | Grid: (15, 12) | Screen: (272,  96) | Depth:   4 | Prio: 20
+  Tile: 50  | Grid: (15, 11) | Screen: (272,  88) | Depth:   4 | Prio: 20
+  Tile: 52  | Grid: (14, 12) | Screen: (256,  96) | Depth:   4 | Prio: 20
+  Tile: 51  | Grid: (14, 11) | Screen: (256,  88) | Depth:   4 | Prio: 20
+  Tile: 50  | Grid: (14, 10) | Screen: (256,  80) | Depth:   4 | Prio: 20
+  Tile: 52  | Grid: (13, 11) | Screen: (240,  88) | Depth:   4 | Prio: 20
+  Tile: 51  | Grid: (13, 10) | Screen: (240,  80) | Depth:   4 | Prio: 20
+  Tile: 50  | Grid: (13,  9) | Screen: (240,  72) | Depth:   4 | Prio: 20
+  Tile: 255 | Grid: (11, 18) | Screen: (208, 144) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (11, 17) | Screen: (208, 136) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (12, 17) | Screen: (224, 136) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (12, 16) | Screen: (224, 128) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (13, 16) | Screen: (240, 128) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (13, 15) | Screen: (240, 120) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (14, 15) | Screen: (256, 120) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (14, 14) | Screen: (256, 112) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (15, 14) | Screen: (272, 112) | Depth:   5 | Prio: 22
+  Tile: 69  | Grid: (15, 13) | Screen: (272, 104) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (10, 17) | Screen: (192, 136) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (10, 16) | Screen: (192, 128) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (11, 16) | Screen: (208, 128) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (11, 15) | Screen: (208, 120) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (12, 15) | Screen: (224, 120) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (12, 14) | Screen: (224, 112) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (13, 14) | Screen: (240, 112) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (13, 13) | Screen: (240, 104) | Depth:   5 | Prio: 22
+  Tile: 255 | Grid: (14, 13) | Screen: (256, 104) | Depth:   5 | Prio: 22
+  Tile: 69  | Grid: (14, 12) | Screen: (256,  96) | Depth:   5 | Prio: 22
+  Tile: 68  | Grid: (10, 15) | Screen: (192, 120) | Depth:   5 | Prio: 22
+  Tile: 68  | Grid: (11, 14) | Screen: (208, 112) | Depth:   5 | Prio: 22
+  Tile: 68  | Grid: (12, 13) | Screen: (224, 104) | Depth:   5 | Prio: 22
+  Tile: 68  | Grid: (13, 12) | Screen: (240,  96) | Depth:   5 | Prio: 22
+  Tile: 17  | Grid: (14, 19) | Screen: (256, 152) | Depth:   6 | Prio: 27
+  Tile: 131 | Grid: (15, 19) | Screen: (272, 152) | Depth:   6 | Prio: 27
+  Tile: 132 | Grid: (15, 18) | Screen: (272, 144) | Depth:   6 | Prio: 27
+  Tile: 16  | Grid: (13, 18) | Screen: (240, 144) | Depth:   6 | Prio: 27
+  Tile: 17  | Grid: (13, 17) | Screen: (240, 136) | Depth:   6 | Prio: 27
+  Tile: 129 | Grid: (14, 18) | Screen: (256, 144) | Depth:   6 | Prio: 27
+  Tile: 131 | Grid: (14, 17) | Screen: (256, 136) | Depth:   6 | Prio: 27
+  Tile: 132 | Grid: (14, 16) | Screen: (256, 128) | Depth:   6 | Prio: 27
+  Tile: 129 | Grid: (15, 17) | Screen: (272, 136) | Depth:   6 | Prio: 27
+  Tile: 130 | Grid: (15, 16) | Screen: (272, 128) | Depth:   6 | Prio: 27
+  Tile: 128 | Grid: (15, 15) | Screen: (272, 120) | Depth:   6 | Prio: 27
+  Tile: 68  | Grid: (13, 16) | Screen: (240, 128) | Depth:   6 | Prio: 27
+  Tile: 68  | Grid: (14, 15) | Screen: (256, 120) | Depth:   6 | Prio: 27
+  Tile: 127 | Grid: (10,  7) | Screen: (192,  56) | Depth: -11 | Prio: 28
+  Tile: 126 | Grid: (10,  6) | Screen: (192,  48) | Depth: -11 | Prio: 28
+  Tile: 126 | Grid: (10,  5) | Screen: (192,  40) | Depth: -11 | Prio: 28
+  Tile: 126 | Grid: (10,  4) | Screen: (192,  32) | Depth: -11 | Prio: 28
+  Tile: 126 | Grid: (10,  3) | Screen: (192,  24) | Depth: -11 | Prio: 28
+  Tile: 125 | Grid: (10,  2) | Screen: (192,  16) | Depth: -11 | Prio: 28
+  Tile: 127 | Grid: ( 9,  6) | Screen: (176,  48) | Depth: -11 | Prio: 28
+  Tile: 126 | Grid: ( 9,  5) | Screen: (176,  40) | Depth: -11 | Prio: 28
+  Tile: 126 | Grid: ( 9,  4) | Screen: (176,  32) | Depth: -11 | Prio: 28
+  Tile: 126 | Grid: ( 9,  3) | Screen: (176,  24) | Depth: -11 | Prio: 28
+  Tile: 126 | Grid: ( 9,  2) | Screen: (176,  16) | Depth: -11 | Prio: 28
+  Tile: 125 | Grid: ( 9,  1) | Screen: (176,   8) | Depth: -11 | Prio: 28
+  Tile: 106 | Grid: ( 1,  4) | Screen: ( 48,  32) | Depth: -25 | Prio: 29
+  Tile: 6   | Grid: ( 1,  3) | Screen: ( 48,  24) | Depth: -25 | Prio: 29
+  Tile: 7   | Grid: ( 1,  2) | Screen: ( 48,  16) | Depth: -25 | Prio: 29
+  Tile: 116 | Grid: ( 1,  1) | Screen: ( 48,   8) | Depth: -25 | Prio: 29
+  Tile: 106 | Grid: ( 0,  3) | Screen: ( 32,  24) | Depth: -25 | Prio: 29
+  Tile: 6   | Grid: ( 0,  2) | Screen: ( 32,  16) | Depth: -25 | Prio: 29
+  Tile: 7   | Grid: ( 0,  1) | Screen: ( 32,   8) | Depth: -25 | Prio: 29
+  Tile: 116 | Grid: ( 0,  0) | Screen: ( 32,   0) | Depth: -25 | Prio: 29
+  Tile: 108 | Grid: ( 0,  8) | Screen: ( 32,  64) | Depth: -23 | Prio: 30
+  Tile: 173 | Grid: ( 0,  7) | Screen: ( 32,  56) | Depth: -23 | Prio: 30
+  Tile: 108 | Grid: ( 1,  7) | Screen: ( 48,  56) | Depth: -23 | Prio: 30
+  Tile: 176 | Grid: ( 0,  6) | Screen: ( 32,  48) | Depth: -23 | Prio: 30
+  Tile: 173 | Grid: ( 1,  6) | Screen: ( 48,  48) | Depth: -23 | Prio: 30
+  Tile: 108 | Grid: ( 2,  6) | Screen: ( 64,  48) | Depth: -23 | Prio: 30
+  Tile: 172 | Grid: ( 0,  5) | Screen: ( 32,  40) | Depth: -23 | Prio: 30
+  Tile: 176 | Grid: ( 1,  5) | Screen: ( 48,  40) | Depth: -23 | Prio: 30
+  Tile: 173 | Grid: ( 2,  5) | Screen: ( 64,  40) | Depth: -23 | Prio: 30
+  Tile: 108 | Grid: ( 3,  5) | Screen: ( 80,  40) | Depth: -23 | Prio: 30
+  Tile: 172 | Grid: ( 1,  4) | Screen: ( 48,  32) | Depth: -23 | Prio: 30
+  Tile: 175 | Grid: ( 2,  4) | Screen: ( 64,  32) | Depth: -23 | Prio: 30
+  Tile: 174 | Grid: ( 3,  4) | Screen: ( 80,  32) | Depth: -23 | Prio: 30
