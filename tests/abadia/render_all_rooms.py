@@ -7,7 +7,7 @@ import sys
 if os.path.exists('src'):
     sys.path.insert(0, 'src')
 
-from abadia.graphics import AbbeyTiles, AbbeyCanvas
+from abadia.graphics import AbbeyTiles, BufferedCanvas
 from abadia.interpreter import AbadiaInterpreter
 from abadia.abbey_blocks_library import BLOCK_DEFINITIONS
 from abadia.abbey_rooms_library import ROOM_DEFINITIONS
@@ -30,8 +30,8 @@ for room_id in range(100):
     room = ROOM_DEFINITIONS[room_id]
     print(f"\nRoom {room_id:02d}: {len(room.blocks)} blocks")
 
-    # Create canvas - make it large enough for any room
-    canvas = AbbeyCanvas(40, 40, bg_color=(20, 20, 20))
+    # Create canvas using BufferedCanvas for proper isometric rendering
+    canvas = BufferedCanvas(tiles, bg_color=(20, 20, 20))
     interpreter = AbadiaInterpreter(tiles)
 
     blocks_rendered = 0
@@ -47,15 +47,19 @@ for room_id in range(100):
         block_def = BLOCK_DEFINITIONS[b_id]
 
         try:
+            height = block_entry.extra_param if block_entry.extra_param is not None else 0
             interpreter.execute(block_def, canvas,
                               block_entry.x_pos, block_entry.y_pos,
                               param1=block_entry.x_length,
-                              param2=block_entry.y_length)
+                              param2=block_entry.y_length,
+                              height=height,
+                              prio=i)
             blocks_rendered += 1
         except Exception as e:
             blocks_skipped += 1
 
-    # Save room
+    # Render and save room
+    canvas.render()
     output_file = os.path.join(output_dir, f'room_{room_id:02d}.png')
     canvas.save(output_file)
     print(f"  Rendered: {blocks_rendered}/{len(room.blocks)} blocks -> {output_file}")
