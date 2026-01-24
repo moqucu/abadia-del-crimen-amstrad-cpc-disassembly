@@ -196,9 +196,15 @@ class AbadiaInterpreter:
                 self.dec_x()
             elif opcode == 0xF2: # UpdateY
                 val = self.read_expr()
-                self.h += val 
+                # Interpret as signed byte for coordinate adjustment
+                if val > 127:
+                    val = val - 256
+                self.h += val
             elif opcode == 0xF1: # UpdateX
                 val = self.read_expr()
+                # Interpret as signed byte for coordinate adjustment
+                if val > 127:
+                    val = val - 256
                 self.l += val
             elif opcode == 0xF0: # IncParam1 (0x6D)
                 self.regs[13] = (self.regs[13] + 1) & 0xFF
@@ -307,23 +313,28 @@ class AbadiaInterpreter:
             if self.pc >= len(self.memory): break
             peek = self.memory[self.pc]
             if peek >= 0xC8: break # Opcode
-            
+
             self.pc += 1
             if peek == 0x84:
-                val2 = self.read_val()
-                # 0x84 seems to be Reverse Subtract (val2 - val) based on trace analysis
-                val = (val2 - val) & 0xFF
+                # 0x84 is UNARY NEGATE - negates the accumulated value so far
+                # Example: expression "01 6D 84 70" = -(1 + PARAM1) + DEPTHX
+                val = (-val) & 0xFF
+            elif peek == 0x82:
+                # 0x82 is a literal prefix - consume next byte as literal value
+                # This is critical: 0xFF after 0x82 is the value -1, not END!
+                literal = self.read_byte()
+                val = (val + literal) & 0xFF
             else:
                 # peek is the value/reg
                 op_val = peek
                 if op_val >= 0x60:
                     reg_idx = op_val - 0x60
-                    
+
                     # Handle FlipX swapping for DEPTHX/DEPTHY
                     if self.flip_x_mode:
                         if reg_idx == 16: reg_idx = 17
                         elif reg_idx == 17: reg_idx = 16
-                        
+
                     if reg_idx < len(self.regs):
                         op_val = self.regs[reg_idx]
                     else:

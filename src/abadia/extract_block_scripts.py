@@ -40,20 +40,129 @@ def parse_material_table(filepath):
                     })
     return material_table_text
 
+def read_expression(memory, pc):
+    """
+    Read an expression from bytecode, returning (bytes_consumed, list_of_bytes).
+    Expressions continue until we hit a byte >= 0xC8 (which is an opcode).
+
+    Key: 0x82 is a literal escape prefix - the next byte is always a literal value,
+    even if it would otherwise look like a register (>=0x60) or opcode (>=0xC8).
+    """
+    expr_bytes = []
+    while pc < 65536:
+        byte = memory[pc]
+
+        # 0x82 = literal prefix, next byte is literal value
+        if byte == 0x82:
+            expr_bytes.append(byte)
+            pc += 1
+            if pc < 65536:
+                expr_bytes.append(memory[pc])  # This is the literal (could be 0xFF!)
+                pc += 1
+        elif byte >= 0xC8:
+            # This is an opcode, expression ends (don't consume it)
+            break
+        else:
+            # Regular value or register reference
+            expr_bytes.append(byte)
+            pc += 1
+
+    return expr_bytes
+
+
+def extract_bytecode(memory, start_addr, max_length=500):
+    """
+    Extract bytecode starting at start_addr, properly parsing opcodes and their operands.
+    Returns list of bytes.
+
+    Key fix: 0xFF is only END when it appears in opcode position.
+    When it appears after 0x82 (literal prefix), it's just the value -1.
+    """
+    bytecode = []
+    pc = start_addr
+
+    while pc < 65536 and len(bytecode) < max_length:
+        opcode = memory[pc]
+        bytecode.append(opcode)
+        pc += 1
+
+        # END opcode - we're done
+        if opcode == 0xFF:
+            break
+
+        # JMP, CALL, CALL_FLIP - consume 2 address bytes
+        elif opcode in [0xEA, 0xEC, 0xE4]:
+            for _ in range(2):
+                if pc < 65536:
+                    bytecode.append(memory[pc])
+                    pc += 1
+
+        # LD (UpdateReg) - consume register byte + expression
+        elif opcode == 0xF7:
+            if pc < 65536:
+                bytecode.append(memory[pc])  # Register byte
+                pc += 1
+            expr = read_expression(memory, pc)
+            bytecode.extend(expr)
+            pc += len(expr)
+
+        # ADD X, ADD Y - consume expression
+        elif opcode in [0xF1, 0xF2]:
+            expr = read_expression(memory, pc)
+            bytecode.extend(expr)
+            pc += len(expr)
+
+        # DRAWTILE variants (F9, F8, EB) - consume tile/control sequence
+        elif opcode in [0xF9, 0xF8, 0xEB]:
+            # These consume pairs of (value, control) until we hit an opcode (>=0xC8)
+            while pc < 65536:
+                # Read tile value (could be 0x82 prefixed literal or register)
+                if memory[pc] == 0x82:
+                    bytecode.append(memory[pc])
+                    pc += 1
+                    if pc < 65536:
+                        bytecode.append(memory[pc])
+                        pc += 1
+                elif memory[pc] >= 0xC8:
+                    # Hit an opcode, done with this DRAWTILE sequence
+                    break
+                else:
+                    bytecode.append(memory[pc])
+                    pc += 1
+
+                # Now read control byte
+                if pc >= 65536 or memory[pc] >= 0xC8:
+                    # Next byte is an opcode, done
+                    break
+
+                ctrl = memory[pc]
+                bytecode.append(ctrl)
+                pc += 1
+
+                # If control is 0x80 or 0x81, continue reading tiles
+                # Otherwise (count), we continue reading
+                # Actually the loop continues until we hit opcode
+
+        # Other opcodes have no additional operands
+        # (FE, FD, FC, FB, FA, F6, F5, F4, F3, F0, EF, EE, ED, E9-E5, E0)
+
+    return bytecode
+
+
 def extract_blocks(memory, mappings):
     """Extract bytecode and tile data for each block."""
     blocks = {}
     for item in mappings:
         addr = item['addr']
         block_id = item['id']
-        
+
         if addr == 0: continue
-        
+
         # Read Tile Pointer (2 bytes, Little Endian)
         ptr_low = memory[addr]
         ptr_high = memory[addr+1]
         tile_ptr = (ptr_high << 8) | ptr_low
-        
+
         # Read Tile Data (12 bytes) from the tile_ptr address
         tile_data = []
         for i in range(12):
@@ -61,19 +170,10 @@ def extract_blocks(memory, mappings):
                 tile_data.append(memory[tile_ptr + i])
             else:
                 tile_data.append(0)
-                
-        # Read Bytecode (starting at addr + 2) until 0xFF
-        bytecode = []
-        pc = addr + 2
-        while pc < 65536:
-            opcode = memory[pc]
-            bytecode.append(opcode)
-            pc += 1
-            if opcode == 0xFF:
-                break
-            if len(bytecode) > 500: # Safety
-                break
-                
+
+        # Extract bytecode with proper opcode parsing
+        bytecode = extract_bytecode(memory, addr + 2)
+
         blocks[block_id] = {
             'address': addr,
             'tile_ptr': tile_ptr,
