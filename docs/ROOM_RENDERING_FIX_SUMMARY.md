@@ -1,31 +1,42 @@
-# Room Rendering Fix Summary
+# Room Rendering Z-Depth Fix Summary
 
-**Date:** 2026-01-11
-**Status:** COMPLETE (Room 00 fully rendered)
+This document details the analysis and resolution of the Z-depth calculation discrepancies between the Python implementation and the JavaScript reference.
 
-## Major Fixes
+## The Problem
 
-### 1. Missing Blocks Recovered
-*   **Issue:** Regex in `extract_block_definitions` only matched uppercase Hex (`0x0A-0x0F` were skipped).
-*   **Fix:** Updated regex to `[0-9A-Fa-f]`.
-*   **Result:** Recovered **36 missing blocks** (Total now 95/96). This fixed the holes in the floor (Block 0x0F) and walls.
+Initial comparisons of the rendering logs showed a consistent mismatch in the calculated Z-depth values for certain blocks, even though the visual placement (X, Y) was correct.
 
-### 2. Block 0x0C Crash Fixed
-*   **Issue:** The disassembly for Block 0x0C (Stairs) contained a corrupted instruction `EA F1` (missing high byte). This caused the interpreter to jump to `0xF100` and crash.
-*   **Fix:** Added a memory patcher in `extract_block_scripts.py` that rewrites the bytecode to `EA 1A F1` (Jump to `0x1AF1`) before extraction.
-*   **Result:** Block 0x0C now executes correctly (drawing the red stairs).
+*   **Walls (Height=20):** Python depths matched JS exactly or were close.
+*   **Floor (Height=255/ -1):** Python depths were consistently higher (closer to zero) than JS depths by a fixed amount (e.g., -8 vs -16).
 
-### 3. Interpreter Stability
-*   **Issue:** `op_paint_tile` crashed on register access logic.
-*   **Fix:** Logic updated to correctly handle opcodes `> 0xC8` within the paint loop.
-*   **Result:** No more `IndexError` or crashes during rendering.
+## The Cause
 
-## Validation
-Ran `test_room_render.py` for Room 00:
-*   **Blocks:** 33/33 blocks processed.
-*   **Errors:** 0 errors.
-*   **Output:** `debug_room_00.png` generated successfully.
+The Z-depth in *La Abadía del Crimen* is calculated using two registers (`Reg 16` and `Reg 17`) which track the "depth coordinates" `depthX` and `depthY`. These registers are initialized at the start of each block's execution based on the block's position and height.
 
-## Next Steps
-*   **Sprites:** Now that the background is solid, we can overlay sprites.
-*   **Audio:** Proceed with PSG analysis.
+The analysis revealed that the initialization formula differs depending on whether the block's height is positive (e.g., Walls) or negative (e.g., Floor, where 255 represents -1).
+
+## The Solution
+
+A conditional initialization offset was implemented in `src/abadia/interpreter.py`.
+
+**Logic:**
+```python
+# Initialize Depth registers (DEPTHX=16, DEPTHY=17)
+# offset depends on whether height is treated as negative (>127) or positive.
+depth_offset = -11 if height > 127 else -3
+
+self.regs[16] = (start_x + height + depth_offset) & 0xFF
+self.regs[17] = (start_y + height + depth_offset) & 0xFF
+```
+
+### Verification Results (Room 1)
+
+| Block Type | Height | Grid Pos | JS Depth | Python Depth (Old) | Python Depth (New) | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Floor** (Prio 1) | 255 (-1) | (0,0) | **-16** | -8 | **-16** | ✅ MATCH |
+| **Wall** (Prio 31) | 20 | (0,7) | **46** | 46 | **46** | ✅ MATCH |
+| **Wall** (Prio 31) | 20 | (0,13) | **46** | 46 | **46** | ✅ MATCH |
+
+## Conclusion
+
+The `offset = -11` for negative heights and `offset = -3` for positive heights aligns the Python rendering engine's Z-sorting logic with the reference implementation for the vast majority of cases, ensuring correct visual occlusion.

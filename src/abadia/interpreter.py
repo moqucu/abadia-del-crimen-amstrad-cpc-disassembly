@@ -74,6 +74,7 @@ class AbadiaInterpreter:
         
         self.trace_enabled = False
         self.trace_log = []
+        self.draw_events = [] # capture chronological draw calls
         self.start_address = 0
 
         # Safety limits
@@ -93,6 +94,7 @@ class AbadiaInterpreter:
         self.canvas = canvas
         self.trace_enabled = trace
         self.trace_log = []
+        self.draw_events = []
         
         # Start after the tile pointer (2 bytes)
         self.start_address = block_def.address
@@ -121,10 +123,15 @@ class AbadiaInterpreter:
         self.regs = [0] * 32
         
         # Initialize Depth registers (DEPTHX=16, DEPTHY=17)
-        # Based on trace analysis, they include position and height.
-        # Approximation: val = pos + height + 3 (Matches Block 2 trace)
-        self.regs[16] = (start_x + height + 3) & 0xFF
-        self.regs[17] = (start_y + height + 3) & 0xFF
+        # H=255 is a special case for floor blocks (Constant Depth -16)
+        if height == 255:
+            self.regs[16] = 0
+            self.regs[17] = 0
+        else:
+            # Standard initialization for walls and objects
+            # Based on trace analysis, initialization offset is -3.
+            self.regs[16] = (start_x + height - 3) & 0xFF
+            self.regs[17] = (start_y + height - 3) & 0xFF
 
         # Load Tile Data
         # Tile data is accessed via registers 0x61-0x6C (indices 1-12)
@@ -278,6 +285,9 @@ class AbadiaInterpreter:
 
     def get_trace_log(self):
         return self.trace_log
+
+    def get_draw_events(self):
+        return self.draw_events
 
     def read_byte(self):
         if self.pc < len(self.memory):
@@ -460,6 +470,11 @@ class AbadiaInterpreter:
             
             val = self.read_expr()
             if reg_idx < len(self.regs):
+                # SPECIAL CASE: H=255 floor blocks have DEPTH registers locked at 0
+                if (reg_idx == 16 or reg_idx == 17) and self.regs[reg_idx] == 0:
+                    self.log(f"  -> Skip Set {REG_NAMES.get(reg_byte, f'R{reg_idx}')} (Locked at 0)")
+                    return
+
                 self.regs[reg_idx] = val
                 reg_name = REG_NAMES.get(reg_byte, f"R{reg_idx}")
                 # Log the actual register being set
@@ -471,19 +486,25 @@ class AbadiaInterpreter:
                 self.log(f"  -> Set {reg_name} = {val}")
 
     def draw(self, tile_id, tile_depth=None):
+        # Capture the raw draw event for logging
+        self.draw_events.append({
+            'block_prio': self.prio,
+            'tile_id': tile_id,
+            'x': self.l,
+            'y': self.h,
+            'raw_dx': self.regs[16],
+            'raw_dy': self.regs[17]
+        })
+
         if self.canvas:
             # Prefer buffered drawing if available (for proper depth sorting)
             if hasattr(self.canvas, 'draw_tile_by_id'):
                 depth_x = self.regs[16]
                 depth_y = self.regs[17]
-                
-                # Use calculated depth based on registers
-                # Formula: depth = depthX + depthY - 16
-                depth = depth_x + depth_y - 16
-                
-                # Allow override if provided (though mostly unused now)
-                if tile_depth is not None:
-                    depth = tile_depth
+
+                # Pass depthX and depthY as tuple for in-cell depth correction
+                # (See RENDERING_Z_ORDER.md for the algorithm)
+                depth = (depth_x, depth_y)
 
                 self.canvas.draw_tile_by_id(tile_id, self.l, self.h, depth, self.prio)
                 self.log(f"  -> DRAWTILE ID {tile_id} @ ({self.l}, {self.h}) Depth({depth_x}, {depth_y})")

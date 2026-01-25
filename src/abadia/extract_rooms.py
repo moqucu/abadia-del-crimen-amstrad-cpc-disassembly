@@ -54,8 +54,11 @@ class RoomExtractor:
         self.data = raw_data[0x80:]
         self.rooms: List[RoomDefinition] = []
 
-    def parse_room(self, offset: int, room_id: int) -> RoomDefinition:
-        """Parse a single room starting at the given offset"""
+    def parse_room(self, offset: int, room_id: int) -> tuple[RoomDefinition, int]:
+        """
+        Parse a single room starting at the given offset.
+        Returns the room definition and the offset of the next room.
+        """
 
         # Read length byte
         length = self.data[offset]
@@ -70,6 +73,9 @@ class RoomExtractor:
 
             # Check for end marker
             if byte0 == 0xFF:
+                # End of room found
+                # Consume the 0xFF byte
+                offset += 1
                 break
 
             # Extract block ID (bits 7-1) and size flag (bit 0)
@@ -114,7 +120,7 @@ class RoomExtractor:
             file_offset=start_offset,
             length=length,
             blocks=blocks
-        )
+        ), offset
 
     def extract_all_rooms(self) -> List[RoomDefinition]:
         """Extract all rooms from abadia8.bin"""
@@ -127,18 +133,12 @@ class RoomExtractor:
 
         while offset < max_offset and offset < len(self.data):
             # Parse this room
-            room = self.parse_room(offset, room_id)
+            room, next_offset = self.parse_room(offset, room_id)
             self.rooms.append(room)
 
-            # Move to next room
-            # Next room starts at current offset + length + 1 (for the length byte itself)
-            offset = room.file_offset + room.length + 1
+            # Move to next room based on actual parsed data
+            offset = next_offset
             room_id += 1
-
-            # Safety check
-            if room.length == 0:
-                print(f"Warning: Room {room_id} has zero length at offset 0x{offset:04X}")
-                break
 
         return self.rooms
 
