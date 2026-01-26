@@ -275,7 +275,7 @@ def disassemble_bytecode(bytecode, tile_data=None):
 
 
 def main():
-    output_dir = "generated_blocks_python"
+    output_dir = "src/abadia/resources/generated_blocks"
     os.makedirs(output_dir, exist_ok=True)
 
     print(f"Output directory: {output_dir}")
@@ -357,7 +357,7 @@ def main():
         
         # Save Trace to individual log file
         logs = interpreter.get_trace_log()
-        log_path = os.path.join(output_dir, f"block_type_{block_id}.log")
+        log_path = os.path.join(output_dir, f"block_{block_id}.log")
         with open(log_path, "w") as f:
             f.write(f"BLOCK TRACE: #{block_id}\n")
             f.write(f"SOURCE ROOM: {room_id}\n")
@@ -375,7 +375,7 @@ def main():
 
         # Render and Save Image
         canvas.render()
-        img_path = os.path.join(output_dir, f"block_type_{block_id}.png")
+        img_path = os.path.join(output_dir, f"block_{block_id}.png")
         canvas.save(img_path)
 
     # Process orphaned blocks
@@ -406,7 +406,7 @@ def main():
         )
         
         logs = interpreter.get_trace_log()
-        log_path = os.path.join(output_dir, f"block_type_{block_id}.log")
+        log_path = os.path.join(output_dir, f"block_{block_id}.log")
         with open(log_path, "w") as f:
             f.write(f"BLOCK TRACE: #{block_id}\n")
             f.write(f"SOURCE ROOM: Manual (Not found in rooms)\n")
@@ -423,7 +423,7 @@ def main():
                 f.write(line + "\n")
 
         canvas.render()
-        img_path = os.path.join(output_dir, f"block_type_{block_id}.png")
+        img_path = os.path.join(output_dir, f"block_{block_id}.png")
         canvas.save(img_path)
 
     print(f"Finished. Processed {len(block_occurrences)} found blocks + {len(orphans)} orphans.")
