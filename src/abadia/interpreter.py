@@ -27,8 +27,9 @@ OPCODE_NAMES = {
     0xEA: "JMP",
     0xE9: "FLIP X",
     0xE8: "FLIP X", 0xE7: "FLIP X", 0xE6: "FLIP X", 0xE5: "FLIP X", # Variants
-    0xE4: "CALL FLIP",
-    0xC2: "SKIP_2", 0xC6: "SKIP_2", 0xB6: "SKIP_2", 0xBA: "SKIP_2"
+    0xE4: "CALL_PRESERVE",
+    0xC2: "SKIP_2", 0xC6: "SKIP_2", 0xB6: "SKIP_2", 0xBA: "SKIP_2",
+    0x00: "END (00)"
 }
 
 REG_NAMES = {
@@ -281,8 +282,8 @@ class AbadiaInterpreter:
                 ))
                 self.call_depth += 1
 
-                # Toggle Flip for the callee
-                self.flip_x_mode = not self.flip_x_mode
+                # Preserve Flip (Inherit from caller)
+                # self.flip_x_mode = not self.flip_x_mode # REMOVED
                 
                 # Skip Header (Tile Load) logic logic congruent with ASM 1BB9
                 # Check if target has header (Opcode < 0xE0)
