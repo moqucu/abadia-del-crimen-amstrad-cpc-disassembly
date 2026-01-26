@@ -201,9 +201,32 @@ class AbadiaInterpreter:
                     self.l, self.h
                 )
                 self.call_stack.append(state)
-                
-                # Jump to address (execute header/tile load)
-                self.pc = addr
+
+                # All CALL targets have a 2-byte tile header at the start.
+                # If first byte < 0xE0, the main loop's header handling will process it.
+                # If first byte >= 0xE0, it would be misinterpreted as an opcode,
+                # so we must process the header here.
+                if addr + 1 < len(self.memory):
+                    first_byte = self.memory[addr]
+                    if first_byte >= 0xE0:
+                        # Process header: read 2-byte tile pointer and load tiles
+                        tile_ptr_low = self.memory[addr]
+                        tile_ptr_high = self.memory[addr + 1]
+                        tile_ptr = (tile_ptr_high << 8) | tile_ptr_low
+
+                        # Load 12 bytes of tile data into T0-T11 (regs 1-12)
+                        if tile_ptr + 12 <= len(self.memory):
+                            for i in range(12):
+                                self.regs[1 + i] = self.memory[tile_ptr + i]
+                            self.log(f"  -> Load Tileset from 0x{tile_ptr:04X}")
+
+                        # Skip the 2-byte header
+                        self.pc = addr + 2
+                    else:
+                        # Let main loop handle the header (opcode < 0xE0 case)
+                        self.pc = addr
+                else:
+                    self.pc = addr
 
             elif opcode == 0xFC: # PUSH POS
                 self.pos_stack.append((self.l, self.h))
@@ -268,12 +291,12 @@ class AbadiaInterpreter:
                 self.pc = addr
             elif opcode in [0xE9, 0xE8, 0xE7, 0xE6, 0xE5]: # FlipX
                 self.flip_x_mode = not self.flip_x_mode
-            elif opcode == 0xE4: # CallBlock FlipX (Preserve Tiles)
+            elif opcode == 0xE4: # CallBlock Preserve (skip tile header, don't load tiles)
                 # Reads address
                 low = self.read_byte()
                 high = self.read_byte()
                 addr = (high << 8) | low
-                
+
                 self.call_stack.append((
                     self.pc,
                     self.regs[13], self.regs[14], self.regs[15], self.regs[16], self.regs[17],
@@ -282,20 +305,10 @@ class AbadiaInterpreter:
                 ))
                 self.call_depth += 1
 
-                # Preserve Flip (Inherit from caller)
-                # self.flip_x_mode = not self.flip_x_mode # REMOVED
-                
-                # Skip Header (Tile Load) logic logic congruent with ASM 1BB9
-                # Check if target has header (Opcode < 0xE0)
-                # If so, skip 2 bytes.
-                if addr < len(self.memory):
-                    first_byte = self.memory[addr]
-                    if first_byte < 0xE0:
-                        self.pc = addr + 2
-                    else:
-                        self.pc = addr
-                else:
-                    self.pc = addr
+                # All CALL targets have a 2-byte tile header.
+                # CALL_PRESERVE skips the header WITHOUT loading tiles (preserves current tileset).
+                # Always skip 2 bytes regardless of header value.
+                self.pc = addr + 2
 
             elif opcode == 0xFF: # End / Ret
                 if len(self.call_stack) > 0:
