@@ -3,19 +3,32 @@ from PIL import Image
 
 
 class AbbeyTiles:
-    """Load and manage the 256 base tiles."""
+    """Load and manage the 256 base tiles from the generated sprite sheet."""
 
     def __init__(self, tiles_dir='src/abadia/resources/tiles', palette='day'):
         self.tiles = {}
-        tile_path = os.path.join(tiles_dir, f'palette_{palette}')
+        sheet_filename = f'tiles_{palette}.png'
+        sheet_path = os.path.join(tiles_dir, sheet_filename)
 
-        for i in range(256):
-            filename = f'tile_{i:03d}_0x{i:02X}.png'
-            filepath = os.path.join(tile_path, filename)
-            if os.path.exists(filepath):
-                self.tiles[i] = Image.open(filepath).copy()
-            else:
-                # Fallback: create empty tile
+        if os.path.exists(sheet_path):
+            sheet = Image.open(sheet_path).convert('RGBA')
+            
+            for i in range(256):
+                # Calculate position in the 16-tile-wide grid
+                # X = Column * 16 pixels
+                # Y = Row * 8 pixels
+                col = i % 16
+                row = i // 16
+                x = col * 16
+                y = row * 8
+                
+                # Crop the 16x8 tile
+                tile = sheet.crop((x, y, x + 16, y + 8))
+                self.tiles[i] = tile
+        else:
+            print(f"Warning: Tile sheet {sheet_path} not found.")
+            # Fallback: create empty tiles
+            for i in range(256):
                 self.tiles[i] = Image.new('RGB', (16, 8), (0, 0, 0))
 
     def get(self, num):

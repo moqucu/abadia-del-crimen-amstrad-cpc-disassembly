@@ -34,6 +34,7 @@ OPCODE_NAMES = {
 REG_NAMES = {
     0x6D: "PARAM1",
     0x6E: "PARAM2",
+    0x6F: "HEIGHT",
     0x70: "DEPTHX",
     0x71: "DEPTHY"
 }
@@ -129,10 +130,14 @@ class AbadiaInterpreter:
             self.regs[17] = 0
         else:
             # Standard initialization for walls and objects
-            # Based on trace analysis, initialization offset is -3.
-            self.regs[16] = (start_x + height - 3) & 0xFF
-            self.regs[17] = (start_y + height - 3) & 0xFF
-
+            # Logic derived from ASM routine at 0x1FB8:
+            # A = Height >> 1
+            # Reg16 (E) = Y + A + X - 15
+            # Reg17 (D) = 16 + Y + A - X
+            h_eff = height // 2
+            self.regs[16] = (start_y + h_eff + start_x - 15) & 0xFF
+            self.regs[17] = (16 + start_y + h_eff - start_x) & 0xFF
+            
         # Load Tile Data
         # Tile data is accessed via registers 0x61-0x6C (indices 1-12)
         if hasattr(block_def, 'tile_data') and block_def.tile_data:
@@ -145,6 +150,8 @@ class AbadiaInterpreter:
         # 0x6E = index 14 = PARAM2
         self.regs[13] = param1 
         self.regs[14] = param2 
+        # 0x6F = index 15 = HEIGHT
+        self.regs[15] = height
         
         if self.trace_enabled:
             self.log(f"=== TRACE START: Block Type {block_def.block_id} ===")
@@ -172,58 +179,7 @@ class AbadiaInterpreter:
                 op_name = OPCODE_NAMES.get(opcode, f"UNK_{opcode:02X}")
                 self.log(f"[{offset:4d}] {op_name}")
             
-            if opcode == 0xFF: # End
-                break
-            elif opcode == 0xFE: # Loop Param1 (0x6D / index 13)
-                self.op_loop(13)
-            elif opcode == 0xFD: # Loop Param2 (0x6E / index 14)
-                self.op_loop(14)
-            elif opcode == 0xFC: # PushPos
-                self.pos_stack.append(self.l)
-                self.pos_stack.append(self.h)
-            elif opcode == 0xFB: # PopPos
-                if len(self.pos_stack) >= 2:
-                    self.h = self.pos_stack.pop()
-                    self.l = self.pos_stack.pop()
-            elif opcode == 0xFA: # LoopEnd
-                self.op_loop_end()
-            elif opcode == 0xF9: # PaintTile DecY
-                self.op_paint_tile(dec_y=True)
-            elif opcode == 0xF8: # PaintTile IncX
-                self.op_paint_tile(inc_x=True)
-            elif opcode == 0xF7: # UpdateReg
-                self.op_update_reg()
-            elif opcode == 0xF6: # IncY
-                self.h += 1
-            elif opcode == 0xF5: # IncX
-                self.inc_x()
-            elif opcode == 0xF4: # DecY
-                self.h -= 1
-            elif opcode == 0xF3: # DecX
-                self.dec_x()
-            elif opcode == 0xF2: # UpdateY
-                val = self.read_expr()
-                # Interpret as signed byte for coordinate adjustment
-                if val > 127:
-                    val = val - 256
-                self.h += val
-            elif opcode == 0xF1: # UpdateX
-                val = self.read_expr()
-                # Interpret as signed byte for coordinate adjustment
-                if val > 127:
-                    val = val - 256
-                self.l += val
-            elif opcode == 0xF0: # IncParam1 (0x6D)
-                self.regs[13] = (self.regs[13] + 1) & 0xFF
-            elif opcode == 0xEF: # IncParam2 (0x6E)
-                self.regs[14] = (self.regs[14] + 1) & 0xFF
-            elif opcode == 0xEE: # DecParam1 (0x6D)
-                self.regs[13] = (self.regs[13] - 1) & 0xFF
-            elif opcode == 0xED: # DecParam2 (0x6E)
-                self.regs[14] = (self.regs[14] - 1) & 0xFF
-            elif opcode == 0xE0: # NOP / Restart Fetch
-                continue
-            elif opcode == 0xEC: # CallBlock
+            if opcode == 0xEC: # CallBlock (Standard)
                 # Reads address (2 bytes, Little Endian)
                 low = self.read_byte()
                 high = self.read_byte()
@@ -235,10 +191,71 @@ class AbadiaInterpreter:
                     self.log(f"Warning: Max call depth ({self.max_call_depth}) exceeded")
                     break
 
-                # Push return address
-                self.call_stack.append(self.pc)
-                # Jump
+                # Push State: Return Addr, Regs(13-17), Flip, Pos
+                # ASM saves: HL (Pos), BC (Flip), 1FDE (Depth), 1FDB (Params), 1FDD (Height)
+                state = (
+                    self.pc,
+                    self.regs[13], self.regs[14], self.regs[15], self.regs[16], self.regs[17],
+                    self.flip_x_mode,
+                    self.l, self.h
+                )
+                self.call_stack.append(state)
+                
+                # Jump to address (execute header/tile load)
                 self.pc = addr
+
+            elif opcode == 0xFC: # PUSH POS
+                self.pos_stack.append((self.l, self.h))
+            elif opcode == 0xFB: # POP POS
+                if self.pos_stack:
+                    (self.l, self.h) = self.pos_stack.pop()
+            
+            elif opcode == 0xFE: # WHILE PARAM1
+                self.op_loop(13)
+            elif opcode == 0xFD: # WHILE PARAM2
+                self.op_loop(14)
+            elif opcode == 0xFA: # ENDWHILE
+                self.op_loop_end()
+            
+            elif opcode == 0xF9: # DRAWTILE DEC_Y
+                self.op_paint_tile(dec_y=True)
+            elif opcode == 0xF8: # DRAWTILE INC_X
+                self.op_paint_tile(inc_x=True)
+            
+            elif opcode == 0xF7: # LD
+                self.op_update_reg()
+            
+            elif opcode == 0xF6: # INC Y
+                self.h = (self.h + 1) & 0xFF
+            elif opcode == 0xF5: # INC X
+                self.inc_x()
+            elif opcode == 0xF4: # DEC Y
+                self.h = (self.h - 1) & 0xFF
+            elif opcode == 0xF3: # DEC X
+                self.dec_x()
+            
+            elif opcode == 0xF2: # ADD Y
+                val = self.read_expr()
+                self.h = (self.h + val) & 0xFF
+            elif opcode == 0xF1: # ADD X
+                val = self.read_expr()
+                if self.flip_x_mode:
+                    self.l = (self.l - val) & 0xFF
+                else:
+                    self.l = (self.l + val) & 0xFF
+
+            elif opcode == 0xF0: # INC PARAM1
+                self.regs[13] = (self.regs[13] + 1) & 0xFF
+            elif opcode == 0xEF: # INC PARAM2
+                self.regs[14] = (self.regs[14] + 1) & 0xFF
+            elif opcode == 0xEE: # DEC PARAM1
+                self.regs[13] = (self.regs[13] - 1) & 0xFF
+            elif opcode == 0xED: # DEC PARAM2
+                self.regs[14] = (self.regs[14] - 1) & 0xFF
+            
+            elif opcode == 0xE0: # NOP
+                pass
+
             elif opcode == 0xEB: # PaintTile DecX
                 self.op_paint_tile(dec_x=True)
             elif opcode == 0xEA: # ChangePC (jump without return)
@@ -250,13 +267,51 @@ class AbadiaInterpreter:
                 self.pc = addr
             elif opcode in [0xE9, 0xE8, 0xE7, 0xE6, 0xE5]: # FlipX
                 self.flip_x_mode = not self.flip_x_mode
-            elif opcode == 0xE4: # CallBlock FlipX
-                self.flip_x_mode = not self.flip_x_mode
+            elif opcode == 0xE4: # CallBlock FlipX (Preserve Tiles)
+                # Reads address
                 low = self.read_byte()
                 high = self.read_byte()
                 addr = (high << 8) | low
-                self.call_stack.append(self.pc)
-                self.pc = addr
+                
+                self.call_stack.append((
+                    self.pc,
+                    self.regs[13], self.regs[14], self.regs[15], self.regs[16], self.regs[17],
+                    self.flip_x_mode,
+                    self.l, self.h
+                ))
+                self.call_depth += 1
+
+                # Toggle Flip for the callee
+                self.flip_x_mode = not self.flip_x_mode
+                
+                # Skip Header (Tile Load) logic logic congruent with ASM 1BB9
+                # Check if target has header (Opcode < 0xE0)
+                # If so, skip 2 bytes.
+                if addr < len(self.memory):
+                    first_byte = self.memory[addr]
+                    if first_byte < 0xE0:
+                        self.pc = addr + 2
+                    else:
+                        self.pc = addr
+                else:
+                    self.pc = addr
+
+            elif opcode == 0xFF: # End / Ret
+                if len(self.call_stack) > 0:
+                    # Restore State
+                    state = self.call_stack.pop()
+                    (
+                        self.pc,
+                        self.regs[13], self.regs[14], self.regs[15], self.regs[16], self.regs[17],
+                        self.flip_x_mode,
+                        self.l, self.h
+                    ) = state
+                    
+                    self.call_depth -= 1
+                    if self.trace_enabled:
+                        self.log(f"  -> RET (Restore State)")
+                else:
+                    break
             elif opcode < 0xE0:
                 # Implicit "Load Tileset" header (2 bytes = Address)
                 # The code jumps to an address that starts with a pointer to tile data.
@@ -513,4 +568,3 @@ class AbadiaInterpreter:
                 tile_img = self.tiles.get(tile_id)
                 if tile_img is not None:
                     self.canvas.draw_tile(tile_img, self.l, self.h)
-

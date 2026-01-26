@@ -104,8 +104,8 @@ class RoomRenderer:
                     canvas,
                     start_x=block_entry.x_pos,
                     start_y=block_entry.y_pos,
-                    param1=block_entry.x_length if block_entry.x_length > 0 else 1,
-                    param2=block_entry.y_length if block_entry.y_length > 0 else 1,
+                    param1=block_entry.x_length,
+                    param2=block_entry.y_length,
                     height=height,
                     prio=i
                 )

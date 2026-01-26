@@ -40,13 +40,13 @@ of the game's runtime masking engine, providing a valid study of the game's grap
 
 import re
 import os
+import shutil
 from PIL import Image
 from abadia.cpc_palette import CpcPalette
 
 # Default paths
 DEFAULT_ASM_FILE = "translated_english_files/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
 DEFAULT_OUTPUT_DIR = "src/abadia/resources/tiles"
-DEFAULT_SHEET_PATH = "src/abadia/resources/abbey_tiles_spritesheet.png"
 
 def get_palette_colors(palette_name='day'):
     """
@@ -208,71 +208,42 @@ def extract_tile(data, tile_number, palette='day'):
 
     return img
 
-def extract_all_tiles(asm_path, output_base_dir):
+def cleanup_individual_tiles(output_base_dir):
+    """Remove legacy individual tile directories."""
+    for palette in ['day', 'night']:
+        dir_path = os.path.join(output_base_dir, f"palette_{palette}")
+        if os.path.exists(dir_path):
+            print(f"Removing legacy directory: {dir_path}")
+            shutil.rmtree(dir_path)
+
+def generate_tile_maps(asm_path, output_dir, tiles_per_row=16):
     """
-    Extract all 256 tiles from the disassembled .asm file and save as individual PNG files.
-    Creates separate directories for each palette.
+    Create tile map images containing all tiles for each palette.
+    Saves as 'tiles_day.png' and 'tiles_night.png'.
 
     Args:
         asm_path: Path to the .asm file
-        output_base_dir: Base directory to save tile images
-    """
-    # Read graphics data from the .asm file
-    print("Reading graphics data from .asm file...")
-    graphics_data = read_graphics_from_asm(asm_path)
-
-    print(f"Read {len(graphics_data)} bytes of graphics data")
-    print(f"Expected tiles: {len(graphics_data) // 32}")
-
-    # Extract tiles for each palette
-    for palette_name in ['day', 'night']:
-        print(f"\nExtracting tiles with '{palette_name}' palette...")
-
-        # Create output directory for this palette
-        output_dir = os.path.join(output_base_dir, f"palette_{palette_name}")
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Extract each tile
-        for tile_num in range(256):
-            try:
-                tile_img = extract_tile(graphics_data, tile_num, palette=palette_name)
-
-                # Save as PNG
-                output_path = os.path.join(output_dir, f"tile_{tile_num:03d}_0x{tile_num:02X}.png")
-                tile_img.save(output_path)
-
-                if tile_num % 64 == 0:
-                    print(f"  Extracted tile {tile_num}/256...")
-
-            except Exception as e:
-                print(f"  Error extracting tile {tile_num}: {e}")
-
-        print(f"  Completed {palette_name} palette tiles")
-
-def create_tile_sheet(asm_path, output_base_path, tiles_per_row=16):
-    """
-    Create sprite sheet images containing all tiles for each palette.
-
-    Args:
-        asm_path: Path to the .asm file
-        output_base_path: Base path for saving sprite sheets (palette name will be added)
+        output_dir: Directory to save the tile maps
         tiles_per_row: Number of tiles per row in the sheet
     """
     # Read graphics data from the .asm file
     print("Reading graphics data from .asm file...")
     graphics_data = read_graphics_from_asm(asm_path)
+    
+    os.makedirs(output_dir, exist_ok=True)
 
     # Create sprite sheets for each palette
     for palette_name in ['day', 'night']:
-        print(f"\nCreating sprite sheet for '{palette_name}' palette...")
+        print(f"\nGenerating tile map for '{palette_name}' palette...")
 
         # Calculate sheet dimensions
         total_tiles = 256
         rows = (total_tiles + tiles_per_row - 1) // tiles_per_row
 
-        # Each tile is 16x8, add 1 pixel spacing
-        sheet_width = tiles_per_row * 17  # 16 pixels + 1 spacing
-        sheet_height = rows * 9  # 8 pixels + 1 spacing
+        # Each tile is 16x8
+        # NO SPACING as per requirements for easy programmatic access
+        sheet_width = tiles_per_row * 16
+        sheet_height = rows * 8
 
         # Create sprite sheet (RGBA)
         sheet = Image.new('RGBA', (sheet_width, sheet_height), (0, 0, 0, 0))
@@ -283,19 +254,16 @@ def create_tile_sheet(asm_path, output_base_path, tiles_per_row=16):
             # Calculate position in sheet
             row = tile_num // tiles_per_row
             col = tile_num % tiles_per_row
-            x = col * 17
-            y = row * 9
+            x = col * 16
+            y = row * 8
 
             # Paste tile into sheet (using alpha compositing)
             sheet.paste(tile_img, (x, y))
 
-            if tile_num % 64 == 0:
-                print(f"  Processing tile {tile_num}/256...")
-
-        # Save with palette name in filename
-        output_path = output_base_path.replace('.png', f'_{palette_name}.png')
+        # Save with standard filename
+        output_path = os.path.join(output_dir, f'tiles_{palette_name}.png')
         sheet.save(output_path)
-        print(f"  Sprite sheet saved to: {output_path}")
+        print(f"  Tile map saved to: {output_path}")
 
 if __name__ == "__main__":
     import sys
@@ -303,42 +271,26 @@ if __name__ == "__main__":
     # Use default paths or environment overrides
     asm_file = DEFAULT_ASM_FILE
     output_dir = DEFAULT_OUTPUT_DIR
-    sheet_path = DEFAULT_SHEET_PATH
 
     if not os.path.exists(asm_file):
         print(f"Error: {asm_file} not found")
         sys.exit(1)
 
-    # Extract individual tiles
-    print("=" * 60)
-    print(f"Extracting individual tiles from {asm_file}...")
-    print("=" * 60)
-    extract_all_tiles(asm_file, output_dir)
+    # Cleanup old files
+    cleanup_individual_tiles(output_dir)
 
-    # Create sprite sheets
+    # Create tile maps
     print("\n" + "=" * 60)
-    print("Creating sprite sheets...")
+    print("Generating Tile Maps...")
     print("=" * 60)
-    create_tile_sheet(asm_file, sheet_path, tiles_per_row=16)
+    generate_tile_maps(asm_file, output_dir, tiles_per_row=16)
 
     print("\n" + "=" * 60)
     print("DONE!")
     print("=" * 60)
-    print(f"\nIndividual tiles organized by palette:")
-    print(f"  ./tiles/palette_day/    (256 tiles)")
-    print(f"  ./tiles/palette_night/  (256 tiles)")
-    print(f"\nSprite sheets:")
-    print(f"  ./abbey_tiles_spritesheet_day.png")
-    print(f"  ./abbey_tiles_spritesheet_night.png")
-    print("\nPalette colors matched from CPC game screenshots:")
-    print("  Day palette:")
-    print("    Pen 0: Bright Cyan (floor/background)")
-    print("    Pen 1: Bright Yellow (highlights)")
-    print("    Pen 2: Orange (walls, bricks)")
-    print("    Pen 3: Black (outlines, text)")
-    print("  Night palette:")
-    print("    Pen 0: Bright Blue (floor/background)")
-    print("    Pen 1: Bright White (highlights)")
-    print("    Pen 2: Bright Magenta (walls, structures)")
-    print("    Pen 3: Black (outlines, text)")
-    print("\nTile data extracted from addresses 8300-A2FF in the .asm file")
+    print(f"\nTile Maps generated in {output_dir}:")
+    print(f"  tiles_day.png")
+    print(f"  tiles_night.png")
+    print(f"\nAccess Formula:")
+    print(f"  X = (TileID % 16) * 16")
+    print(f"  Y = (TileID // 16) * 8")
