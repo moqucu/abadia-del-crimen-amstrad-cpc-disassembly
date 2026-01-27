@@ -128,8 +128,10 @@ class RoomExtractor:
         offset = 0
         room_id = 0
 
-        # Room data goes from 0x0000 to 0x2237 according to MEMORY_BANK_ANALYSIS.md
-        max_offset = 0x2237
+        # Room data goes from 0x0000 to 0x2329 (116 rooms total, ending with room 115)
+        # Note: Original MEMORY_BANK_ANALYSIS.md said 0x2237 which excludes the last room
+        # Data after 0x2329 is 0xFF padding
+        max_offset = 0x2329
 
         while offset < max_offset and offset < len(self.data):
             # Parse this room

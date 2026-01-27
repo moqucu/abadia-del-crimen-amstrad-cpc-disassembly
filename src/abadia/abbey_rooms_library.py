@@ -1,6 +1,6 @@
 """
 Room definitions extracted from abadia8.bin
-Total rooms: 115
+Total rooms: 116
 """
 
 from typing import List, Optional
@@ -3288,6 +3288,49 @@ ROOM_DEFINITIONS = {
             BlockEntry(0x54, 22, 13, 1, 0, None),
             BlockEntry(0x17, 23, 28, 3, 1, None),
             BlockEntry(0x34, 10, 21, 1, 0, 4),
+        ]
+    ),
+    115: RoomDefinition(
+        room_id=115,
+        file_offset=0x22AB,
+        length=139,
+        blocks=[
+            BlockEntry(0x04, 23, 10, 1, 1, 20),
+            BlockEntry(0x51, 20, 24, 5, 2, None),
+            BlockEntry(0x05, 10, 13, 3, 1, None),
+            BlockEntry(0x1D, 9, 15, 1, 0, None),
+            BlockEntry(0x01, 8, 18, 1, 1, None),
+            BlockEntry(0x04, 9, 29, 4, 2, None),
+            BlockEntry(0x04, 13, 31, 3, 2, None),
+            BlockEntry(0x04, 23, 28, 5, 0, None),
+            BlockEntry(0x2C, 20, 12, 0, 0, 2),
+            BlockEntry(0x2C, 22, 14, 0, 0, 2),
+            BlockEntry(0x0F, 15, 18, 4, 2, 4),
+            BlockEntry(0x2F, 23, 17, 5, 4, 4),
+            BlockEntry(0x18, 16, 17, 2, 1, 2),
+            BlockEntry(0x0F, 19, 18, 2, 1, 4),
+            BlockEntry(0x02, 19, 18, 0, 1, None),
+            BlockEntry(0x3F, 12, 14, 2, 3, None),
+            BlockEntry(0x38, 10, 17, 2, 1, None),
+            BlockEntry(0x0B, 14, 18, 1, 0, None),
+            BlockEntry(0x05, 17, 25, 2, 2, None),
+            BlockEntry(0x38, 17, 27, 0, 2, None),
+            BlockEntry(0x31, 15, 29, 1, 1, None),
+            BlockEntry(0x24, 21, 18, 2, 1, 4),
+            BlockEntry(0x36, 16, 22, 1, 3, 2),
+            BlockEntry(0x33, 16, 29, 7, 1, None),
+            BlockEntry(0x05, 18, 31, 2, 4, None),
+            BlockEntry(0x0C, 15, 18, 0, 0, None),
+            BlockEntry(0x18, 13, 20, 2, 1, 2),
+            BlockEntry(0x46, 12, 19, 1, 0, 4),
+            BlockEntry(0x24, 16, 26, 7, 1, 2),
+            BlockEntry(0x09, 14, 16, 3, 0, 8),
+            BlockEntry(0x09, 17, 13, 3, 0, 8),
+            BlockEntry(0x31, 13, 11, 2, 3, 30),
+            BlockEntry(0x01, 8, 9, 1, 1, None),
+            BlockEntry(0x38, 9, 29, 7, 1, 40),
+            BlockEntry(0x33, 10, 27, 0, 1, None),
+            BlockEntry(0x34, 14, 12, 3, 4, 255),
         ]
     ),
 }
