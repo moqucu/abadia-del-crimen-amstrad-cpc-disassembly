@@ -1,3 +1,10 @@
+"""
+Tile buffer and rendering system for La Abadia del Crimen.
+
+Provides AbbeyTiles for loading tile graphics, TileBuffer for depth-aware tile storage,
+and BufferedCanvas for rendering rooms with proper isometric z-ordering.
+"""
+
 import os
 from PIL import Image
 

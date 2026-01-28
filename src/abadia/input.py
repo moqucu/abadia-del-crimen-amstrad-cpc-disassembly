@@ -1,4 +1,9 @@
+"""
+Keyboard input handler wrapping pygame for game control and special key combinations.
+"""
+
 import pygame
+
 
 class Keyboard:
     """

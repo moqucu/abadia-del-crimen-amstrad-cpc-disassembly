@@ -1,4 +1,9 @@
+"""
+Analyze the color swap lookup tables used for tile masking/transparency effects.
+"""
+
 import os
+
 
 def analyze():
     with open('src/abadia/resources/lookup_tables.bin', 'rb') as f:

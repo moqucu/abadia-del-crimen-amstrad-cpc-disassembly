@@ -1,5 +1,10 @@
+"""
+Amstrad CPC color palette definitions and RGB mappings for day/night rendering.
+"""
+
 from PIL import Image, ImageDraw, ImageFont
 import os
+
 
 class CpcPalette:
     """

@@ -1,3 +1,10 @@
+"""
+Bytecode interpreter for La Abadia del Crimen building block scripts.
+
+Executes the game's custom bytecode that draws isometric building blocks
+using tile drawing, coordinate manipulation, loops, and subroutine calls.
+"""
+
 import os
 from .graphics import AbbeyCanvas, AbbeyTiles
 

@@ -1,3 +1,7 @@
+"""
+Compare generated DSL scripts with JS reference to verify disassembly accuracy.
+"""
+
 import re
 import difflib
 

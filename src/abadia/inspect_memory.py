@@ -1,3 +1,7 @@
+"""
+Utility script to inspect raw bytes at specific addresses in the memory dump.
+"""
+
 import os
 
 memory_file = 'src/abadia/resources/abbey_code.bin'

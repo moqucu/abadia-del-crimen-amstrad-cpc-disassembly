@@ -1,3 +1,8 @@
+"""
+Player character state for Friar Guillermo (William of Baskerville).
+"""
+
+
 class Guillermo:
     """
     Representation of the main character, Friar Guillermo (William of Baskerville).

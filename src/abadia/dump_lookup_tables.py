@@ -1,5 +1,9 @@
+"""
+Extract the 4 color lookup tables (0x9D00-0xA0FF) from the binary to a separate file.
+"""
 
 import sys
+
 
 def dump_tables():
     with open('src/abadia/resources/abbey_code.bin', 'rb') as f:

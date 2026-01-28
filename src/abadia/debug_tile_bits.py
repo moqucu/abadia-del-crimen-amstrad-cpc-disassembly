@@ -1,5 +1,9 @@
+"""
+Debug utility to display tile pixel data as ASCII matrix for visual inspection.
+"""
 
 import os
+
 
 def decode_cpc_mode1_byte(byte_val):
     pixels = []

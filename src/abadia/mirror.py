@@ -1,3 +1,8 @@
+"""
+State management for the secret mirror puzzle object in the abbey.
+"""
+
+
 class Mirror:
     """
     Representation of the secret mirror in the abbey.
