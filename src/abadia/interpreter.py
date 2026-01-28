@@ -202,6 +202,15 @@ class AbadiaInterpreter:
                 )
                 self.call_stack.append(state)
 
+                # Re-initialize depth registers with current position (matching JS behavior)
+                # JS: executeScript always recalculates depth from current (x, y, height)
+                height = self.regs[15]
+                if height != 255:
+                    h_eff = height // 2
+                    self.regs[16] = (self.h + h_eff + self.l - 15) & 0xFF  # DEPTHX
+                    self.regs[17] = (16 + self.h + h_eff - self.l) & 0xFF  # DEPTHY
+                    self.log(f"  -> Re-init Depth: DEPTHX={self.regs[16]}, DEPTHY={self.regs[17]}")
+
                 # All CALL targets have a 2-byte tile header at the start.
                 # If first byte < 0xE0, the main loop's header handling will process it.
                 # If first byte >= 0xE0, it would be misinterpreted as an opcode,
@@ -304,6 +313,14 @@ class AbadiaInterpreter:
                     self.l, self.h
                 ))
                 self.call_depth += 1
+
+                # Re-initialize depth registers with current position (matching JS behavior)
+                height = self.regs[15]
+                if height != 255:
+                    h_eff = height // 2
+                    self.regs[16] = (self.h + h_eff + self.l - 15) & 0xFF  # DEPTHX
+                    self.regs[17] = (16 + self.h + h_eff - self.l) & 0xFF  # DEPTHY
+                    self.log(f"  -> Re-init Depth: DEPTHX={self.regs[16]}, DEPTHY={self.regs[17]}")
 
                 # All CALL targets have a 2-byte tile header.
                 # CALL_PRESERVE skips the header WITHOUT loading tiles (preserves current tileset).

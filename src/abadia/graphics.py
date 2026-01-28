@@ -187,8 +187,9 @@ class TileBuffer:
                         'sort_index': index   # Creation Order
                     })
 
-        # Sort by depth (lower = further = draw first), then by creation order
-        draw_list.sort(key=lambda t: (t['depth'], t['sort_index']))
+        # Sort by depth (lower = further = draw first), then by block priority
+        # This matches JS behavior where same-depth tiles are ordered by Prio
+        draw_list.sort(key=lambda t: (t['depth'], t['prio']))
         
         # Convert to tuple format expected by renderer
         return [(t['x'], t['y'], t['tile'], t['depth'], t['prio']) for t in draw_list]
