@@ -8,7 +8,6 @@ This document provides a summary of all Python scripts in the `src/abadia/` dire
 | `abbey_architect.py` | Complete Block Renderer demonstrating isometric engine assembly |
 | `abbey_blocks_library.py` | Auto-generated library of 96 building block scripts from memory dump |
 | `abbey_rooms_library.py` | Room definitions extracted from abadia8.bin (116 rooms) |
-| `add_missing_blocks.py` | Add missing critical blocks to abbey_blocks_library.py |
 | `analyze_coverage.py` | Analyze room rendering coverage - which blocks are missing |
 | `analyze_lookup_tables.py` | Analyze the color swap lookup tables for tile masking/transparency |
 | `bytecode_to_dsl.py` | Converts block bytecode to human-readable DSL format |
