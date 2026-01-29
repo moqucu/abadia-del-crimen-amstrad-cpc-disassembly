@@ -12,30 +12,26 @@ Each tile is 32 bytes:
 
 The tile data is located in the .asm file at addresses 8300-A2FF (8192 bytes).
 
-CONGRUENCE WITH ORIGINAL ASSEMBLY CODE:
+COLOR MAPPING AND TRANSPARENCY:
+-------------------------------
+The color/transparency mappings below were reverse-engineered empirically by comparing
+output with the original game. They produce pixel-perfect matches with game screenshots.
+
+1. **Tiles 0-10:** Fully opaque floor tiles, no transparency needed.
+
+2. **Tiles 11-127:** Pen 1 is transparent, others opaque.
+   - Pen 0 → Cyan, Pen 1 → Transparent, Pen 2 → Orange, Pen 3 → Black
+
+3. **Tiles 128-255:** Pen 2 is transparent, others opaque.
+   - Pen 0 → Cyan, Pen 1 → Yellow, Pen 2 → Transparent, Pen 3 → Black
+
+NOTE ON LOOKUP TABLES (0x9D00-0xA0FF):
 --------------------------------------
-This script implements a 3-tier tile rendering logic that is functionally congruent with 
-the original Z80 assembly code found at address 0x4E49.
-
-1. **Tier 1 (Tiles 0-10):**
-   - **Assembly:** Checks if TileID < 0x0B. If so, uses direct LDI copy (no table lookup).
-   - **Python:** `if tile_number < 11`: Renders as Opaque Cyan background.
-   - **Logic:** These are base tiles (floor) that do not require masking.
-
-2. **Tier 2 (Tiles 11-127):**
-   - **Assembly:** Checks if Bit 7 is clear. If so, uses Lookup Tables 1 & 2 at 0x9D00.
-   - **Python:** `if 11 <= tile_number < 128`: Applies specific bit-to-color mapping.
-   - **Logic:** The lookup tables perform masking/transparency. We emulate this by 
-     mapping Bit 1 to Transparent and correcting color assignments (e.g., Bit 3 -> Black).
-
-3. **Tier 3 (Tiles 128-255):**
-   - **Assembly:** If Bit 7 is set, uses Lookup Tables 3 & 4 at 0x9F00.
-   - **Python:** `if tile_number >= 128`: Applies a different bit-to-color mapping.
-   - **Logic:** High-ID tiles use a different color encoding in the raw binary. 
-     We emulate the lookup table's result by mapping Bit 2 to Transparent and Bit 1 to Yellow.
-
-This implementation effectively "patches" the raw pixel data to match the visual output 
-of the game's runtime masking engine, providing a valid study of the game's graphics architecture.
+The original game has AND/OR lookup tables at addresses 0x9D00-0xA0FF that the assembly
+code at 0x4E49 references. However, direct application of these tables produces dithered
+color patterns (e.g., [0,1,1,0] instead of solid colors), which do NOT match the actual
+game output. The tables may be used for sprite compositing or other effects, not regular
+tile rendering. The empirical mappings above correctly reproduce the game's visuals.
 """
 
 import re
