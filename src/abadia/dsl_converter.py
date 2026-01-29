@@ -1,11 +1,14 @@
-#!/usr/bin/env python3
 """
-Bytecode to DSL Converter for La Abadia del Crimen building blocks.
+DSL Converter - Internal library for bytecode disassembly.
 
-Converts the binary bytecode scripts into a human-readable DSL format
-compatible with the scripts.abs format from the web version.
+Converts binary bytecode scripts into human-readable DSL (Domain-Specific Language)
+format. Used by extract_block_scripts.py to embed DSL in abbey_blocks_library.py
+and by room_renderer.py to include DSL in room log files.
 
-This allows easy comparison and debugging of block rendering.
+Main exports:
+- BytecodeToDSL: Class for converting bytecode to DSL
+- disassemble_single_block(block_id): Convenience function for single block
+- disassemble_all_blocks(output_path): Batch disassembly to file
 """
 
 import os

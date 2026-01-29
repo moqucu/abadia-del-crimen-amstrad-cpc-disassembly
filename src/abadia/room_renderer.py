@@ -25,7 +25,7 @@ from abadia.graphics import AbbeyTiles, AbbeyCanvas, BufferedCanvas
 from abadia.interpreter import AbadiaInterpreter
 from abadia.abbey_blocks_library import BLOCK_DEFINITIONS
 from abadia.abbey_rooms_library import ROOM_DEFINITIONS
-from abadia.bytecode_to_dsl import disassemble_single_block
+from abadia.dsl_converter import disassemble_single_block
 
 
 class RoomRenderer:
