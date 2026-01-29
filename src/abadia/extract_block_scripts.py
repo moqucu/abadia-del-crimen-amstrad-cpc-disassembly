@@ -227,11 +227,11 @@ def generate_python_file(blocks):
         content.append(f"        tile_ptr=0x{b['tile_ptr']:04X},")
         content.append(f"        tile_data=[{tile_data_hex}],")
         content.append(f"        bytecode=[{bytecode_hex}],")
-        # Add DSL as triple-quoted string
-        content.append(f"        dsl=\"\"\"\\")
+        # Add DSL as triple-quoted string with 10-space indentation
+        content.append('        dsl="""')
         for line in dsl.split('\n'):
-            content.append(line)
-        content.append("\"\"\"")
+            content.append('          ' + line)
+        content.append('          """')
         content.append(f"    ),")
 
     content.append("}")
