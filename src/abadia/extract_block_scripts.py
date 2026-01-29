@@ -184,46 +184,61 @@ def extract_blocks(memory, mappings):
     return blocks
 
 def generate_python_file(blocks):
-    """Generates the output Python file."""
+    """Generates the output Python file with DSL metadata."""
+    from abadia.bytecode_to_dsl import disassemble_single_block
+
     content = [
         '"""',
         'Abbey Blocks Library',
         '',
         'Auto-generated from binary memory dump.',
         'Contains the 96 building block scripts used by the game engine.',
+        'Each block includes raw bytecode and human-readable DSL representation.',
         '"""',
         '',
         'class BlockDef:',
-        '    def __init__(self, block_id, description, address, tile_ptr, tile_data, bytecode):',
+        '    def __init__(self, block_id, description, address, tile_ptr, tile_data, bytecode, dsl=""):',
         '        self.block_id = block_id',
         '        self.description = description',
         '        self.address = address',
         '        self.tile_ptr = tile_ptr',
         '        self.tile_data = tile_data',
         '        self.bytecode = bytecode',
+        '        self.dsl = dsl',
         '',
         'BLOCK_DEFINITIONS = {'
     ]
-    
+
     for block_id in sorted(blocks.keys()):
         b = blocks[block_id]
         bytecode_hex = ", ".join(f"0x{x:02X}" for x in b['bytecode'])
         tile_data_hex = ", ".join(f"0x{x:02X}" for x in b['tile_data'])
-        
+
+        # Generate DSL for this block
+        try:
+            dsl = disassemble_single_block(block_id)
+        except Exception as e:
+            dsl = f"; Error generating DSL: {e}"
+
         content.append(f"    0x{block_id:02X}: BlockDef(")
         content.append(f"        block_id=0x{block_id:02X},")
         content.append(f"        description=\"{b['description']}\",")
         content.append(f"        address=0x{b['address']:04X},")
         content.append(f"        tile_ptr=0x{b['tile_ptr']:04X},")
         content.append(f"        tile_data=[{tile_data_hex}],")
-        content.append(f"        bytecode=[{bytecode_hex}]")
-        content.append(f"    ), ")
-        
+        content.append(f"        bytecode=[{bytecode_hex}],")
+        # Add DSL as triple-quoted string
+        content.append(f"        dsl=\"\"\"\\")
+        for line in dsl.split('\n'):
+            content.append(line)
+        content.append("\"\"\"")
+        content.append(f"    ),")
+
     content.append("}")
-    
+
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write("\n".join(content))
-    print(f"Generated {OUTPUT_FILE} with {len(blocks)} blocks.")
+    print(f"Generated {OUTPUT_FILE} with {len(blocks)} blocks (including DSL).")
 
 def main():
     print("Loading memory dump...")
