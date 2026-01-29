@@ -90,8 +90,16 @@ def extract_bytecode(memory, start_addr, max_length=500):
         if opcode == 0xFF:
             break
 
-        # JMP, CALL, CALL_FLIP - consume 2 address bytes
-        elif opcode in [0xEA, 0xEC, 0xE4]:
+        # JMP - consume 2 address bytes and stop (terminal instruction)
+        elif opcode == 0xEA:
+            for _ in range(2):
+                if pc < 65536:
+                    bytecode.append(memory[pc])
+                    pc += 1
+            break  # JMP is terminal - execution continues elsewhere
+
+        # CALL, CALL_FLIP - consume 2 address bytes (but continue - returns here)
+        elif opcode in [0xEC, 0xE4]:
             for _ in range(2):
                 if pc < 65536:
                     bytecode.append(memory[pc])
@@ -183,20 +191,43 @@ def extract_blocks(memory, mappings):
         }
     return blocks
 
-def generate_python_file(blocks):
-    """Generates the output Python file with DSL metadata."""
-    from abadia.bytecode_to_dsl import disassemble_single_block
+def generate_python_file(blocks, memory):
+    """Generates the output Python file with DSL metadata and subroutines."""
+    from abadia.bytecode_to_dsl import disassemble_single_block, BytecodeToDSL
+
+    # Shared subroutines (SCRIPT96+) - code that blocks JMP/CALL into
+    SUBROUTINES = {
+        96:  (0x18E3, "Common floor rendering setup"),
+        97:  (0x18E7, "Common floor rendering loop"),
+        99:  (0x1CA6, "Arch column base rendering"),
+        100: (0x1CAF, "Arch column middle rendering"),
+        101: (0x1CB4, "Arch column top rendering"),
+        102: (0x1CBD, "Arch column finish"),
+        106: (0x198C, "FLIP X then JMP SCRIPT1"),
+        107: (0x19AD, "Common column/window code"),
+        108: (0x19C6, "FLIP X then JMP SCRIPT107"),
+        109: (0x1990, "Column generation code"),
+        110: (0x19A9, "FLIP X then JMP SCRIPT109"),
+        111: (0x19CA, "LD PARAM2 manipulation"),
+        112: (0x19D4, "FLIP X then JMP SCRIPT111"),
+        113: (0x1BCF, "Floor tile rendering code"),
+    }
 
     content = [
         '"""',
         'Abbey Blocks Library',
         '',
         'Auto-generated from binary memory dump.',
-        'Contains the 96 building block scripts used by the game engine.',
-        'Each block includes raw bytecode and human-readable DSL representation.',
+        'Contains building block scripts and shared subroutines used by the game engine.',
+        'Each entry includes raw bytecode and human-readable DSL representation.',
+        '',
+        'BLOCK_DEFINITIONS: Building blocks (0x01-0x5F) referenced by room definitions.',
+        'SUBROUTINE_DEFINITIONS: Shared code (SCRIPT96+) that blocks JMP/CALL into.',
         '"""',
         '',
+        '',
         'class BlockDef:',
+        '    """A building block script with tile data."""',
         '    def __init__(self, block_id, description, address, tile_ptr, tile_data, bytecode, dsl=""):',
         '        self.block_id = block_id',
         '        self.description = description',
@@ -206,9 +237,21 @@ def generate_python_file(blocks):
         '        self.bytecode = bytecode',
         '        self.dsl = dsl',
         '',
+        '',
+        'class SubroutineDef:',
+        '    """A shared subroutine that blocks can JMP/CALL into."""',
+        '    def __init__(self, script_id, description, address, bytecode, dsl=""):',
+        '        self.script_id = script_id',
+        '        self.description = description',
+        '        self.address = address',
+        '        self.bytecode = bytecode',
+        '        self.dsl = dsl',
+        '',
+        '',
         'BLOCK_DEFINITIONS = {'
     ]
 
+    # Generate block definitions
     for block_id in sorted(blocks.keys()):
         b = blocks[block_id]
         bytecode_hex = ", ".join(f"0x{x:02X}" for x in b['bytecode'])
@@ -227,7 +270,39 @@ def generate_python_file(blocks):
         content.append(f"        tile_ptr=0x{b['tile_ptr']:04X},")
         content.append(f"        tile_data=[{tile_data_hex}],")
         content.append(f"        bytecode=[{bytecode_hex}],")
-        # Add DSL as triple-quoted string with 10-space indentation
+        content.append('        dsl="""')
+        for line in dsl.split('\n'):
+            content.append('          ' + line)
+        content.append('          """')
+        content.append(f"    ),")
+
+    content.append("}")
+    content.append("")
+    content.append("")
+
+    # Generate subroutine definitions
+    content.append("SUBROUTINE_DEFINITIONS = {")
+
+    converter = BytecodeToDSL()
+
+    for script_id in sorted(SUBROUTINES.keys()):
+        addr, desc = SUBROUTINES[script_id]
+
+        # Extract bytecode for subroutine
+        bytecode = extract_bytecode(memory, addr)
+        bytecode_hex = ", ".join(f"0x{x:02X}" for x in bytecode)
+
+        # Generate DSL
+        try:
+            dsl = converter.disassemble_block(addr, [], script_id)
+        except Exception as e:
+            dsl = f"; Error generating DSL: {e}"
+
+        content.append(f"    {script_id}: SubroutineDef(")
+        content.append(f"        script_id={script_id},")
+        content.append(f"        description=\"{desc}\",")
+        content.append(f"        address=0x{addr:04X},")
+        content.append(f"        bytecode=[{bytecode_hex}],")
         content.append('        dsl="""')
         for line in dsl.split('\n'):
             content.append('          ' + line)
@@ -238,21 +313,21 @@ def generate_python_file(blocks):
 
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write("\n".join(content))
-    print(f"Generated {OUTPUT_FILE} with {len(blocks)} blocks (including DSL).")
+    print(f"Generated {OUTPUT_FILE} with {len(blocks)} blocks + {len(SUBROUTINES)} subroutines.")
 
 def main():
     print("Loading memory dump...")
     memory = load_memory(MEM_FILE)
-    
+
     print("Parsing material table from ASM...")
     mappings = parse_material_table(ASM_FILE)
     print(f"Found {len(mappings)} entries.")
-    
+
     print("Extracting blocks...")
     blocks = extract_blocks(memory, mappings)
-    
-    print("Generating library...")
-    generate_python_file(blocks)
+
+    print("Generating library (blocks + subroutines)...")
+    generate_python_file(blocks, memory)
 
 if __name__ == "__main__":
     main()
