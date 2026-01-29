@@ -25,6 +25,7 @@ from abadia.graphics import AbbeyTiles, AbbeyCanvas, BufferedCanvas
 from abadia.interpreter import AbadiaInterpreter
 from abadia.abbey_blocks_library import BLOCK_DEFINITIONS
 from abadia.abbey_rooms_library import ROOM_DEFINITIONS
+from abadia.bytecode_to_dsl import disassemble_single_block
 
 
 class RoomRenderer:
@@ -173,7 +174,16 @@ class RoomRenderer:
                 screen_y = buf_y * 8
                 line = f"Order #{idx:03d} | Depth: {depth:>3} | Prio: {prio:02d} | Tile: {tile_id:<3} | Screen: ({screen_x}, {screen_y})"
                 f.write("  " + line + "\n")
-        
+            f.write("-" * 80 + "\n")
+
+            # SECTION 4: BLOCK DSL SCRIPTS
+            f.write("SECTION 4: BLOCK DSL SCRIPTS (Human-readable bytecode)\n")
+            f.write("-" * 80 + "\n")
+            for block_id in sorted(used_block_ids):
+                if block_id in BLOCK_DEFINITIONS:
+                    dsl = disassemble_single_block(block_id)
+                    f.write(dsl + "\n\n")
+
         print(f"  Saved log:   {log_path}")
 
         return canvas
