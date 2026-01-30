@@ -9,7 +9,7 @@ All file locations have been verified by code analysis.
 import re
 from PIL import Image
 import os
-from abadia.cpc_palette import CpcPalette
+from engine.palette import CpcPalette
 
 # Sprite definitions with VERIFIED file locations
 # Format: name, file_address, width_bytes, height_pixels

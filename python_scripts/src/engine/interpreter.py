@@ -64,7 +64,8 @@ RELATIONSHIP TO OTHER FILES:
 """
 
 import os
-from .graphics import AbbeyCanvas, AbbeyTiles
+from .canvas import Canvas, AbbeyCanvas
+from .tiles import Tiles, AbbeyTiles
 from .opcodes import OPCODE_NAMES, REGISTER_NAMES, get_opcode_name, get_register_name
 
 # Alias for backward compatibility

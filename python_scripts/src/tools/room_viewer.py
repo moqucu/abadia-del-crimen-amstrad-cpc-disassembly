@@ -17,15 +17,9 @@ Merged features from test suite:
 import os
 import sys
 
-# Add src to path if needed
-if os.path.exists('src'):
-    sys.path.insert(0, 'src')
-
-from abadia.graphics import AbbeyTiles, AbbeyCanvas, BufferedCanvas
-from abadia.interpreter import AbadiaInterpreter
-from abadia.abbey_blocks_library import BLOCK_DEFINITIONS
-from abadia.abbey_rooms_library import ROOM_DEFINITIONS
-from abadia.dsl_converter import disassemble_single_block
+from engine import Tiles, Canvas, BufferedCanvas, AbadiaInterpreter
+from engine.dsl import disassemble_single_block
+from data import BLOCK_DEFINITIONS, ROOM_DEFINITIONS
 
 
 class RoomRenderer:
@@ -38,7 +32,7 @@ class RoomRenderer:
         Args:
             palette: 'day' or 'night'
         """
-        self.tiles = AbbeyTiles(palette=palette)
+        self.tiles = Tiles(palette=palette)
         self.interpreter = AbadiaInterpreter(self.tiles)
         self.palette = palette
 

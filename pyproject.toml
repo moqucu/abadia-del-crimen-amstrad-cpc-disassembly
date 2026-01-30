@@ -23,7 +23,13 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["python_scripts/src/abadia"]
+packages = [
+    "python_scripts/src/engine",
+    "python_scripts/src/game",
+    "python_scripts/src/data",
+    "python_scripts/src/tools",
+    "python_scripts/src/codegen",
+]
 
 [tool.ruff]
 line-length = 88
@@ -35,6 +41,6 @@ select = ["E", "F", "I", "B"]
 ignore = []
 
 [tool.pytest.ini_options]
-addopts = "--cov=abadia --cov-report=term-missing"
+addopts = "--cov=engine --cov=game --cov=data --cov-report=term-missing"
 testpaths = ["tests"]
 pythonpath = ["python_scripts/src"]

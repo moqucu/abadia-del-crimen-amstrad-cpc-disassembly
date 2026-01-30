@@ -383,7 +383,7 @@ class BytecodeToDSL:
             
         # 2. Check blocks
         # We need the block list sorted by address
-        from abadia.abbey_blocks_library import BLOCK_DEFINITIONS as BLOCK_LIBRARY
+        from data.blocks import BLOCK_DEFINITIONS as BLOCK_LIBRARY
         
         # Build list if not cached? For now just iterate.
         sorted_blocks = sorted(BLOCK_LIBRARY.values(), key=lambda b: b.address)
@@ -415,7 +415,7 @@ class BytecodeToDSL:
 
 def disassemble_all_blocks(output_path: str = "tests/abadia/resouces/scripts_disassembled.abs"):
     """Disassemble all blocks to DSL format."""
-    from abadia.abbey_blocks_library import BLOCK_DEFINITIONS as BLOCK_LIBRARY
+    from data.blocks import BLOCK_DEFINITIONS as BLOCK_LIBRARY
 
     converter = BytecodeToDSL()
 
@@ -462,7 +462,7 @@ def disassemble_all_blocks(output_path: str = "tests/abadia/resouces/scripts_dis
 
 def disassemble_single_block(block_id: int) -> str:
     """Disassemble a single block and return DSL string."""
-    from abadia.abbey_blocks_library import BLOCK_DEFINITIONS as BLOCK_LIBRARY
+    from data.blocks import BLOCK_DEFINITIONS as BLOCK_LIBRARY
 
     if block_id not in BLOCK_LIBRARY:
         return f"; Block 0x{block_id:02X} not found in library"

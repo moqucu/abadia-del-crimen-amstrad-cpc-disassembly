@@ -13,14 +13,8 @@ Goals:
 import os
 import sys
 
-# Add src to path
-if os.path.exists('src'):
-    sys.path.insert(0, 'src')
-
-from abadia.graphics import AbbeyTiles, BufferedCanvas
-from abadia.interpreter import AbadiaInterpreter
-from abadia.abbey_blocks_library import BLOCK_DEFINITIONS
-from abadia.abbey_rooms_library import ROOM_DEFINITIONS
+from engine import Tiles, BufferedCanvas, AbadiaInterpreter
+from data import BLOCK_DEFINITIONS, ROOM_DEFINITIONS
 
 OUTPUT_DIR = "python_scripts/resources/generated_blocks"
 
@@ -56,7 +50,7 @@ def generate_block_outputs(script_id, room_id, blk_idx, block_entry):
     
     # Setup Engine
     # Transparent background (Alpha 0)
-    tiles = AbbeyTiles(palette='day')
+    tiles = Tiles(palette='day')
     canvas = BufferedCanvas(tiles, bg_color=(0, 0, 0, 0)) # Image is RGBA created in BufferedCanvas?
     # Note: BufferedCanvas creates 'RGB' by default. We need to patch it or accept black background?
     # The spec asks for "Transparent (Alpha 0)".

@@ -3,8 +3,8 @@ Main game loop controller emulating the original Z80 game logic structure.
 """
 
 import time
-from abadia.input import Keyboard
-from abadia.guillermo import Guillermo
+from .input import Keyboard
+from .player import Guillermo
 
 
 class AbadiaGame:

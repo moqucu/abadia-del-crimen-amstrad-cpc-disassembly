@@ -193,7 +193,7 @@ def extract_blocks(memory, mappings):
 
 def generate_python_file(blocks, memory):
     """Generates the output Python file with DSL metadata and subroutines."""
-    from abadia.dsl_converter import disassemble_single_block, BytecodeToDSL
+    from engine.dsl import disassemble_single_block, BytecodeToDSL
 
     # Shared subroutines (SCRIPT96+) - code that blocks JMP/CALL into
     SUBROUTINES = {

@@ -38,7 +38,7 @@ import re
 import os
 import shutil
 from PIL import Image
-from abadia.cpc_palette import CpcPalette
+from engine.palette import CpcPalette
 
 # Default paths
 DEFAULT_ASM_FILE = "translated_english_files/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
