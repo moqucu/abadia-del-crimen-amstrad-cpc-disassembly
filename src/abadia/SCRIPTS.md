@@ -24,6 +24,5 @@ This document provides a summary of all Python scripts in the `src/abadia/` dire
 | `mirror.py` | State management for secret mirror puzzle object |
 | `opcodes.py` | Single source of truth for bytecode opcode definitions |
 | `rebuild_abbey_code.py` | Rebuild 64KB memory dump from original BIN files |
-| `replicate_block_traces.py` | Replicate block traces and renderings from JS version |
 | `room_renderer.py` | Render complete rooms using block definitions and interpreter |
 | `trace_block_execution.py` | Trace execution of a single block for debugging |
