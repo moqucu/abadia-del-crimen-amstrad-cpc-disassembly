@@ -9,10 +9,13 @@ Main exports:
 - BytecodeToDSL: Class for converting bytecode to DSL
 - disassemble_single_block(block_id): Convenience function for single block
 - disassemble_all_blocks(output_path): Batch disassembly to file
+
+Opcode definitions are imported from opcodes.py (single source of truth).
 """
 
 import os
 from typing import List, Tuple, Optional
+from .opcodes import REGISTER_NAMES, get_register_name
 
 
 class BytecodeToDSL:
@@ -71,25 +74,15 @@ class BytecodeToDSL:
         Returns (value, string_representation).
         """
         val = self.read_byte()
-        
+
         # 0x82 is a literal escape prefix
         if val == 0x82:
             literal = self.read_byte()
             return literal, str(literal)
-            
+
         if val >= 0x60:
-            # Register reference
-            reg_names = {
-                0x70: "DEPTHX", 0x71: "DEPTHY",
-                0x6F: "HEIGHT", 0x72: "HEIGHT2",
-                0x6D: "PARAM1", 0x6E: "PARAM2",
-            }
-            if val in reg_names:
-                return 0, reg_names[val] # Value is unknown at disassembly time
-            elif 0x61 <= val <= 0x6C:
-                return 0, f"T{val - 0x61}"
-            else:
-                return 0, f"REG{val:02X}"
+            # Register reference - use shared REGISTER_NAMES from opcodes.py
+            return 0, get_register_name(val)  # Value is unknown at disassembly time
         else:
             return val, str(val)
 
@@ -291,12 +284,7 @@ class BytecodeToDSL:
 
             elif opcode == 0xF7:  # LD register
                 reg_byte = self.read_byte()
-                reg_names = {
-                    0x70: "DEPTHX", 0x71: "DEPTHY",
-                    0x6F: "HEIGHT", 0x72: "HEIGHT2",
-                    0x6D: "PARAM1", 0x6E: "PARAM2",
-                }
-                reg_name = reg_names.get(reg_byte, f"REG{reg_byte:02X}")
+                reg_name = get_register_name(reg_byte)
                 formatted = self.read_expression_str(reg_name)
                 self.emit(f"LD {reg_name}, {formatted}")
 

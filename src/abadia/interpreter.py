@@ -60,58 +60,15 @@ RELATIONSHIP TO OTHER FILES:
   - Uses: graphics.py (AbbeyTiles, canvas), abbey_code.bin (memory)
   - Used by: room_renderer.py (renders complete rooms)
   - Complements: dsl_converter.py (human-readable disassembly of same bytecode)
-
-NOTE ON OPCODE DUPLICATION:
----------------------------
-Opcodes are also handled in dsl_converter.py for disassembly purposes.
-The OPCODE_NAMES dictionary below is the authoritative reference.
-If adding new opcodes, update both files to keep them in sync.
+  - Opcodes: Defined in opcodes.py (single source of truth)
 """
 
 import os
 from .graphics import AbbeyCanvas, AbbeyTiles
+from .opcodes import OPCODE_NAMES, REGISTER_NAMES, get_opcode_name, get_register_name
 
-OPCODE_NAMES = {
-    0xFF: "END",
-    0xFE: "WHILE PARAM1",
-    0xFD: "WHILE PARAM2",
-    0xFC: "PUSH POS",
-    0xFB: "POP POS",
-    0xFA: "ENDWHILE",
-    0xF9: "DRAWTILE DEC_Y",
-    0xF8: "DRAWTILE INC_X",
-    0xF7: "LD",
-    0xF6: "INC Y",
-    0xF5: "INC X",
-    0xF4: "DEC Y",
-    0xF3: "DEC X",
-    0xF2: "ADD Y",
-    0xF1: "ADD X",
-    0xF0: "INC PARAM1",
-    0xEF: "INC PARAM2",
-    0xEE: "DEC PARAM1",
-    0xED: "DEC PARAM2",
-    0xE0: "NOP",
-    0xEC: "CALL",
-    0xEB: "DRAWTILE DEC_X",
-    0xEA: "JMP",
-    0xE9: "FLIP X",
-    0xE8: "FLIP X", 0xE7: "FLIP X", 0xE6: "FLIP X", 0xE5: "FLIP X", # Variants
-    0xE4: "CALL_PRESERVE",
-    0xC2: "SKIP_2", 0xC6: "SKIP_2", 0xB6: "SKIP_2", 0xBA: "SKIP_2",
-    0x00: "END (00)"
-}
-
-REG_NAMES = {
-    0x6D: "PARAM1",
-    0x6E: "PARAM2",
-    0x6F: "HEIGHT",
-    0x70: "DEPTHX",
-    0x71: "DEPTHY"
-}
-# Add T0-T11
-for i in range(12):
-    REG_NAMES[0x61 + i] = f"T{i}"
+# Alias for backward compatibility
+REG_NAMES = REGISTER_NAMES
 
 class AbadiaInterpreter:
     """
