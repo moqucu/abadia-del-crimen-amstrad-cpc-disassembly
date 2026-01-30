@@ -10,12 +10,11 @@ This document provides a summary of all Python scripts in the `src/abadia/` dire
 | `abbey_rooms_library.py` | Room definitions extracted from abadia8.bin (116 rooms) |
 | `dsl_converter.py` | Internal library for converting bytecode to human-readable DSL |
 | `cpc_palette.py` | Amstrad CPC color palette definitions and RGB mappings |
-| `debug_tile_bits.py` | Display tile pixel data as ASCII matrix for visual inspection |
 | `decompile_scripts.py` | Decompile custom scripting language (rst 08h/10h) to pseudo-code |
 | `extract_block_scripts.py` | Extract building block scripts from binary memory dump |
 | `extract_rooms.py` | Extract room/screen definitions from abadia8.bin |
 | `extract_sprites.py` | Extract sprites from disassembled game code as PNGs |
-| `extract_tiles.py` | Extract 256 base tiles (16x8) from game code to PNG tilesheets |
+| `extract_tiles.py` | Extract 256 base tiles (16x8) from game code to PNG tilesheets and debug log |
 | `generate_block_examples.py` | Render first occurrence of each block type from rooms |
 | `generate_trace.py` | Generate trace for Room 0 to compare with debug output |
 | `graphics.py` | Tile buffer and rendering system with isometric z-ordering |

@@ -77,6 +77,60 @@ def decode_cpc_mode1_byte(byte_val):
         pixels.append(pixel_value)
     return pixels
 
+def tile_to_ascii_matrix(data, tile_number):
+    """
+    Generate an ASCII matrix representation of a tile for debugging.
+
+    Args:
+        data: Raw binary tile data
+        tile_number: Tile index (0-255)
+
+    Returns:
+        String with ASCII representation showing pen values (0-3) for each pixel
+    """
+    tile_offset = tile_number * 32
+    if tile_offset + 32 > len(data):
+        return f"; Tile {tile_number} out of range"
+
+    lines = [f"Tile {tile_number} (0x{tile_number:02X}):"]
+    for y in range(8):
+        row_pixels = []
+        for x_byte in range(4):
+            byte_val = data[tile_offset + y * 4 + x_byte]
+            row_pixels.extend(decode_cpc_mode1_byte(byte_val))
+        lines.append(" ".join(str(p) for p in row_pixels))
+    return "\n".join(lines)
+
+
+def generate_tile_debug_log(data, output_path):
+    """
+    Generate a debug log file with ASCII matrix representations of all 256 tiles.
+
+    Args:
+        data: Raw binary tile data
+        output_path: Path to output log file
+    """
+    lines = [
+        "Tile Debug Log - ASCII Matrix Representations",
+        "=" * 50,
+        "Each tile shown as 16x8 grid of pen values (0-3)",
+        "Pen mapping depends on tile range:",
+        "  Tiles 0-10:    All pens opaque",
+        "  Tiles 11-127:  Pen 1 = transparent",
+        "  Tiles 128-255: Pen 2 = transparent",
+        "=" * 50,
+        ""
+    ]
+
+    for tile_num in range(256):
+        lines.append(tile_to_ascii_matrix(data, tile_num))
+        lines.append("")
+
+    with open(output_path, 'w') as f:
+        f.write("\n".join(lines))
+    print(f"  Debug log saved to: {output_path}")
+
+
 def read_graphics_from_asm(asm_file):
     """
     Read the tile graphics data from the disassembled .asm file.
@@ -225,7 +279,19 @@ def generate_tile_maps(asm_path, output_dir, tiles_per_row=16):
     # Read graphics data from the .asm file
     print("Reading graphics data from .asm file...")
     graphics_data = read_graphics_from_asm(asm_path)
-    
+    generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row)
+
+
+def generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row=16):
+    """
+    Create tile map images from pre-loaded graphics data.
+    Saves as 'tiles_day.png' and 'tiles_night.png'.
+
+    Args:
+        graphics_data: Pre-loaded tile graphics data (bytearray)
+        output_dir: Directory to save the tile maps
+        tiles_per_row: Number of tiles per row in the sheet
+    """
     os.makedirs(output_dir, exist_ok=True)
 
     # Create sprite sheets for each palette
@@ -275,11 +341,22 @@ if __name__ == "__main__":
     # Cleanup old files
     cleanup_individual_tiles(output_dir)
 
+    # Read graphics data for both tile maps and debug log
+    print("Reading graphics data from .asm file...")
+    graphics_data = read_graphics_from_asm(asm_file)
+
     # Create tile maps
     print("\n" + "=" * 60)
     print("Generating Tile Maps...")
     print("=" * 60)
-    generate_tile_maps(asm_file, output_dir, tiles_per_row=16)
+    generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row=16)
+
+    # Generate debug log
+    print("\n" + "=" * 60)
+    print("Generating Tile Debug Log...")
+    print("=" * 60)
+    debug_log_path = os.path.join(output_dir, "tiles_debug.log")
+    generate_tile_debug_log(graphics_data, debug_log_path)
 
     print("\n" + "=" * 60)
     print("DONE!")
