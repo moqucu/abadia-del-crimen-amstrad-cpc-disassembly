@@ -25,4 +25,3 @@ This document provides a summary of all Python scripts in the `src/abadia/` dire
 | `opcodes.py` | Single source of truth for bytecode opcode definitions |
 | `rebuild_abbey_code.py` | Rebuild 64KB memory dump from original BIN files |
 | `room_renderer.py` | Render complete rooms using block definitions and interpreter |
-| `trace_block_execution.py` | Trace execution of a single block for debugging |
