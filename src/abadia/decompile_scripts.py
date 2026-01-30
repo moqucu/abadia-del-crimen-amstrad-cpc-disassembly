@@ -1,9 +1,54 @@
+"""
+Decompile Logic/AI Scripts from "La Abadia del Crimen"
+
+This script decompiles the game's LOGIC/AI scripting system, which is DIFFERENT from
+the block rendering bytecode handled by interpreter.py and dsl_converter.py.
+
+SCRIPT TYPES:
+-------------
+The game uses two RST (restart) instructions for its logic scripts:
+
+  - rst 08h: Evaluates a boolean condition expression
+  - rst 10h: Assigns a computed value to a game variable
+
+Both use Reverse Polish Notation (RPN) bytecode that follows the RST instruction.
+
+EXPRESSION FORMAT:
+------------------
+Expressions are stack-based RPN. Operands are pushed, operators pop and compute:
+
+  - Values 0x00-0x7F: Literal constants
+  - Values 0x80-0xFF: Game variable references (see VARIABLES dict)
+  - Operators: == (0x3D), >= (0x3E), < (0x3C), OR (0x2A), AND (0x26), + (0x2B), - (0x2D)
+
+EXAMPLE OUTPUT:
+---------------
+  --- Script at ~3A5Fh ---
+  SET [day_number] = (0x01 + [day_number])
+
+  --- Script at ~3B12h ---
+  EVALUATE: ([time_of_day] == 0x05)
+
+GAME VARIABLES:
+---------------
+The script maps 60+ game variables including:
+  - Character positions: william_x, william_y, adso_z, berengario_x, etc.
+  - Time/day tracking: time_of_day, day_number, is_night_ending
+  - NPC AI states: abbot_state, malaquias_goal, berengario_arrival
+  - Inventory: william_inventory, adso_inventory, abbot_inventory
+  - Puzzle flags: parchment_is_safe, investigation_complete_flag
+  - Counters/timers: scriptorium_disobey_counter, dark_library_timer
+
+USAGE:
+------
+  python decompile_scripts.py <input.asm> <output.txt>
+
+NOTE: This is a standalone research/documentation tool for understanding the game's
+AI and event logic. For block rendering bytecode, see interpreter.py and dsl_converter.py.
+"""
+
 import re
 import sys
-
-# This script decompiles the custom scripting language used in "La Abadía del Crimen".
-# It parses the Z80 assembly source file, finds script blocks initiated by 'rst 08h'
-# and 'rst 10h', and translates the bytecode into human-readable pseudo-code.
 
 # Operator mapping derived from the game's interpreter logic at 3DF6h
 OPERATORS = {
