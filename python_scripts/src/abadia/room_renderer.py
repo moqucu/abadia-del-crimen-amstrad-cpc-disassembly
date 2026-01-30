@@ -132,7 +132,9 @@ class RoomRenderer:
         # Determine output path
         if output_dir is None:
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            output_dir = os.path.join(script_dir, "resources", "rendered_rooms")
+            # Go up from src/abadia to python_scripts, then into resources
+            python_scripts_dir = os.path.dirname(os.path.dirname(script_dir))
+            output_dir = os.path.join(python_scripts_dir, "resources", "rendered_rooms")
         
         os.makedirs(output_dir, exist_ok=True)
         
@@ -211,7 +213,7 @@ def main():
 
     print(f"\n{'='*80}")
     print(f"Room rendering complete! Generated {len(ROOM_DEFINITIONS) * 2} images")
-    print(f"Location: python_scripts/src/abadia/resources/rendered_rooms/")
+    print(f"Location: python_scripts/resources/rendered_rooms/")
     print(f"{'='*80}\n")
 
 

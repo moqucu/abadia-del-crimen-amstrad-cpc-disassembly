@@ -21,7 +21,7 @@ from .opcodes import REGISTER_NAMES, get_register_name
 class BytecodeToDSL:
     """Converts block bytecode to human-readable DSL."""
 
-    def __init__(self, memory_file='python_scripts/src/abadia/resources/abbey_code.bin'):
+    def __init__(self, memory_file='python_scripts/resources/abbey_code.bin'):
         """Load the memory file containing all bytecode."""
         self.memory = bytearray(65536)
         if os.path.exists(memory_file):

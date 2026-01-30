@@ -22,7 +22,7 @@ from abadia.interpreter import AbadiaInterpreter
 from abadia.abbey_blocks_library import BLOCK_DEFINITIONS
 from abadia.abbey_rooms_library import ROOM_DEFINITIONS
 
-OUTPUT_DIR = "python_scripts/src/abadia/resources/generated_blocks"
+OUTPUT_DIR = "python_scripts/resources/generated_blocks"
 
 def scan_for_unique_blocks():
     """
