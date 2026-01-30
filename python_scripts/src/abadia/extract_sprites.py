@@ -152,7 +152,7 @@ def extract_all_sprites(asm_file):
 
     # Create output directories
     # Updated paths to resources folder
-    base_dir = 'src/abadia/resources/sprites'
+    base_dir = 'python_scripts/src/abadia/resources/sprites'
     os.makedirs(os.path.join(base_dir, 'day'), exist_ok=True)
     os.makedirs(os.path.join(base_dir, 'night'), exist_ok=True)
 
@@ -189,7 +189,7 @@ def extract_all_sprites(asm_file):
 def create_sprite_sheet(palette='day'):
     """Create a sprite sheet from all individual sprites"""
 
-    base_dir = 'src/abadia/resources/sprites'
+    base_dir = 'python_scripts/src/abadia/resources/sprites'
     sprite_dir = os.path.join(base_dir, palette)
     
     try:
@@ -247,7 +247,7 @@ def create_sprite_sheet(palette='day'):
         else:
             sheet.paste(img, (x, y))
 
-    output_file = f'src/abadia/resources/abbey_sprites_sheet_{palette}.png'
+    output_file = f'python_scripts/src/abadia/resources/abbey_sprites_sheet_{palette}.png'
     sheet.save(output_file)
     print(f"Created: {output_file} ({sheet_width}×{sheet_height}px, {len(sprite_images)} sprites)")
 

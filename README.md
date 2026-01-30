@@ -4,7 +4,7 @@ This project hosts the disassembly of the Amstrad CPC version of "La Abadía del
 
 ## Project Structure
 
-### 🛠 Source Code (`src/abadia/`)
+### 🛠 Python Tools (`python_scripts/src/abadia/`)
 Python tools for reverse engineering and asset extraction:
 - **`cpc_palette.py`**: Centralized CPC Amstrad palette utilities. Can be run directly to generate a palette visualization.
 - **`extract_sprites.py`**: Tool for extracting game sprites with correct transparency.
@@ -65,15 +65,15 @@ A `Makefile` is provided for common tasks:
 uv run pytest
 
 # Run a specific tool
-uv run python src/abadia/extract_sprites.py
+uv run python python_scripts/src/abadia/extract_sprites.py
 
 # Or activate the venv manually
 source .venv/bin/activate
-python src/abadia/extract_sprites.py
+python python_scripts/src/abadia/extract_sprites.py
 
 # Linting and Type Checking
-uv run ruff check src/
-uv run mypy src/
+uv run ruff check python_scripts/src/
+uv run mypy python_scripts/src/
 ```
 
 ### Alternative: pip (without uv)
@@ -90,7 +90,7 @@ pip install -e ".[dev]"
 
 1. Open **Settings > Project > Python Interpreter**.
 2. Select **Add Local Interpreter** and choose the existing environment at `.venv/bin/python`.
-3. Ensure `src/` is marked as a **Sources Root**.
+3. Ensure `python_scripts/src/` is marked as a **Sources Root**.
 
 ### Code Quality Standards
 
@@ -103,7 +103,7 @@ pip install -e ".[dev]"
 ## Troubleshooting
 
 ### Import Errors
-If PyCharm or the shell doesn't recognize the `abadia` package, ensure you have installed the project in editable mode (`pip install -e .`) or set `PYTHONPATH=src`.
+If PyCharm or the shell doesn't recognize the `abadia` package, ensure you have installed the project in editable mode (`pip install -e .`) or set `PYTHONPATH=python_scripts/src`.
 
 ### Palette Mismatches
-If extracted graphics look incorrect, check `src/abadia/cpc_palette.py`. The `VISUAL_PALETTES` are tuned to match authentic game screenshots rather than strict hardware specs.
+If extracted graphics look incorrect, check `python_scripts/src/abadia/cpc_palette.py`. The `VISUAL_PALETTES` are tuned to match authentic game screenshots rather than strict hardware specs.

@@ -2,7 +2,7 @@
 """
 Extract Building Block Scripts from Binary Memory Dump.
 
-Uses 'src/abadia/resources/abbey_code.bin' as the source of truth for bytes.
+Uses 'python_scripts/src/abadia/resources/abbey_code.bin' as the source of truth for bytes.
 Uses the ASM file only to find the Material Table mapping (ID -> Address).
 """
 
@@ -10,8 +10,8 @@ import re
 import os
 
 ASM_FILE = "translated_english_files/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
-MEM_FILE = "src/abadia/resources/abbey_code.bin"
-OUTPUT_FILE = "src/abadia/abbey_blocks_library.py"
+MEM_FILE = "python_scripts/src/abadia/resources/abbey_code.bin"
+OUTPUT_FILE = "python_scripts/src/abadia/abbey_blocks_library.py"
 
 def load_memory(filepath):
     """Load the full 64KB memory dump."""

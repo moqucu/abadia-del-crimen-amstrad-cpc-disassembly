@@ -12,7 +12,7 @@ from PIL import Image
 class AbbeyTiles:
     """Load and manage the 256 base tiles from the generated sprite sheet."""
 
-    def __init__(self, tiles_dir='src/abadia/resources/tiles', palette='day'):
+    def __init__(self, tiles_dir='python_scripts/src/abadia/resources/tiles', palette='day'):
         self.tiles = {}
         sheet_filename = f'tiles_{palette}.png'
         sheet_path = os.path.join(tiles_dir, sheet_filename)

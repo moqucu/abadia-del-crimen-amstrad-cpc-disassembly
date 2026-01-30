@@ -26,7 +26,7 @@ file type, load address, etc.). This header is stripped when loading into memory
 
 OUTPUT:
 -------
-Creates: src/abadia/resources/abbey_code.bin (65536 bytes)
+Creates: python_scripts/src/abadia/resources/abbey_code.bin (65536 bytes)
 
 This file is used by:
   - interpreter.py (executes block bytecode)
@@ -44,7 +44,7 @@ Requires the original BIN files in the 'pirated_spanish_CPC_game_files' director
 import os
 
 BIN_DIR = 'pirated_spanish_CPC_game_files'
-OUTPUT_FILE = 'src/abadia/resources/abbey_code.bin'
+OUTPUT_FILE = 'python_scripts/src/abadia/resources/abbey_code.bin'
 
 def rebuild():
     # Initialize 64KB memory

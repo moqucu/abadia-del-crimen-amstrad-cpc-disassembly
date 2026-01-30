@@ -23,11 +23,12 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/abadia"]
+packages = ["python_scripts/src/abadia"]
 
 [tool.ruff]
 line-length = 88
 target-version = "py38"
+src = ["python_scripts/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B"]
@@ -36,4 +37,4 @@ ignore = []
 [tool.pytest.ini_options]
 addopts = "--cov=abadia --cov-report=term-missing"
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["python_scripts/src"]

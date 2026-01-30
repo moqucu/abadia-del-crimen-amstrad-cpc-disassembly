@@ -1,6 +1,6 @@
 # Python Scripts Reference
 
-This document provides a summary of all Python scripts in the `src/abadia/` directory.
+This document provides a summary of all Python scripts in the `python_scripts/src/abadia/` directory.
 
 | Script | Summary |
 |--------|---------|

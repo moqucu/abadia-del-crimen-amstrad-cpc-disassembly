@@ -211,7 +211,7 @@ def main():
 
     print(f"\n{'='*80}")
     print(f"Room rendering complete! Generated {len(ROOM_DEFINITIONS) * 2} images")
-    print(f"Location: src/abadia/resources/rendered_rooms/")
+    print(f"Location: python_scripts/src/abadia/resources/rendered_rooms/")
     print(f"{'='*80}\n")
 
 
