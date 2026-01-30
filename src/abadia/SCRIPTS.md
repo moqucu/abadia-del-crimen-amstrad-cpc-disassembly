@@ -19,7 +19,6 @@ This document provides a summary of all Python scripts in the `src/abadia/` dire
 | `graphics.py` | Tile buffer and rendering system with isometric z-ordering |
 | `guillermo.py` | Player character state for Friar Guillermo |
 | `input.py` | Keyboard input handler wrapping pygame for game control |
-| `inspect_memory.py` | Utility to inspect raw bytes at specific memory addresses |
 | `interpreter.py` | Bytecode interpreter for building block scripts |
 | `main.py` | Main game loop controller emulating original Z80 logic |
 | `mirror.py` | State management for secret mirror puzzle object |
