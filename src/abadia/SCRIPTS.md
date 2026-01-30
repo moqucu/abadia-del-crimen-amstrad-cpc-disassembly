@@ -16,7 +16,6 @@ This document provides a summary of all Python scripts in the `src/abadia/` dire
 | `extract_sprites.py` | Extract sprites from disassembled game code as PNGs |
 | `extract_tiles.py` | Extract 256 base tiles (16x8) from game code to PNG tilesheets and debug log |
 | `generate_block_examples.py` | Render first occurrence of each block type from rooms |
-| `generate_trace.py` | Generate trace for Room 0 to compare with debug output |
 | `graphics.py` | Tile buffer and rendering system with isometric z-ordering |
 | `guillermo.py` | Player character state for Friar Guillermo |
 | `input.py` | Keyboard input handler wrapping pygame for game control |
