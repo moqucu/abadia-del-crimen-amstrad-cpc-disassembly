@@ -1,8 +1,71 @@
 """
-Bytecode interpreter for La Abadia del Crimen building block scripts.
+Bytecode Interpreter for La Abadia del Crimen Building Block Scripts.
 
-Executes the game's custom bytecode that draws isometric building blocks
-using tile drawing, coordinate manipulation, loops, and subroutine calls.
+This is a CORE COMPONENT of the rendering system - the engine that executes
+the bytecode scripts defining how isometric building blocks are drawn.
+
+ARCHITECTURE:
+-------------
+    BlockDef (bytecode) --> AbadiaInterpreter --> BufferedCanvas --> PNG
+                                   |
+                            64KB Memory Dump
+                           (abbey_code.bin)
+
+STATE MACHINE:
+--------------
+The interpreter maintains:
+  - Registers (regs[0-31]): T0-T11 (tile IDs), PARAM1/2, HEIGHT, DEPTHX/Y
+  - Stacks: call_stack (subroutines), pos_stack (push/pop position), loop_stack
+  - Coordinates: l (X), h (Y)
+  - Flags: flip_x_mode (mirror mode)
+  - PC: Program counter
+
+OPCODES IMPLEMENTED:
+--------------------
+  0xFF        END/RET       End script or return from subroutine
+  0xFE        WHILE PARAM1  Loop using PARAM1 as counter
+  0xFD        WHILE PARAM2  Loop using PARAM2 as counter
+  0xFC        PUSH POS      Push current X,Y position
+  0xFB        POP POS       Restore X,Y position
+  0xFA        ENDWHILE      End of loop body
+  0xF9        DRAWTILE      Draw tile, then DEC Y
+  0xF8        DRAWTILE      Draw tile, then INC X
+  0xEB        DRAWTILE      Draw tile, then DEC X
+  0xF7        LD            Load register with expression
+  0xF6        INC Y         Increment Y coordinate
+  0xF5        INC X         Increment X coordinate
+  0xF4        DEC Y         Decrement Y coordinate
+  0xF3        DEC X         Decrement X coordinate
+  0xF2        ADD Y         Add expression to Y
+  0xF1        ADD X         Add expression to X
+  0xF0        INC PARAM1    Increment PARAM1 register
+  0xEF        INC PARAM2    Increment PARAM2 register
+  0xEE        DEC PARAM1    Decrement PARAM1 register
+  0xED        DEC PARAM2    Decrement PARAM2 register
+  0xEC        CALL          Call subroutine (saves state, loads tiles)
+  0xEA        JMP           Jump to address (no return)
+  0xE9-0xE5   FLIP X        Toggle mirror mode
+  0xE4        CALL_PRESERVE Call subroutine (preserves current tileset)
+  0xE0        NOP           No operation
+  <0xE0       TILE HEADER   Load tileset from pointer
+
+SAFETY FEATURES:
+----------------
+  - Max 50,000 opcodes per block (prevents infinite loops)
+  - Max 20 nested call depth
+  - PC bounds checking
+
+RELATIONSHIP TO OTHER FILES:
+----------------------------
+  - Uses: graphics.py (AbbeyTiles, canvas), abbey_code.bin (memory)
+  - Used by: room_renderer.py (renders complete rooms)
+  - Complements: dsl_converter.py (human-readable disassembly of same bytecode)
+
+NOTE ON OPCODE DUPLICATION:
+---------------------------
+Opcodes are also handled in dsl_converter.py for disassembly purposes.
+The OPCODE_NAMES dictionary below is the authoritative reference.
+If adding new opcodes, update both files to keep them in sync.
 """
 
 import os
