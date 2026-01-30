@@ -34,43 +34,56 @@ Comprehensive analysis of the game's internal systems:
 
 ### Environment Setup
 
-This project uses a modern Python development environment:
-- **Python 3.8+**
-- **Build System**: `hatchling`
-- **Virtual Environment**: `.venv/`
+This project uses [uv](https://docs.astral.sh/uv/) for fast, reliable Python package management.
 
 ```bash
-# Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-# or
-.venv\Scripts\activate     # Windows
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install in editable mode with dev dependencies
-pip install -e ".[dev]"
+# Sync dependencies (creates .venv automatically)
+uv sync
+
+# Or with dev dependencies
+uv sync --all-extras
 ```
 
 ### Workflow (Make Commands)
 
 A `Makefile` is provided for common tasks:
-- `make dev`: Install development dependencies.
+- `make sync`: Sync dependencies with uv.
+- `make dev`: Sync with development dependencies.
 - `make test`: Run unit tests with `pytest`.
 - `make lint`: Check code quality with `ruff`.
 - `make format`: Auto-format code with `ruff`.
+- `make lock`: Update uv.lock after changing dependencies.
 - `make clean`: Remove build artifacts and caches.
 
-### Manual Commands
+### Running Tools
 
 ```bash
 # Run tests
-pytest
+uv run pytest
 
-# Run a specific tool (example)
-PYTHONPATH=src python3 src/abadia/extract_sprites.py
+# Run a specific tool
+uv run python src/abadia/extract_sprites.py
+
+# Or activate the venv manually
+source .venv/bin/activate
+python src/abadia/extract_sprites.py
 
 # Linting and Type Checking
-ruff check src/
-mypy src/
+uv run ruff check src/
+uv run mypy src/
+```
+
+### Alternative: pip (without uv)
+
+If you prefer not to use uv:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
 ```
 
 ### PyCharm Configuration
