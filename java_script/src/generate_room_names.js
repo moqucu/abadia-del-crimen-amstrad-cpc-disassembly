@@ -5,7 +5,7 @@ const path = require('path');
 const ABADIA_REPO = path.join(process.env.HOME, 'GitHub', 'abadia');
 const PATH_ROOMS = path.join(ABADIA_REPO, 'public/assets/abadia/rooms.json');
 const PATH_FLOORS = path.join(ABADIA_REPO, 'public/assets/abadia/floors.json');
-const OUTPUT_FILE = path.join(__dirname, '..', 'ROOM_NAMES.md');
+const OUTPUT_FILE = path.join(__dirname, '..', 'resources', 'ROOM_NAMES.md');
 
 const SPECIAL_ROOMS = {
     115: "Mirror Room (Close)",
