@@ -6,27 +6,40 @@ This script reconstructs the complete Z80 memory image (abbey_code.bin) from the
 original Amstrad CPC game files. It is essential for reproducibility and documents
 the provenance of the binary data used throughout this project.
 
-MEMORY MAP:
------------
-The Amstrad CPC has 64KB of addressable memory. The game loads 4 BIN files into
-specific memory regions:
+═══════════════════════════════════════════════════════════════════════════════
+MEMORY BANK & FILE STRUCTURE ANALYSIS
+═══════════════════════════════════════════════════════════════════════════════
 
+The game uses "windowing" where 0x4000-0x7FFF is swapped with different content
+depending on game state (Game Logic, Room Rendering, Debugging, etc.).
+
+MAIN MEMORY MAP (Configuration 0):
+──────────────────────────────────────────────────────────────────────────────
     Address Range    File          Content
-    ─────────────────────────────────────────────────
     0x0000-0x00FF    (unused)      Zero-filled
-    0x0100-0x3FFF    ABADIA1.BIN   Main game code
-    0x4000-0x7FFF    ABADIA2.BIN   Code and data
-    0x8000-0xBFFF    ABADIA3.BIN   Graphics and tile data
-    0xC000-0xFFFF    ABADIA0.BIN   Presentation/video
+    0x0100-0x3FFF    ABADIA1.BIN   Core Kernel: main loop, interrupts, HW control
+    0x4000-0x7FFF    ABADIA2.BIN   The Window: swappable logic/data
+    0x8000-0xBFFF    ABADIA3.BIN   Assets: sprites, fonts, audio data
+    0xC000-0xFFFF    ABADIA0.BIN   Video RAM: active screen buffer
+
+ADDITIONAL BANK FILES (swapped into 0x4000-0x7FFF):
+  ABADIA5.BIN  Development debugger left by Paco Menéndez
+  ABADIA6.BIN  0x0000-0x2FFF: Demo recording (Attract Mode keystrokes)
+               0x3000-0x3FFF: Manuscript/intro scroll logic
+  ABADIA7.BIN  0x0A00-0x1414: Height maps (3D geometry, collision, depth)
+               0x1800-0x3FFF: AI navigation/pathfinding data
+  ABADIA8.BIN  0x0000-0x2237: Room definitions (116 rooms)
+               0x2328-0x2B27: Scoreboard/UI graphics
+               0x2B28-0x37FF: Endgame content (music, final scroll)
 
 AMSDOS HEADER:
---------------
-Each BIN file has a 128-byte AMSDOS header that contains metadata (filename,
-file type, load address, etc.). This header is stripped when loading into memory.
+──────────────────────────────────────────────────────────────────────────────
+Each BIN file has a 128-byte AMSDOS header with metadata (filename, file type,
+load address, etc.). This header is stripped when loading into memory.
 
 OUTPUT:
--------
-Creates: python_scripts/resources/abbey_code.bin (65536 bytes)
+──────────────────────────────────────────────────────────────────────────────
+Creates: python/resources/abbey_code.bin (65536 bytes)
 
 This file is used by:
   - interpreter.py (executes block bytecode)

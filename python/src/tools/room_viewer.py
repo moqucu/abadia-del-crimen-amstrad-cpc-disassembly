@@ -7,11 +7,33 @@ Renders complete rooms/screens using:
 - Block definitions from abbey_blocks_library
 - AbadiaInterpreter to execute block scripts
 
-Merged features from test suite:
-- Robust error handling (skips bad blocks instead of crashing)
-- JS-compatible numbering (Room 0 -> room_1)
-- Cyan background color (0, 128, 128) for 'day' palette matches
-- Detailed logging (Block params + Tile trace)
+═══════════════════════════════════════════════════════════════════════════════
+LOG FILE SPECIFICATION (for cross-implementation comparison)
+═══════════════════════════════════════════════════════════════════════════════
+
+NAMING: room_{JS_ID}_{PALETTE}.log (JS_ID = Python_ID + 1)
+
+SECTION 1: BLOCK MANIFEST
+  Records input parameters for each block processed.
+  Format: Block #{INDEX:02d}: ID 0x{BLOCK_ID:02X} | Pos: (X,Y) | Size: (W,H) | H: {HEIGHT} [{STATUS}]
+
+SECTION 2: CHRONOLOGICAL DRAW EVENTS
+  Every DRAWTILE command in execution order (before buffering/sorting).
+  Format: Event: Block #{PRIO:02d} -> DrawTile({TILE_ID}) @ (X,Y) | RawRegs: (DX, DY)
+
+SECTION 3: FINAL RENDER LIST
+  Flattened, sorted tiles in Painter's Algorithm order.
+  Format: Order #{IDX:03d} | Depth: {DEPTH:>3} | Prio: {PRIO:02d} | Tile: {TILE_ID:<3} | Screen: (X, Y)
+  Where: Depth = DepthX + DepthY - 16, Screen_X = BufferX*16+32, Screen_Y = BufferY*8
+
+SECTION 4: BLOCK DSL SCRIPTS
+  Human-readable disassembly of each unique block script used.
+
+═══════════════════════════════════════════════════════════════════════════════
+RENDERING FEATURES:
+  - JS-compatible numbering (Room 0 -> room_1)
+  - Cyan background (0, 128, 128) for 'day' palette
+  - Robust error handling (skips bad blocks)
 """
 
 import os

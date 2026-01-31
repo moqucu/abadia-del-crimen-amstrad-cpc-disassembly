@@ -4,10 +4,34 @@ Bytecode Interpreter for La Abadia del Crimen Building Block Scripts.
 This is a CORE COMPONENT of the rendering system - the engine that executes
 the bytecode scripts defining how isometric building blocks are drawn.
 
+═══════════════════════════════════════════════════════════════════════════════
+ISOMETRIC 3D GRAPHICS ENGINE
+═══════════════════════════════════════════════════════════════════════════════
+
+The visual core of "La Abadía del Crimen" is a 2D tile-based isometric engine.
+Despite its 3D appearance, the world is constructed from pre-drawn 2D bitmap
+assets and a powerful interpreter that composes them.
+
+HIERARCHY:
+  Tiles (256 bitmaps, 16x8px) → Blocks (96 bytecode scripts) → Rooms (116 layouts)
+
+COORDINATE SYSTEM:
+  Grid:   16x20 cells
+  Screen: 320x200 pixels (Screen X = 32 + GridX*16, Screen Y = GridY*8)
+
+TILE RENDERING TIERS (from assembly at 0x4E49):
+  Tier 1 (0-10):    Direct copy, fully opaque floor tiles
+  Tier 2 (11-127):  Masked tiles using lookup tables at 0x9D00 (Bit1=Transparent)
+  Tier 3 (128-255): High masked tiles using 0x9F00 (Bit2=Transparent, Bit1=Yellow)
+
+BUILDING BLOCKS:
+  Stored at Material Table 0x156D. Each block is a bytecode script that stamps
+  tiles in patterns. A wall or archway is just a few bytes of looping code.
+
 ARCHITECTURE:
--------------
+─────────────────────────────────────────────────────────────────────────────────
     BlockDef (bytecode) --> AbadiaInterpreter --> BufferedCanvas --> PNG
-                                   |
+                                   │
                             64KB Memory Dump
                            (abbey_code.bin)
 

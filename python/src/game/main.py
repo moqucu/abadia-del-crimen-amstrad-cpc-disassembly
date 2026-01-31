@@ -1,5 +1,44 @@
 """
 Main game loop controller emulating the original Z80 game logic structure.
+
+═══════════════════════════════════════════════════════════════════════════════
+MAIN GAME LOOP ANALYSIS (Location: 0x25B7 in Bank 0 / abadia1.bin)
+═══════════════════════════════════════════════════════════════════════════════
+
+The main loop orchestrates game logic, AI, input, and rendering every frame.
+
+LOOP STRUCTURE:
+──────────────────────────────────────────────────────────────────────────────
+  Address   Function          Description
+  25B7      Start             Loop entry point
+  25B8-C7   Input & System    Check Pause/Save, update search params
+  25CF      Time Update       Call 55B6 (time of day, lamp fuel)
+  25D5-D8   Game Over Check   Check if Guillermo died (42E7, 42AC)
+  25DB      Scroll            Advance "Time of Day" text scroll (5499)
+  25DE      Voice & Events    Process voice lines and events (3EEA)
+  25E1      Camera & Bonus    Update camera target and score (41D6)
+  25E4      Screen Check      Check if moved to new screen (2355)
+  25E7-ED   Render Screen     If redraw flag (2DB8) set, call 19D8
+  25F0-F8   Objects & Doors   Handle pickup/drop (5096), doors (0D67)
+  25FB-FE   Player Move       Update Guillermo position/sprite (291D)
+  2601      NPC Move          Execute AI/movement for monks (2664)
+  260B      Light Logic       Update light sprite (26A3)
+  260E-11   Mirror/Flip       Handle door flip (0E66), mirror (5374)
+  2614-19   Sync              Frame limiter: wait for interrupt counter (2D4B)
+  261B-20   Sound             Play footstep sounds if moving
+  2627      Draw Sprites      Render all sprites (2674) with Painter's Algorithm
+  262A-32   Loop Control      Check ESC, jump back to 25B7
+
+KEY SUBROUTINES:
+  19D8  Draw Screen   Render static room using building blocks
+  2674  Draw Sprites  Render dynamic elements with depth sorting
+  55B6  Time          Manage passage of game time (canonical hours)
+  2664  NPC AI        Call individual behavior routines for each monk
+
+MEMORY VARIABLES:
+  0x2D4B  Interrupt counter for frame sync
+  0x2DB8  Screen redraw flag (nonzero = redraw needed)
+  0x3036  Guillermo's animation state
 """
 
 import time

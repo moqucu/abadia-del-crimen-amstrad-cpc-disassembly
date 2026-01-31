@@ -2,8 +2,45 @@
 """
 Extract Building Block Scripts from Binary Memory Dump.
 
-Uses 'python_scripts/resources/abbey_code.bin' as the source of truth for bytes.
+Uses 'python/resources/abbey_code.bin' as the source of truth for bytes.
 Uses the ASM file only to find the Material Table mapping (ID -> Address).
+
+═══════════════════════════════════════════════════════════════════════════════
+BUILDING BLOCK EXTRACTION
+═══════════════════════════════════════════════════════════════════════════════
+
+SOURCE: Material Table at 0x156D in the disassembled game code.
+OUTPUT: abbey_blocks_library.py with BLOCK_DEFINITIONS dictionary.
+
+BLOCK STRUCTURE:
+  Each block is a bytecode script that tells the engine how to loop and stamp
+  the 256 base tiles to create larger shapes. A huge wall or archway takes
+  only a few bytes of script, reusing the same brick tile repeatedly.
+
+STATISTICS:
+  Total Blocks in Table:  96 (IDs 0x00-0x5F)
+  Successfully Extracted: 95 blocks
+  Block Script Range:     0xF4-0xFF opcodes
+
+EXAMPLE SCRIPT - Floor Block (0x0D):
+  F7 70 ...       ; Update registers
+  FD              ; Outer Loop (PARAM2 times)
+    FC            ; Push position
+    FE            ; Inner Loop (PARAM1 times)
+      F9 61 80 61 ; DrawTile(0x61, ...)
+      F5          ; Inc X
+      F6          ; Inc Y
+    FA            ; End Inner Loop
+    FB            ; Pop position
+    F4            ; Dec Y
+  FF              ; End
+
+KEY BLOCKS IDENTIFIED:
+  0x01: Thin black brick wall (Vertical)
+  0x02: Thin red brick wall (Horizontal)
+  0x0D: Floor of thick blue tiles
+  0x11/0x12: Complex Arches
+  0x4A: Work Table
 """
 
 import re

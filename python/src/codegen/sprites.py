@@ -1,9 +1,43 @@
 #!/usr/bin/env python3
 """
-CORRECTED Sprite Extraction Script for La Abadía del Crimen (CPC Amstrad)
+Sprite Extraction Script for La Abadía del Crimen (CPC Amstrad)
 
 Based on analysis of sprite drawing routine at 0x4914 and metadata table at 0x2E17.
-All file locations have been verified by code analysis.
+
+═══════════════════════════════════════════════════════════════════════════════
+SPRITE FORMAT ANALYSIS
+═══════════════════════════════════════════════════════════════════════════════
+
+SPRITE METADATA TABLE (20 bytes per sprite at 0x2E17):
+  Offset  Size  Name            Description
+  ──────────────────────────────────────────────────────────────────────────────
+  0x00    1     Status          Bit 7 = needs redraw, bits 0-1 = animation counter
+  0x01    1     X position      Current X position (bytes)
+  0x02    1     Y position      Current Y position (pixels)
+  0x03    1     Old X           Previous X for erasing
+  0x04    1     Old Y           Previous Y for erasing
+  0x05    1     Width           Width in bytes (bit 7 = disappearing flag)
+  0x06    1     Height          Height in pixels
+  0x07-08 2     Graphics ptr    Little-endian pointer to sprite data
+  0x09    1     Old Width       Width for erasing old sprite
+  0x0A    1     Old Height      Height for erasing old sprite
+  0x0B    1     Animation       Animation state (bit 7 = not a monk)
+
+SPRITE GRAPHICS FORMAT (from drawing routine at 0x4914):
+  - Linear byte array: Width × Height bytes
+  - Scanline format: Rows of 'width' bytes each
+  - Encoding: CPC Mode 1 (4 pixels per byte, 2 bits each)
+  - Transparency: Color 0 is transparent (tested at 0x4B15-0x4B16)
+  - AND/OR masking: Non-zero pixels use AND/OR to preserve background
+
+SPECIAL CASES:
+  - Monk sprites have TWO parts: Head (10 lines) + Robe (from table at 0x48C8)
+  - Light sprite has ptr=0x0000, uses fill pattern table at 0x48E8
+
+MEMORY REORGANIZATION:
+  Graphics pointers are RUNTIME addresses after copy operations at 0x24F2:
+    0x8300-0xA2FF → 0x6D00-0x8CFF (8KB tile copy)
+  Cannot directly map to file offsets.
 """
 
 import re

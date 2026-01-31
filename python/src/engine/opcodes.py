@@ -5,8 +5,31 @@ This is the SINGLE SOURCE OF TRUTH for all bytecode opcodes used by the
 building block interpreter. Both interpreter.py and dsl_converter.py
 import from this module.
 
+═══════════════════════════════════════════════════════════════════════════════
+SCRIPTING SYSTEM ANALYSIS
+═══════════════════════════════════════════════════════════════════════════════
+
+The game uses TWO distinct bytecode systems:
+
+1. BLOCK SCRIPTS (this module): For rendering isometric building blocks
+   - Interpreter at 0x1BBC / 0x2018
+   - Opcodes in 0xF0-0xFF range (PaintTile, PushPos, Loop, etc.)
+
+2. EVENT SCRIPTS: For game logic and AI decisions
+   - Interpreter at 0x3DD1 (called via RST 08h)
+   - Action Handler at 0x3DAF (called via RST 10h)
+   - Uses tokens 0x80+ for variable references (e.g., 0x88 = TimeOfDay)
+   - Operators: 0x3D (=), 0x3E (>), 0x2A (OR), 0x26 (AND), 0x2B (+)
+
+EVENT SCRIPT EXAMPLE:
+  rst 08h             ; Call EVALUATE interpreter
+  db 88h, 00h, 3Dh    ; [TimeOfDay] == 0
+  db 88h, 06h, 3Dh    ; [TimeOfDay] == 6
+  db 2Ah              ; OR
+  jp nz, Action       ; If True, Jump
+
 OPCODE STRUCTURE:
------------------
+─────────────────────────────────────────────────────────────────────────────────
 Each opcode has:
   - value: The byte value (0x00-0xFF)
   - name: Human-readable name for tracing/DSL
@@ -14,7 +37,6 @@ Each opcode has:
   - category: Grouping for documentation
 
 OPERAND TYPES:
---------------
   none      - No operands
   address   - 2-byte little-endian address (for CALL/JMP)
   reg_expr  - Register byte followed by expression (for LD)
