@@ -1,8 +1,11 @@
 const fs = require('fs');
+const path = require('path');
 
-const PATH_ROOMS = 'public/assets/abadia/rooms.json';
-const PATH_FLOORS = 'public/assets/abadia/floors.json';
-const OUTPUT_FILE = 'ROOM_NAMES.md';
+// Paths - Assets from ~/GitHub/abadia repo, output to local resources
+const ABADIA_REPO = path.join(process.env.HOME, 'GitHub', 'abadia');
+const PATH_ROOMS = path.join(ABADIA_REPO, 'public/assets/abadia/rooms.json');
+const PATH_FLOORS = path.join(ABADIA_REPO, 'public/assets/abadia/floors.json');
+const OUTPUT_FILE = path.join(__dirname, '..', 'ROOM_NAMES.md');
 
 const SPECIAL_ROOMS = {
     115: "Mirror Room (Close)",

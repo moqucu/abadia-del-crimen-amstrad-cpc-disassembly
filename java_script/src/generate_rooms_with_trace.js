@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const { PNG } = require('pngjs');
 
 // --- CONSTANTS ---
@@ -7,12 +8,13 @@ const SCREEN_WIDTH = 320;
 const SCREEN_HEIGHT = 200;
 const BACKGROUND_COLOR_DAY = { r: 0x00, g: 0x80, b: 0x80 }; // Teal
 
-// Paths
-const PATH_ROOMS = 'public/assets/abadia/rooms.json';
-const PATH_FLOORS = 'public/assets/abadia/floors.json';
-const PATH_SCRIPTS = 'public/assets/abadia/scripts.abs';
-const PATH_TILES = 'public/assets/gfx/tiles/tiles_day.png';
-const OUTPUT_DIR = 'generated_rooms';
+// Paths - Assets from ~/GitHub/abadia repo, output to local resources
+const ABADIA_REPO = path.join(process.env.HOME, 'GitHub', 'abadia');
+const PATH_ROOMS = path.join(ABADIA_REPO, 'public/assets/abadia/rooms.json');
+const PATH_FLOORS = path.join(ABADIA_REPO, 'public/assets/abadia/floors.json');
+const PATH_SCRIPTS = path.join(ABADIA_REPO, 'public/assets/abadia/scripts.abs');
+const PATH_TILES = path.join(ABADIA_REPO, 'public/assets/gfx/tiles/tiles_day.png');
+const OUTPUT_DIR = path.join(__dirname, '..', 'resources', 'generated_rooms');
 
 // --- TILE HACKS ---
 const TILE_HACKS = [
