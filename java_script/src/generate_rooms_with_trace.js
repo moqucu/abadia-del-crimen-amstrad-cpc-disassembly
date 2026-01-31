@@ -11,7 +11,6 @@ const BACKGROUND_COLOR_DAY = { r: 0x00, g: 0x80, b: 0x80 }; // Teal
 // Paths - Assets from ~/GitHub/abadia repo, output to local resources
 const ABADIA_REPO = path.join(process.env.HOME, 'GitHub', 'abadia');
 const PATH_ROOMS = path.join(ABADIA_REPO, 'public/assets/abadia/rooms.json');
-const PATH_FLOORS = path.join(ABADIA_REPO, 'public/assets/abadia/floors.json');
 const PATH_SCRIPTS = path.join(ABADIA_REPO, 'public/assets/abadia/scripts.abs');
 const PATH_TILES = path.join(ABADIA_REPO, 'public/assets/gfx/tiles/tiles_day.png');
 const OUTPUT_DIR = path.join(__dirname, '..', 'resources', 'generated_rooms');
