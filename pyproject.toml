@@ -25,17 +25,17 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = [
-    "python_scripts/src/engine",
-    "python_scripts/src/game",
-    "python_scripts/src/data",
-    "python_scripts/src/tools",
-    "python_scripts/src/codegen",
+    "python/src/engine",
+    "python/src/game",
+    "python/src/data",
+    "python/src/tools",
+    "python/src/codegen",
 ]
 
 [tool.ruff]
 line-length = 88
 target-version = "py38"
-src = ["python_scripts/src"]
+src = ["python/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B"]
@@ -44,4 +44,4 @@ ignore = []
 [tool.pytest.ini_options]
 addopts = "--cov=engine --cov=game --cov=data --cov-report=term-missing"
 testpaths = ["tests"]
-pythonpath = ["python_scripts/src"]
+pythonpath = ["python/src"]
