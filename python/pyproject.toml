@@ -1,0 +1,22 @@
+[project]
+name = "abadia-tools"
+version = "0.1.0"
+description = "Tools for disassembling La Abadía del Crimen"
+requires-python = ">=3.8"
+dependencies = [
+    "pillow",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pyright]
+pythonVersion = "3.8"
+venvPath = "."
+extraPaths = ["src"]
+
+[tool.pylint.MASTER]
+init-hook = "import sys; sys.path.insert(0, 'src')"
