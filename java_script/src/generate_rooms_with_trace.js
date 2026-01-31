@@ -1,3 +1,122 @@
+/**
+ * Room Renderer for Abadía del Crimen
+ *
+ * Generates PNG images and detailed trace logs for all game rooms by interpreting
+ * the original game's block scripts and rendering tiles with proper depth sorting.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * RENDERING LOGIC OVERVIEW
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * The game separates visual representation into "Blocks". A room is composed of
+ * a list of blocks. Each block is defined by a script (bytecode) that allows for
+ * complex, reusable, parametric structures (arches, stairs, pillars).
+ *
+ * The rendering pipeline has two stages:
+ *   1. INTERPRETATION: Execute block scripts to generate tiles with 3D depth info
+ *   2. RASTERIZATION: Draw tiles to screen, sorted by depth (Painter's Algorithm)
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * COORDINATE SYSTEM
+ * ───────────────────────────────────────────────────────────────────────────────
+ *
+ *   Grid:    16x20 cells
+ *   Screen:  320x200 pixels
+ *   Tiles:   16x8 pixels each (isometric projection)
+ *            Screen X = OFFSET_X + Grid_X * 16
+ *            Screen Y = Grid_Y * 8
+ *   Depth:   Calculated from X, Y, Height for occlusion handling
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * BUILDING BLOCKS (from rooms.json)
+ * ───────────────────────────────────────────────────────────────────────────────
+ *
+ *   type:    Block type ID → maps to script (SCRIPT_ID = type >> 1)
+ *   x, y:    Position in 16x20 grid
+ *   height:  Base height (used for depth calculation)
+ *   param1, param2: Script parameters (e.g., stair steps, column height)
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * SCRIPT INTERPRETER VARIABLES
+ * ───────────────────────────────────────────────────────────────────────────────
+ *
+ *   X, Y:           Current cursor in local block coordinates
+ *   DEPTHX, DEPTHY: Z-depth components (from block's x, y, height)
+ *   PARAM1, PARAM2: Input parameters from block definition
+ *   HEIGHT:         Block's height property
+ *   flipX:          When true, X operations invert, DEPTHX/DEPTHY swap in LD
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * SCRIPT OPCODES
+ * ───────────────────────────────────────────────────────────────────────────────
+ *
+ *   JMP ScriptID, Line    Unconditional jump to script at line
+ *   LD Target, Expr       Load expression result into variable
+ *                         (skipped if target is DEPTH* and current value is 0)
+ *   ADD Target, Value     Add value to variable
+ *   WHILE Variable        Loop while variable > 0
+ *   ENDWHILE              End loop, decrement counter, jump back if > 0
+ *   PUSH Variable         Push variable onto stack
+ *   POP Variable          Pop from stack into variable
+ *   DRAWTILE TileID       Draw tile at current X,Y with current depth
+ *                         (TileID can be literal or T0-T9 reference)
+ *   DEC Variable          Decrement (increments if flipX and var is X)
+ *   INC Variable          Increment (decrements if flipX and var is X)
+ *   CALL ScriptID         Call subroutine, update tileset
+ *   CALLP ScriptID        Call subroutine, keep caller's tileset
+ *   FLIP                  Toggle flipX state
+ *   END                   Terminate script execution
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * Z-ORDER & DEPTH LOGIC
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * THE DEPTH FORMULA:
+ *   depth = depthX + depthY - 16
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * IN-CELL DEPTH CORRECTION
+ * ───────────────────────────────────────────────────────────────────────────────
+ *
+ * When multiple tiles are drawn to the same grid cell, the engine clamps depth:
+ * If an earlier tile is mathematically closer than a later tile, push it back.
+ *
+ *   for (i = cellBuffer.length - 2; i >= 0; i--) {
+ *       if ((tOld.depthX + tOld.depthY) > (tNew.depthX + tNew.depthY)) {
+ *           if (tOld.depthX > tNew.depthX) tOld.depthX = tNew.depthX;
+ *           if (tOld.depthY > tNew.depthY) tOld.depthY = tNew.depthY;
+ *       }
+ *   }
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * GLOBAL PAINTER'S ALGORITHM
+ * ───────────────────────────────────────────────────────────────────────────────
+ *
+ * After interpretation, tiles are flattened and sorted:
+ *   1. Primary sort: depth (ascending - farther tiles first)
+ *   2. Secondary sort: priority (creation order within cell)
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * THE H=255 SPECIAL CASE (FLOOR BLOCKS)
+ * ───────────────────────────────────────────────────────────────────────────────
+ *
+ * When height = 255 (0xFF):
+ *   - depthX and depthY initialize to 0 (not from coordinates)
+ *   - LD instructions for DEPTH* are skipped when current value is 0
+ *   - Result: constant depth of -16 (drawn first, behind everything)
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * TILE_HACKS
+ * ───────────────────────────────────────────────────────────────────────────────
+ *
+ * Manual depth overrides for specific rooms with visual glitches:
+ *   - Room 8, 38: Staircase fixes
+ *   - Room 72, 78: Door fixes
+ *   - Room 116: Mirror room portico and library fixes
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
 const fs = require('fs');
 const path = require('path');
 const { PNG } = require('pngjs');
