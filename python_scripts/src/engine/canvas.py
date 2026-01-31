@@ -30,7 +30,7 @@ class Canvas:
                     self.image.paste(tile_img, (x_pixel, y_pixel), tile_img)
                 else:
                     self.image.paste(tile_img, (x_pixel, y_pixel))
-            except:
+            except ValueError:
                 pass
 
     def save(self, filename):
@@ -103,7 +103,7 @@ class BufferedCanvas:
                         self.image.paste(tile_img, (x_pixel, y_pixel), tile_img)
                     else:
                         self.image.paste(tile_img, (x_pixel, y_pixel))
-                except:
+                except ValueError:
                     pass
 
     def save(self, filename):

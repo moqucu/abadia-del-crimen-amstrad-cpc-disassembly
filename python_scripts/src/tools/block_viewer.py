@@ -11,7 +11,6 @@ Goals:
 """
 
 import os
-import sys
 
 from engine import Tiles, BufferedCanvas, AbadiaInterpreter
 from data import BLOCK_DEFINITIONS, ROOM_DEFINITIONS
@@ -58,12 +57,7 @@ def generate_block_outputs(script_id, room_id, blk_idx, block_entry):
     # I should verify if I can force RGBA.
     # For now, I'll pass (0,0,0) and assume standard behavior, or modify BufferedCanvas if needed.
     # Actually, let's subclass or modify BufferedCanvas instance after init.
-    canvas.image = canvas.image.convert("RGBA")
-    # Clear to transparent
-    from PIL import ImageDraw
-    # Re-create empty transparent image
-    canvas.image = list(canvas.image.getdata()) # No, inefficient.
-    # Just make a new one
+    # Re-create as transparent RGBA image
     from PIL import Image
     canvas.image = Image.new('RGBA', (320, 200), (0, 0, 0, 0))
     canvas.buffer.clear() # clear internal buffer

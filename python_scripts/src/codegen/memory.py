@@ -67,7 +67,7 @@ def rebuild():
             
         with open(filepath, 'rb') as f:
             # Skip 128-byte AMSDOS header
-            header = f.read(128)
+            f.read(128)
             # Read data
             data = f.read(max_bytes)
             

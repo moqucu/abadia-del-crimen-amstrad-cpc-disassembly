@@ -15,9 +15,8 @@ Merged features from test suite:
 """
 
 import os
-import sys
 
-from engine import Tiles, Canvas, BufferedCanvas, AbadiaInterpreter
+from engine import Tiles, BufferedCanvas, AbadiaInterpreter
 from engine.dsl import disassemble_single_block
 from data import BLOCK_DEFINITIONS, ROOM_DEFINITIONS
 

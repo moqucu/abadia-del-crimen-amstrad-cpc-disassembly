@@ -85,7 +85,7 @@ def decode_cpc_mode1_byte(byte_val):
             pixel_value = ((byte_val >> 6) & 1) | ((byte_val >> 1) & 2)
         elif pixel_num == 2:
             pixel_value = ((byte_val >> 5) & 1) | ((byte_val >> 0) & 2)
-        elif pixel_num == 3:
+        else:  # pixel_num == 3
             pixel_value = ((byte_val >> 4) & 1) | ((byte_val << 1) & 2)
         pixels.append(pixel_value)
     return pixels

@@ -104,7 +104,7 @@ class CpcPalette:
         color_name = CpcPalette.HEX_TO_COLOR.get(hw_code)
         if color_name:
             return CpcPalette.HARDWARE_COLORS.get(color_name, (0, 0, 0))
-        return (0, 0, 0)
+        return 0, 0, 0
 
     @classmethod
     def get_palette_for_rendering(cls, palette_name='day'):
@@ -189,12 +189,17 @@ class CpcPalette:
         img.save(output_path)
         print(f"Debug image saved to {output_path}")
 
-if __name__ == "__main__":
+def main():
+    """CLI entry point."""
     import sys
-    
-    output_path = "docs/amstrad_palette.png"
+
+    dest_path = "docs/amstrad_palette.png"
     if len(sys.argv) > 1:
-        output_path = sys.argv[1]
-        
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    CpcPalette.render_debug_image(output_path)
+        dest_path = sys.argv[1]
+
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+    CpcPalette.render_debug_image(dest_path)
+
+
+if __name__ == "__main__":
+    main()

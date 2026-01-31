@@ -131,7 +131,7 @@ def generate_tile_debug_log(data, output_path):
     print(f"  Debug log saved to: {output_path}")
 
 
-def read_graphics_from_asm(asm_file):
+def read_graphics_from_asm(asm_path):
     """
     Read the tile graphics data from the disassembled .asm file.
 
@@ -141,17 +141,17 @@ def read_graphics_from_asm(asm_file):
     We need to extract bytes from address 8300 to A2FF (exclusive).
 
     Args:
-        asm_file: Path to the .asm file
+        asm_path: Path to the .asm file
 
     Returns:
         bytearray containing the graphics data
     """
-    graphics_data = bytearray()
+    tile_data = bytearray()
 
     # Pattern to match hex dump lines: "XXXX: HH HH ... HH-HH ... HH ..."
     pattern = re.compile(r'^([0-9A-F]{4}):\s+((?:[0-9A-F]{2}\s+)+[0-9A-F]{2}-(?:[0-9A-F]{2}\s+)+[0-9A-F]{2})')
 
-    with open(asm_file, 'r') as f:
+    with open(asm_path, 'r') as f:
         for line in f:
             match = pattern.match(line.strip())
             if match:
@@ -164,9 +164,9 @@ def read_graphics_from_asm(asm_file):
 
                     # Convert to bytes and append
                     for hex_byte in hex_bytes:
-                        graphics_data.append(int(hex_byte, 16))
+                        tile_data.append(int(hex_byte, 16))
 
-    return graphics_data
+    return tile_data
 
 def extract_tile(data, tile_number, palette='day'):
     """
@@ -266,33 +266,33 @@ def cleanup_individual_tiles(output_base_dir):
             print(f"Removing legacy directory: {dir_path}")
             shutil.rmtree(dir_path)
 
-def generate_tile_maps(asm_path, output_dir, tiles_per_row=16):
+def generate_tile_maps(asm_path, dest_dir, tiles_per_row=16):
     """
     Create tile map images containing all tiles for each palette.
     Saves as 'tiles_day.png' and 'tiles_night.png'.
 
     Args:
         asm_path: Path to the .asm file
-        output_dir: Directory to save the tile maps
+        dest_dir: Directory to save the tile maps
         tiles_per_row: Number of tiles per row in the sheet
     """
     # Read graphics data from the .asm file
     print("Reading graphics data from .asm file...")
-    graphics_data = read_graphics_from_asm(asm_path)
-    generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row)
+    tile_data = read_graphics_from_asm(asm_path)
+    generate_tile_maps_from_data(tile_data, dest_dir, tiles_per_row)
 
 
-def generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row=16):
+def generate_tile_maps_from_data(tile_data, dest_dir, tiles_per_row=16):
     """
     Create tile map images from pre-loaded graphics data.
     Saves as 'tiles_day.png' and 'tiles_night.png'.
 
     Args:
-        graphics_data: Pre-loaded tile graphics data (bytearray)
-        output_dir: Directory to save the tile maps
+        tile_data: Pre-loaded tile graphics data (bytearray)
+        dest_dir: Directory to save the tile maps
         tiles_per_row: Number of tiles per row in the sheet
     """
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(dest_dir, exist_ok=True)
 
     # Create sprite sheets for each palette
     for palette_name in ['day', 'night']:
@@ -311,7 +311,7 @@ def generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row=16):
         sheet = Image.new('RGBA', (sheet_width, sheet_height), (0, 0, 0, 0))
 
         for tile_num in range(total_tiles):
-            tile_img = extract_tile(graphics_data, tile_num, palette=palette_name)
+            tile_img = extract_tile(tile_data, tile_num, palette=palette_name)
 
             # Calculate position in sheet
             row = tile_num // tiles_per_row
@@ -323,7 +323,7 @@ def generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row=16):
             sheet.paste(tile_img, (x, y))
 
         # Save with standard filename
-        output_path = os.path.join(output_dir, f'tiles_{palette_name}.png')
+        output_path = os.path.join(dest_dir, f'tiles_{palette_name}.png')
         sheet.save(output_path)
         print(f"  Tile map saved to: {output_path}")
 

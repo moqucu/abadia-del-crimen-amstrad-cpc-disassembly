@@ -15,7 +15,7 @@ Opcode definitions are imported from opcodes.py (single source of truth).
 
 import os
 from typing import List, Tuple, Optional
-from .opcodes import REGISTER_NAMES, get_register_name
+from .opcodes import get_register_name
 
 
 class BytecodeToDSL:
@@ -95,7 +95,7 @@ class BytecodeToDSL:
         _, s = self.read_operand()
         return s
 
-    def read_expression_str(self, target_reg: Optional[str] = None) -> str:
+    def read_expression_str(self) -> str:
         """Read an expression and return DSL string representation."""
         parts = []
         
@@ -191,7 +191,7 @@ class BytecodeToDSL:
                 
                 # If it's a literal count < 60, we can emit multiple movements
                 # Otherwise (register count), we just show the comment
-                if count_val < 0x60 and count_val > 0:
+                if 0 < count_val < 0x60:
                     for _ in range(count_val):
                         if move_type == "DEC Y":
                             lines.append("DEC Y")
@@ -202,16 +202,14 @@ class BytecodeToDSL:
 
         return lines
 
-        return lines
-
-    def disassemble_block(self, address: int, tile_data: List[int], block_id: int = 0) -> str:
+    def disassemble_block(self, address: int, tile_data: List[int], blk_id: int = 0) -> str:
         """
         Disassemble a block starting at the given address.
 
         Args:
             address: Start address of block script (after tile pointer)
             tile_data: List of tile IDs loaded for this block
-            block_id: Block ID for labeling
+            blk_id: Block ID for labeling
 
         Returns:
             DSL string representation
@@ -222,7 +220,7 @@ class BytecodeToDSL:
         self.loop_depth = 0
 
         # Emit header (Script N = Block N, since block 0x00 doesn't exist)
-        self.emit(f"[SCRIPT{block_id}]")
+        self.emit(f"[SCRIPT{blk_id}]")
 
         # Emit TILES line
         if tile_data:
@@ -285,7 +283,7 @@ class BytecodeToDSL:
             elif opcode == 0xF7:  # LD register
                 reg_byte = self.read_byte()
                 reg_name = get_register_name(reg_byte)
-                formatted = self.read_expression_str(reg_name)
+                formatted = self.read_expression_str()
                 self.emit(f"LD {reg_name}, {formatted}")
 
             elif opcode == 0xF6:  # INC Y
@@ -301,11 +299,11 @@ class BytecodeToDSL:
                 self.emit("DEC X")
 
             elif opcode == 0xF2:  # ADD Y, expr
-                formatted = self.read_expression_str("DEPTHY")
+                formatted = self.read_expression_str()
                 self.emit(f"ADD Y, {formatted}")
 
             elif opcode == 0xF1:  # ADD X, expr
-                formatted = self.read_expression_str("DEPTHX")
+                formatted = self.read_expression_str()
                 self.emit(f"ADD X, {formatted}")
 
             elif opcode == 0xF0:  # INC PARAM1
@@ -386,13 +384,13 @@ class BytecodeToDSL:
         from data.blocks import BLOCK_DEFINITIONS as BLOCK_LIBRARY
         
         # Build list if not cached? For now just iterate.
-        sorted_blocks = sorted(BLOCK_LIBRARY.values(), key=lambda b: b.address)
-        
+        sorted_blocks = sorted(BLOCK_LIBRARY.values(), key=lambda x: x.address)
+
         # Find the block that contains this address
         best_match = None
-        for b in sorted_blocks:
-            if b.address <= addr:
-                best_match = b
+        for blk in sorted_blocks:
+            if blk.address <= addr:
+                best_match = blk
             else:
                 break
                 
@@ -421,17 +419,17 @@ def disassemble_all_blocks(output_path: str = "tests/abadia/resouces/scripts_dis
 
     # Build script address mapping (block_id = script_number since block 0x00 doesn't exist)
     script_addresses = {}
-    for block_id, block_def in BLOCK_LIBRARY.items():
+    for blk_id, blk_def in BLOCK_LIBRARY.items():
         # Map both block address and script address (block + 2)
         # CALL instructions often use the raw block address
-        script_addresses[block_def.address] = block_id
-        script_addresses[block_def.address + 2] = block_id  # Script start
+        script_addresses[blk_def.address] = blk_id
+        script_addresses[blk_def.address + 2] = blk_id  # Script start
     converter.set_script_addresses(script_addresses)
 
     all_scripts = []
 
-    for block_id in sorted(BLOCK_LIBRARY.keys()):
-        block_def = BLOCK_LIBRARY[block_id]
+    for blk_id in sorted(BLOCK_LIBRARY.keys()):
+        block_def = BLOCK_LIBRARY[blk_id]
 
         # Get tile data - trim trailing zeros for cleaner output
         tile_data = list(block_def.tile_data) if block_def.tile_data else []
@@ -443,11 +441,11 @@ def disassemble_all_blocks(output_path: str = "tests/abadia/resouces/scripts_dis
         script_addr = block_def.address + 2
 
         try:
-            dsl = converter.disassemble_block(script_addr, tile_data, block_id)
+            dsl = converter.disassemble_block(script_addr, tile_data, blk_id)
             all_scripts.append(dsl)
             all_scripts.append("")  # Blank line between scripts
         except Exception as e:
-            all_scripts.append(f"[SCRIPT{block_id}]")
+            all_scripts.append(f"[SCRIPT{blk_id}]")
             all_scripts.append(f"; Error disassembling: {e}")
             all_scripts.append("")
 
@@ -460,12 +458,12 @@ def disassemble_all_blocks(output_path: str = "tests/abadia/resouces/scripts_dis
     return output_path
 
 
-def disassemble_single_block(block_id: int) -> str:
+def disassemble_single_block(blk_id: int) -> str:
     """Disassemble a single block and return DSL string."""
     from data.blocks import BLOCK_DEFINITIONS as BLOCK_LIBRARY
 
-    if block_id not in BLOCK_LIBRARY:
-        return f"; Block 0x{block_id:02X} not found in library"
+    if blk_id not in BLOCK_LIBRARY:
+        return f"; Block 0x{blk_id:02X} not found in library"
 
     converter = BytecodeToDSL()
 
@@ -476,7 +474,7 @@ def disassemble_single_block(block_id: int) -> str:
         script_addresses[bdef.address + 2] = bid
     converter.set_script_addresses(script_addresses)
 
-    block_def = BLOCK_LIBRARY[block_id]
+    block_def = BLOCK_LIBRARY[blk_id]
 
     # Get tile data - trim trailing zeros
     tile_data = list(block_def.tile_data) if block_def.tile_data else []
@@ -485,16 +483,21 @@ def disassemble_single_block(block_id: int) -> str:
 
     script_addr = block_def.address + 2
 
-    return converter.disassemble_block(script_addr, tile_data, block_id)
+    return converter.disassemble_block(script_addr, tile_data, blk_id)
 
 
-if __name__ == "__main__":
+def main():
+    """CLI entry point."""
     import sys
 
     if len(sys.argv) > 1:
         # Disassemble specific block
-        block_id = int(sys.argv[1], 16) if sys.argv[1].startswith("0x") else int(sys.argv[1])
-        print(disassemble_single_block(block_id))
+        target_id = int(sys.argv[1], 16) if sys.argv[1].startswith("0x") else int(sys.argv[1])
+        print(disassemble_single_block(target_id))
     else:
         # Disassemble all blocks
         disassemble_all_blocks()
+
+
+if __name__ == "__main__":
+    main()

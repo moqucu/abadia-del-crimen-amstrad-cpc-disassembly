@@ -12,6 +12,7 @@ dependencies = [
     "Pillow>=10.0.0",  # Image processing for sprite/tile extraction
     "click>=8.0.0",    # CLI framework
     "numpy>=1.24.0",   # Array operations
+    "pygame>=2.6.1",
 ]
 
 [project.optional-dependencies]

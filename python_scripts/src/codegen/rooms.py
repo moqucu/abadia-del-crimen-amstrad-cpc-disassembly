@@ -14,7 +14,6 @@ Room data format (sequential in file):
 
 from dataclasses import dataclass
 from typing import List, Optional
-import struct
 
 
 @dataclass

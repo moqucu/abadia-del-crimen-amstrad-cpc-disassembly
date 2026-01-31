@@ -16,7 +16,8 @@ class Keyboard:
         if not pygame.get_init():
             pygame.init()
 
-    def get_state(self):
+    @staticmethod
+    def get_state():
         """
         Returns the full state of all keys.
         Useful if you want to snapshot input for a specific frame.
@@ -65,7 +66,8 @@ class Keyboard:
         mods = pygame.key.get_mods()
         return (mods & pygame.KMOD_SHIFT) and keys[pygame.K_f]
 
-    def update(self):
+    @staticmethod
+    def update():
         """
         Call this once per frame to process the internal event queue.
         """

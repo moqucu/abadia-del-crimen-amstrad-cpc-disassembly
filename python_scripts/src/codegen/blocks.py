@@ -196,7 +196,7 @@ def generate_python_file(blocks, memory):
     from engine.dsl import disassemble_single_block, BytecodeToDSL
 
     # Shared subroutines (SCRIPT96+) - code that blocks JMP/CALL into
-    SUBROUTINES = {
+    subroutines = {
         96:  (0x18E3, "Common floor rendering setup"),
         97:  (0x18E7, "Common floor rendering loop"),
         99:  (0x1CA6, "Arch column base rendering"),
@@ -285,8 +285,8 @@ def generate_python_file(blocks, memory):
 
     converter = BytecodeToDSL()
 
-    for script_id in sorted(SUBROUTINES.keys()):
-        addr, desc = SUBROUTINES[script_id]
+    for script_id in sorted(subroutines.keys()):
+        addr, desc = subroutines[script_id]
 
         # Extract bytecode for subroutine
         bytecode = extract_bytecode(memory, addr)
@@ -313,7 +313,7 @@ def generate_python_file(blocks, memory):
 
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write("\n".join(content))
-    print(f"Generated {OUTPUT_FILE} with {len(blocks)} blocks + {len(SUBROUTINES)} subroutines.")
+    print(f"Generated {OUTPUT_FILE} with {len(blocks)} blocks + {len(subroutines)} subroutines.")
 
 def main():
     print("Loading memory dump...")

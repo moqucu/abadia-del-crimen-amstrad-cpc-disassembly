@@ -64,9 +64,10 @@ RELATIONSHIP TO OTHER FILES:
 """
 
 import os
-from .canvas import Canvas, AbbeyCanvas
-from .tiles import Tiles, AbbeyTiles
-from .opcodes import OPCODE_NAMES, REGISTER_NAMES, get_opcode_name, get_register_name
+from typing import Union
+from .canvas import AbbeyCanvas, BufferedCanvas
+from .tiles import AbbeyTiles
+from .opcodes import OPCODE_NAMES, REGISTER_NAMES
 
 # Alias for backward compatibility
 REG_NAMES = REGISTER_NAMES
@@ -113,7 +114,7 @@ class AbadiaInterpreter:
         self.iteration_count = 0
         self.call_depth = 0
         
-    def execute(self, block_def, canvas: AbbeyCanvas, start_x, start_y, param1=1, param2=1, height=0, prio=0, trace=False):
+    def execute(self, block_def, canvas: Union[AbbeyCanvas, BufferedCanvas], start_x, start_y, param1=1, param2=1, height=0, prio=0, trace=False):
         """
         Execute a block script.
         start_x, start_y: Grid coordinates.
@@ -573,7 +574,6 @@ class AbadiaInterpreter:
 
     def op_update_reg(self):
         reg_byte = self.read_byte()
-        val = 0
         if reg_byte >= 0x60:
             reg_idx = reg_byte - 0x60
             
@@ -599,7 +599,7 @@ class AbadiaInterpreter:
                 
                 self.log(f"  -> Set {reg_name} = {val}")
 
-    def draw(self, tile_id, tile_depth=None):
+    def draw(self, tile_id):
         # Capture the raw draw event for logging
         self.draw_events.append({
             'block_prio': self.prio,

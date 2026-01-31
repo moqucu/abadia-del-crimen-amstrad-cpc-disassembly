@@ -23,7 +23,7 @@ OPERAND TYPES:
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict
 
 
 @dataclass

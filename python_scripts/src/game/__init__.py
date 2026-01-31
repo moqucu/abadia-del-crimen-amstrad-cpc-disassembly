@@ -7,9 +7,9 @@ Game logic, entities, and state management.
 from .player import Guillermo
 from .objects import Mirror
 
-# InputHandler requires pygame which is optional
+# Keyboard requires pygame which is optional
 try:
-    from .input import InputHandler
-    __all__ = ['Guillermo', 'Mirror', 'InputHandler']
+    from .input import Keyboard
+    __all__ = ['Guillermo', 'Mirror', 'Keyboard']
 except ImportError:
     __all__ = ['Guillermo', 'Mirror']

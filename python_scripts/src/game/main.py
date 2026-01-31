@@ -102,16 +102,19 @@ class AbadiaGame:
         if self.keyboard.is_load_pressed():
             self.handle_load_game()
 
-    def handle_pause(self):
+    @staticmethod
+    def handle_pause():
         """Handle game pause logic."""
         print("Game Paused.")
         # In the original, this might wait for another key or enter a loop
 
-    def handle_save_game(self):
+    @staticmethod
+    def handle_save_game():
         """0x25C4 - Handle saving game to disk."""
         print("Saving game...")
 
-    def handle_load_game(self):
+    @staticmethod
+    def handle_load_game():
         """Handle loading game from disk."""
         print("Loading game...")
 
@@ -123,7 +126,8 @@ class AbadiaGame:
         """0x25CF (calls 55B6) - Update game time."""
         pass
 
-    def check_game_over(self):
+    @staticmethod
+    def check_game_over():
         """0x25D5 (calls 42E7, 42AC) - Death check."""
         return False
 
@@ -167,7 +171,8 @@ class AbadiaGame:
         """0x260B - Graphics effects."""
         pass
 
-    def wait_for_next_frame(self):
+    @staticmethod
+    def wait_for_next_frame():
         """0x2614 - Frame synchronization."""
         # Simple sleep to prevent 100% CPU usage in this mockup
         time.sleep(0.02) 
