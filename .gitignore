@@ -148,3 +148,7 @@ dmypy.json
 .idea/
 .vscode/
 .DS_Store
+
+# Excluded project folders
+cpc_original_game_copy/
+cpc_disassembly/cracked_spanish_cpc_game_files/

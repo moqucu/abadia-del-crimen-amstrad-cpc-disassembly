@@ -25,10 +25,10 @@ test:
 	uv run pytest
 
 lint:
-	uv run ruff check python_scripts/src/
+	uv run ruff check python/src/
 
 format:
-	uv run ruff format python_scripts/src/
+	uv run ruff format python/src/
 
 lock:
 	uv lock
