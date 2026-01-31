@@ -38,12 +38,12 @@ USAGE:
 ------
     python rebuild_abbey_code.py
 
-Requires the original BIN files in the 'pirated_spanish_CPC_game_files' directory.
+Requires the original BIN files in the 'cracked_spanish_cpc_game_files' directory.
 """
 
 import os
 
-BIN_DIR = 'pirated_spanish_CPC_game_files'
+BIN_DIR = 'cracked_spanish_cpc_game_files'
 OUTPUT_FILE = 'python_scripts/resources/abbey_code.bin'
 
 def rebuild():

@@ -254,5 +254,5 @@ def create_sprite_sheet(palette='day'):
 
 if __name__ == '__main__':
     # Use default ASM file
-    asm_path = "translated_english_files/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
+    asm_path = "translated_english_disassembly/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
     extract_all_sprites(asm_path)

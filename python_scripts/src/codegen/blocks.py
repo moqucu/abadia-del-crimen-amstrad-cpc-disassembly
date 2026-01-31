@@ -9,7 +9,7 @@ Uses the ASM file only to find the Material Table mapping (ID -> Address).
 import re
 import os
 
-ASM_FILE = "translated_english_files/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
+ASM_FILE = "translated_english_disassembly/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
 MEM_FILE = "python_scripts/resources/abbey_code.bin"
 OUTPUT_FILE = "python_scripts/src/abadia/abbey_blocks_library.py"
 

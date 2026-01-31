@@ -172,7 +172,7 @@ def main():
 
     # Path to abadia8.bin
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    abadia8_path = os.path.join(base_dir, "pirated_spanish_CPC_game_files", "ABADIA8.BIN")
+    abadia8_path = os.path.join(base_dir, "cracked_spanish_cpc_game_files", "ABADIA8.BIN")
 
     if not os.path.exists(abadia8_path):
         print(f"Error: {abadia8_path} not found!")

@@ -41,7 +41,7 @@ from PIL import Image
 from engine.palette import CpcPalette
 
 # Default paths
-DEFAULT_ASM_FILE = "translated_english_files/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
+DEFAULT_ASM_FILE = "translated_english_disassembly/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
 DEFAULT_OUTPUT_DIR = "python_scripts/resources/tiles"
 
 def get_palette_colors(palette_name='day'):
