@@ -47,19 +47,34 @@ class BufferedCanvas:
     3. Final render sorts by depth for correct occlusion
     """
 
-    def __init__(self, tiles: Tiles, bg_color=(0, 0, 0)):
+    def __init__(self, tiles: Tiles, bg_color=(0, 0, 0), width=16, height=20, pixel_width=None, pixel_height=None):
         self.tiles = tiles
         self.bg_color = bg_color
-        self.buffer = TileBuffer()
+        # Initialize buffer with custom dimensions
+        self.buffer = TileBuffer(width=width, height=height)
 
-        # Output image: 320x200 to match JS output
+        # Output image dimensions
+        # Default: 320x200 to match JS output (16*16 + 32 = 288, wait... JS uses 320x200)
         # Content area: 256x160 (16x20 tiles) starting at x=32
-        self.image = Image.new('RGB', (320, 200), bg_color)
+        
+        if pixel_width is None:
+            pixel_width = 320 # Default game screen width
+            # Or calculate: width * 16 + 32 (offset)
+            if width != 16:
+                pixel_width = width * 16 + 32
+
+        if pixel_height is None:
+            pixel_height = 200 # Default game screen height
+            if height != 20:
+                pixel_height = height * 8
+
+        self.image = Image.new('RGB', (pixel_width, pixel_height), bg_color)
 
     def clear(self):
         """Clear both buffer and image for a new render."""
         self.buffer.clear()
-        self.image = Image.new('RGB', (320, 200), self.bg_color)
+        # Re-create image to clear it
+        self.image = Image.new('RGB', self.image.size, self.bg_color)
 
     def set_height(self, h):
         """Set current height for depth calculations."""

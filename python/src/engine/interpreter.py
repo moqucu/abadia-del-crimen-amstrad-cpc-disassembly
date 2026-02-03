@@ -102,9 +102,9 @@ class AbadiaInterpreter:
     Executes scripts from the extracted BlockDef objects using the full memory map.
     """
 
-    def __init__(self, tiles: AbbeyTiles, memory_file='python_scripts/resources/abbey_code.bin'):
+    def __init__(self, tiles: AbbeyTiles, memory_file='python/resources/abbey_code.bin'):
         self.tiles = tiles
-        self.canvas = None
+        self.memory = []
 
         # Load Memory
         self.memory = bytearray(65536)

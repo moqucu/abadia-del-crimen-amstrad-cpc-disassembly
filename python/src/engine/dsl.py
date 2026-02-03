@@ -19,11 +19,10 @@ from .opcodes import get_register_name
 
 
 class BytecodeToDSL:
-    """Converts block bytecode to human-readable DSL."""
+    """Disassembler for Abbey bytecode."""
 
-    def __init__(self, memory_file='python_scripts/resources/abbey_code.bin'):
-        """Load the memory file containing all bytecode."""
-        self.memory = bytearray(65536)
+    def __init__(self, memory_file='python/resources/abbey_code.bin'):
+        self.memory_file = memory_file
         if os.path.exists(memory_file):
             with open(memory_file, 'rb') as f:
                 self.memory = bytearray(f.read())

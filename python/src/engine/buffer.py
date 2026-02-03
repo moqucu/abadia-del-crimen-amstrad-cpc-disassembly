@@ -31,16 +31,20 @@ class TileBuffer:
     X_OFFSET = 8
     Y_OFFSET = 8
 
-    def __init__(self):
+    def __init__(self, width=16, height=20):
+        # Buffer dimensions
+        self.width = width
+        self.height = height
+
         # Each cell holds a list of (tile_id, depth) tuples
-        self.buffer = [[[] for _ in range(self.BUFFER_HEIGHT)]
-                       for _ in range(self.BUFFER_WIDTH)]
+        self.buffer = [[[] for _ in range(self.height)]
+                       for _ in range(self.width)]
         self.current_height = 0  # Z height for depth calculation
 
     def clear(self):
         """Clear the buffer for a new render."""
-        for x in range(self.BUFFER_WIDTH):
-            for y in range(self.BUFFER_HEIGHT):
+        for x in range(self.width):
+            for y in range(self.height):
                 self.buffer[x][y] = []
 
     def set_height(self, h):
@@ -62,9 +66,9 @@ class TileBuffer:
         buf_y = world_y - self.Y_OFFSET
 
         # Clip outside buffer bounds (matches reference exactly)
-        if buf_x < 0 or buf_x >= self.BUFFER_WIDTH:
+        if buf_x < 0 or buf_x >= self.width:
             return
-        if buf_y < 0 or buf_y >= self.BUFFER_HEIGHT:
+        if buf_y < 0 or buf_y >= self.height:
             return
 
         # Use depthX/depthY from interpreter (passed via depth as tuple or use defaults)
@@ -107,8 +111,8 @@ class TileBuffer:
         Matches the reference implementation's logging format.
         """
         trace_lines = []
-        for x in range(self.BUFFER_WIDTH):
-            for y in range(self.BUFFER_HEIGHT):
+        for x in range(self.width):
+            for y in range(self.height):
                 cell = self.buffer[x][y]
                 for tile in cell:
                     tile_id = tile['tile']
@@ -140,8 +144,8 @@ class TileBuffer:
         Returns: list of (buf_x, buf_y, tile_id, depth, block_prio)
         """
         draw_list = []
-        for x in range(self.BUFFER_WIDTH):
-            for y in range(self.BUFFER_HEIGHT):
+        for x in range(self.width):
+            for y in range(self.height):
                 cell = self.buffer[x][y]
                 for index, tile in enumerate(cell):
                     depth = tile['depthX'] + tile['depthY'] - 16

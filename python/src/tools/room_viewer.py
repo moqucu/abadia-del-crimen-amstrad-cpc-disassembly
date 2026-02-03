@@ -66,7 +66,7 @@ class RoomRenderer:
         self.interpreter = AbadiaInterpreter(self.tiles)
         self.palette = palette
 
-    def render_room(self, room_id: int, output_dir: str = None, scales=None):
+    def render_room(self, room_id: int, output_dir: str = None, scales=None, explode_factor=1.0):
         """
         Render a complete room
 
@@ -74,6 +74,7 @@ class RoomRenderer:
             room_id: Room ID (0-based)
             output_dir: Directory to save results
             scales: List of scales to generate (default: [1])
+            explode_factor: Factor to spread blocks apart (default: 1.0)
 
         Returns:
             BufferedCanvas with the rendered room
@@ -88,14 +89,40 @@ class RoomRenderer:
         room = ROOM_DEFINITIONS[room_id]
         js_room_id = room_id + 1  # JS uses 1-indexed room IDs
         
-        print(f"\nRendering Room {room_id} (JS: {js_room_id})...")
+        print(f"\nRendering Room {room_id} (JS: {js_room_id}) [Explode: {explode_factor}]...")
         print(f"  Offset: 0x{room.file_offset:04X}")
         print(f"  Blocks: {len(room.blocks)}")
+
+        # Calculate Canvas Dimensions
+        # Default: 16x20 tiles (256x160 content + margins)
+        buf_w = 16
+        buf_h = 20
+        
+        if explode_factor > 1.0:
+            # Calculate required bounds based on scaled block positions
+            max_x = 0
+            max_y = 0
+            for b in room.blocks:
+                # Scale the position relative to room center? 
+                # Or just scale from origin (easier, moves things down-right)
+                # Let's scale from origin for simplicity.
+                sx = int(b.x_pos * explode_factor)
+                sy = int(b.y_pos * explode_factor)
+                # Add margin for block content (approx 12 tiles)
+                if sx + 12 > max_x: max_x = sx + 12
+                if sy + 12 > max_y: max_y = sy + 12
+            
+            # Ensure we don't shrink below default
+            buf_w = max(16, max_x)
+            buf_h = max(20, max_y)
+            print(f"  Dynamic Buffer Size: {buf_w}x{buf_h}")
 
         # Create buffered canvas
         # Use Cyan background for Day palette to match JS debug output, Black for Night
         bg_color = (0, 128, 128) if self.palette == 'day' else (0, 0, 0)
-        canvas = BufferedCanvas(self.tiles, bg_color=bg_color)
+        
+        # Pass dimensions
+        canvas = BufferedCanvas(self.tiles, bg_color=bg_color, width=buf_w, height=buf_h)
 
         # Logging collections
         used_block_ids = set()
@@ -127,12 +154,16 @@ class RoomRenderer:
             # If extra_param is None, it defaults to 255 (Floor), not 0.
             height = block_entry.extra_param if block_entry.extra_param is not None else 255
             
+            # Calculate exploded position
+            draw_x = int(block_entry.x_pos * explode_factor)
+            draw_y = int(block_entry.y_pos * explode_factor)
+
             try:
                 self.interpreter.execute(
                     block_def,
                     canvas,
-                    start_x=block_entry.x_pos,
-                    start_y=block_entry.y_pos,
+                    start_x=draw_x,
+                    start_y=draw_y,
                     param1=block_entry.x_length,
                     param2=block_entry.y_length,
                     height=height,
@@ -143,14 +174,14 @@ class RoomRenderer:
                 all_draw_events.extend(self.interpreter.get_draw_events())
                 
                 block_execution_trace.append(
-                    f"Block #{i:02d}: ID 0x{block_id*2:02X} | Pos: ({block_entry.x_pos},{block_entry.y_pos}) | Size: ({block_entry.x_length},{block_entry.y_length}) | H: {h_val} [OK]"
+                    f"Block #{i:02d}: ID 0x{block_id*2:02X} | Pos: ({draw_x},{draw_y}) [Orig: {block_entry.x_pos},{block_entry.y_pos}] | Size: ({block_entry.x_length},{block_entry.y_length}) | H: {h_val} [OK]"
                 )
 
             except Exception as e:
-                print(f"  Error rendering block 0x{block_id:02X} at ({block_entry.x_pos},{block_entry.y_pos}): {e}")
+                print(f"  Error rendering block 0x{block_id:02X} at ({draw_x},{draw_y}): {e}")
                 blocks_skipped += 1
                 block_execution_trace.append(
-                    f"Block #{i:02d}: ID 0x{block_id*2:02X} | Pos: ({block_entry.x_pos},{block_entry.y_pos}) | Size: ({block_entry.x_length},{block_entry.y_length}) | H: {h_val} [ERROR: {e}]"
+                    f"Block #{i:02d}: ID 0x{block_id*2:02X} | Pos: ({draw_x},{draw_y}) | Size: ({block_entry.x_length},{block_entry.y_length}) | H: {h_val} [ERROR: {e}]"
                 )
                 continue
 
@@ -167,7 +198,8 @@ class RoomRenderer:
         os.makedirs(output_dir, exist_ok=True)
         
         # Use JS numbering for filename
-        filename_base = f"room_{js_room_id}_{self.palette}"
+        explode_suffix = "_exploded" if explode_factor > 1.0 else ""
+        filename_base = f"room_{js_room_id}_{self.palette}{explode_suffix}"
         log_path = os.path.join(output_dir, f"{filename_base}.log")
 
         # Save Image(s)
@@ -188,7 +220,7 @@ class RoomRenderer:
         
         with open(log_path, "w") as f:
             # SECTION 1: BLOCK MANIFEST
-            f.write(f"Room Index: {room_id} (JS ID: {js_room_id}) - Palette: {self.palette}\n")
+            f.write(f"Room Index: {room_id} (JS ID: {js_room_id}) - Palette: {self.palette} - Explode Factor: {explode_factor}\n")
             f.write("=" * 80 + "\n")
             f.write("SECTION 1: BLOCK MANIFEST\n")
             f.write(f"Summary: {blocks_rendered} rendered, {blocks_skipped} skipped\n")
@@ -241,7 +273,15 @@ def main():
         # Render ALL rooms
         for room_id in sorted(ROOM_DEFINITIONS.keys()):
             try:
+                # 1. Standard Render
                 renderer.render_room(room_id, scales=[1, 8])
+                
+                # 2. Exploded View (2.0x spread)
+                # Only generate exploded view for 1x scale to save time/space, unless 8x is critical?
+                # The user "wants to show... more clearly". 8x might be overkill for exploded if image is huge.
+                # But let's stick to consistent scales=[1, 8] if feasible.
+                renderer.render_room(room_id, scales=[1, 8], explode_factor=2.0)
+                
             except Exception as e:
                 print(f"CRITICAL ERROR rendering room {room_id}: {e}")
                 import traceback
@@ -249,7 +289,7 @@ def main():
 
     print(f"\n{'='*80}")
     print(f"Room rendering complete! Generated {len(ROOM_DEFINITIONS) * 2} images")
-    print(f"Location: python_scripts/resources/rendered_rooms/")
+    print(f"Location: python/resources/rendered_rooms/")
     print(f"{'='*80}\n")
 
 

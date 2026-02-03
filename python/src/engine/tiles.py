@@ -11,7 +11,7 @@ from PIL import Image
 class Tiles:
     """Load and manage the 256 base tiles from the generated sprite sheet."""
 
-    def __init__(self, tiles_dir='python_scripts/resources/tiles', palette='day'):
+    def __init__(self, tiles_dir='python/resources/tiles', palette='day'):
         self.tiles = {}
         sheet_filename = f'tiles_{palette}.png'
         sheet_path = os.path.join(tiles_dir, sheet_filename)
