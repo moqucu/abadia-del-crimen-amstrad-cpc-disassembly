@@ -31,10 +31,14 @@ class TileBuffer:
     X_OFFSET = 8
     Y_OFFSET = 8
 
-    def __init__(self, width=16, height=20):
+    def __init__(self, width=16, height=20, origin=(0, 0), explode_factor=1.0):
         # Buffer dimensions
         self.width = width
         self.height = height
+        
+        # Explosion parameters
+        self.origin_x, self.origin_y = origin
+        self.explode_factor = explode_factor
 
         # Each cell holds a list of (tile_id, depth) tuples
         self.buffer = [[[] for _ in range(self.height)]
@@ -61,9 +65,18 @@ class TileBuffer:
         - Store with depthX/depthY for in-cell correction
         - Apply in-cell depth clamping
         """
+        # Calculate exploded coordinates for screen position
+        if self.explode_factor != 1.0:
+            eff_x = (world_x - self.origin_x) * self.explode_factor + self.origin_x
+            eff_y = (world_y - self.origin_y) * self.explode_factor + self.origin_y
+        else:
+            eff_x = world_x
+            eff_y = world_y
+
         # Transform to buffer coordinates (matches reference exactly)
-        buf_x = world_x - self.X_OFFSET
-        buf_y = world_y - self.Y_OFFSET
+        # Use int() to snap to grid
+        buf_x = int(eff_x) - self.X_OFFSET
+        buf_y = int(eff_y) - self.Y_OFFSET
 
         # Clip outside buffer bounds (matches reference exactly)
         if buf_x < 0 or buf_x >= self.width:
@@ -72,6 +85,7 @@ class TileBuffer:
             return
 
         # Use depthX/depthY from interpreter (passed via depth as tuple or use defaults)
+        # NOTE: Depth is calculated using ORIGINAL world coordinates to maintain occlusion logic
         if isinstance(depth, tuple):
             depth_x, depth_y = depth
         elif depth is not None:

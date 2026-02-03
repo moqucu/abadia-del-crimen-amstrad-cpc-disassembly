@@ -46,7 +46,7 @@ def scan_for_unique_blocks():
                 
     return unique_blocks
 
-def generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=None):
+def generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=None, explode_factor=1.0):
     """
     Render the block and generate logs.
     """
@@ -62,22 +62,37 @@ def generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=None
     # Setup Engine
     # Transparent background (Alpha 0)
     tiles = Tiles(palette='day')
-    canvas = BufferedCanvas(tiles, bg_color=(0, 0, 0, 0)) # Image is RGBA created in BufferedCanvas?
-    # Note: BufferedCanvas creates 'RGB' by default. We need to patch it or accept black background?
-    # The spec asks for "Transparent (Alpha 0)".
-    # BufferedCanvas.__init__ creates Image.new('RGB', ...).
-    # I should verify if I can force RGBA.
-    # For now, I'll pass (0,0,0) and assume standard behavior, or modify BufferedCanvas if needed.
-    # Actually, let's subclass or modify BufferedCanvas instance after init.
-    # Re-create as transparent RGBA image
-    canvas.image = Image.new('RGBA', (320, 200), (0, 0, 0, 0))
+    
+    # Determine canvas size
+    # Default 16x20. If exploded, give more room (e.g. 32x32) to avoid clipping.
+    if explode_factor > 1.0:
+        width, height = 32, 32
+    else:
+        width, height = 16, 20
+        
+    # Origin for explosion is the block's start position
+    origin = (block_entry.x_pos, block_entry.y_pos)
+    
+    canvas = BufferedCanvas(
+        tiles, 
+        bg_color=(0, 0, 0, 0), 
+        width=width, 
+        height=height,
+        origin=origin,
+        explode_factor=explode_factor
+    ) 
+    
+    # Re-create as transparent RGBA image (BufferedCanvas creates RGB by default in some paths, but we force RGBA here)
+    # Note: BufferedCanvas.__init__ creates 'RGB'. We replace it.
+    # We must match the pixel dimensions calculated by BufferedCanvas
+    canvas.image = Image.new('RGBA', canvas.image.size, (0, 0, 0, 0))
     canvas.buffer.clear() # clear internal buffer
     
     interpreter = AbadiaInterpreter(tiles)
     
     # Prepare params
     # If extra_param is None, use 255 (Floor) as per previous findings
-    height = block_entry.extra_param if block_entry.extra_param is not None else 255
+    height_val = block_entry.extra_param if block_entry.extra_param is not None else 255
     # Do NOT clamp P1/P2 to 1. The script often increments them (e.g. Block 3).
     p1 = block_entry.x_length
     p2 = block_entry.y_length
@@ -90,7 +105,7 @@ def generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=None
         start_y=block_entry.y_pos,
         param1=p1,
         param2=p2,
-        height=height,
+        height=height_val,
         prio=blk_idx,
         trace=True
     )
@@ -99,7 +114,8 @@ def generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=None
     canvas.render()
     
     # Save Image(s)
-    filename_base = f"block_{script_id}"
+    explode_suffix = "_exploded" if explode_factor > 1.0 else ""
+    filename_base = f"block_{script_id}{explode_suffix}"
     
     for scale in scales:
         if scale == 1:
@@ -122,7 +138,7 @@ def generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=None
         # 1. Header
         f.write(f"BLOCK TRACE: #{script_id}\n")
         f.write(f"SOURCE ROOM: {js_room_id}\n")
-        f.write(f"BLOCK PARAMS: x={block_entry.x_pos}, y={block_entry.y_pos}, h={height}, p1={p1}, p2={p2}, type={raw_type}\n")
+        f.write(f"BLOCK PARAMS: x={block_entry.x_pos}, y={block_entry.y_pos}, h={height_val}, p1={p1}, p2={p2}, type={raw_type}, explode={explode_factor}\n")
         
         # 2. Script Source (Placeholder)
         f.write("\nSCRIPT SOURCE:\n")
@@ -149,7 +165,10 @@ def main():
     
     for script_id in sorted(unique_blocks.keys()):
         room_id, blk_idx, block_entry = unique_blocks[script_id]
+        # Standard
         generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=[1, 8])
+        # Exploded (2.0x)
+        generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=[1, 8], explode_factor=2.0)
         
     print("Done.")
 

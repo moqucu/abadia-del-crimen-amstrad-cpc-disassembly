@@ -47,11 +47,11 @@ class BufferedCanvas:
     3. Final render sorts by depth for correct occlusion
     """
 
-    def __init__(self, tiles: Tiles, bg_color=(0, 0, 0), width=16, height=20, pixel_width=None, pixel_height=None):
+    def __init__(self, tiles: Tiles, bg_color=(0, 0, 0), width=16, height=20, pixel_width=None, pixel_height=None, origin=(0, 0), explode_factor=1.0):
         self.tiles = tiles
         self.bg_color = bg_color
         # Initialize buffer with custom dimensions
-        self.buffer = TileBuffer(width=width, height=height)
+        self.buffer = TileBuffer(width=width, height=height, origin=origin, explode_factor=explode_factor)
 
         # Output image dimensions
         # Default: 320x200 to match JS output (16*16 + 32 = 288, wait... JS uses 320x200)
