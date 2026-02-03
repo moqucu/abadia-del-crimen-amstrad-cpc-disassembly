@@ -42,6 +42,15 @@ from engine import Tiles, BufferedCanvas, AbadiaInterpreter
 from engine.dsl import disassemble_single_block
 from data import BLOCK_DEFINITIONS, ROOM_DEFINITIONS
 
+from PIL import Image
+
+def upscale_image(image, scale):
+    """
+    Upscale an image by a factor using nearest neighbor interpolation.
+    """
+    new_size = (image.width * scale, image.height * scale)
+    return image.resize(new_size, Image.NEAREST)
+
 
 class RoomRenderer:
     """Renders complete game rooms"""
@@ -57,17 +66,21 @@ class RoomRenderer:
         self.interpreter = AbadiaInterpreter(self.tiles)
         self.palette = palette
 
-    def render_room(self, room_id: int, output_dir: str = None):
+    def render_room(self, room_id: int, output_dir: str = None, scales=None):
         """
         Render a complete room
 
         Args:
             room_id: Room ID (0-based)
             output_dir: Directory to save results
+            scales: List of scales to generate (default: [1])
 
         Returns:
             BufferedCanvas with the rendered room
         """
+        if scales is None:
+            scales = [1]
+
         # Get room definition
         if room_id not in ROOM_DEFINITIONS:
             raise ValueError(f"Room {room_id} not found in ROOM_DEFINITIONS")
@@ -155,12 +168,20 @@ class RoomRenderer:
         
         # Use JS numbering for filename
         filename_base = f"room_{js_room_id}_{self.palette}"
-        png_path = os.path.join(output_dir, f"{filename_base}.png")
         log_path = os.path.join(output_dir, f"{filename_base}.log")
 
-        # Save Image
-        canvas.save(png_path)
-        print(f"  Saved image: {png_path}")
+        # Save Image(s)
+        for scale in scales:
+            if scale == 1:
+                img_to_save = canvas.image
+                suffix = ""
+            else:
+                img_to_save = upscale_image(canvas.image, scale)
+                suffix = f"_x{scale}"
+            
+            png_path = os.path.join(output_dir, f"{filename_base}{suffix}.png")
+            img_to_save.save(png_path)
+            print(f"  Saved image: {png_path}")
 
         # Save Detailed Log (3-Layer Format)
         render_list = canvas.get_render_list()
@@ -220,7 +241,7 @@ def main():
         # Render ALL rooms
         for room_id in sorted(ROOM_DEFINITIONS.keys()):
             try:
-                renderer.render_room(room_id)
+                renderer.render_room(room_id, scales=[1, 8])
             except Exception as e:
                 print(f"CRITICAL ERROR rendering room {room_id}: {e}")
                 import traceback

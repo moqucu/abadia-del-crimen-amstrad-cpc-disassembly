@@ -41,8 +41,8 @@ from PIL import Image
 from engine.palette import CpcPalette
 
 # Default paths
-DEFAULT_ASM_FILE = "translated_english_disassembly/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
-DEFAULT_OUTPUT_DIR = "python_scripts/resources/tiles"
+DEFAULT_ASM_FILE = "cpc_disassembly/translated_english_disassembly/0 - abadia_del_crimen_disassembled_CPC_Amstrad_game_code.asm"
+DEFAULT_OUTPUT_DIR = "python/resources/tiles"
 
 def get_palette_colors(palette_name='day'):
     """
@@ -266,7 +266,7 @@ def cleanup_individual_tiles(output_base_dir):
             print(f"Removing legacy directory: {dir_path}")
             shutil.rmtree(dir_path)
 
-def generate_tile_maps(asm_path, dest_dir, tiles_per_row=16):
+def generate_tile_maps(asm_path, dest_dir, tiles_per_row=16, scales=None, inset=0):
     """
     Create tile map images containing all tiles for each palette.
     Saves as 'tiles_day.png' and 'tiles_night.png'.
@@ -275,23 +275,39 @@ def generate_tile_maps(asm_path, dest_dir, tiles_per_row=16):
         asm_path: Path to the .asm file
         dest_dir: Directory to save the tile maps
         tiles_per_row: Number of tiles per row in the sheet
+        scales: List of integer scales to generate (default: [1])
+        inset: Pixels of transparent space between tiles (default: 0)
     """
     # Read graphics data from the .asm file
     print("Reading graphics data from .asm file...")
     tile_data = read_graphics_from_asm(asm_path)
-    generate_tile_maps_from_data(tile_data, dest_dir, tiles_per_row)
+    generate_tile_maps_from_data(tile_data, dest_dir, tiles_per_row, scales, inset)
 
 
-def generate_tile_maps_from_data(tile_data, dest_dir, tiles_per_row=16):
+def upscale_image(image, scale):
+    """
+    Upscale an image by a factor using nearest neighbor interpolation.
+    """
+    new_size = (image.width * scale, image.height * scale)
+    return image.resize(new_size, Image.NEAREST)
+
+
+def generate_tile_maps_from_data(tile_data, dest_dir, tiles_per_row=16, scales=None, inset=0):
     """
     Create tile map images from pre-loaded graphics data.
     Saves as 'tiles_day.png' and 'tiles_night.png'.
+    Supports scaling (e.g., 8x) via the scales argument.
 
     Args:
         tile_data: Pre-loaded tile graphics data (bytearray)
         dest_dir: Directory to save the tile maps
         tiles_per_row: Number of tiles per row in the sheet
+        scales: List of integer scales to generate (default: [1])
+        inset: Pixels of transparent space between tiles (default: 0)
     """
+    if scales is None:
+        scales = [1]
+        
     os.makedirs(dest_dir, exist_ok=True)
 
     # Create sprite sheets for each palette
@@ -303,9 +319,9 @@ def generate_tile_maps_from_data(tile_data, dest_dir, tiles_per_row=16):
         rows = (total_tiles + tiles_per_row - 1) // tiles_per_row
 
         # Each tile is 16x8
-        # NO SPACING as per requirements for easy programmatic access
-        sheet_width = tiles_per_row * 16
-        sheet_height = rows * 8
+        # Calculate width/height including inset
+        sheet_width = (tiles_per_row * 16) + (max(0, tiles_per_row - 1) * inset)
+        sheet_height = (rows * 8) + (max(0, rows - 1) * inset)
 
         # Create sprite sheet (RGBA)
         sheet = Image.new('RGBA', (sheet_width, sheet_height), (0, 0, 0, 0))
@@ -316,16 +332,24 @@ def generate_tile_maps_from_data(tile_data, dest_dir, tiles_per_row=16):
             # Calculate position in sheet
             row = tile_num // tiles_per_row
             col = tile_num % tiles_per_row
-            x = col * 16
-            y = row * 8
+            x = col * (16 + inset)
+            y = row * (8 + inset)
 
             # Paste tile into sheet (using alpha compositing)
             sheet.paste(tile_img, (x, y))
 
-        # Save with standard filename
-        output_path = os.path.join(dest_dir, f'tiles_{palette_name}.png')
-        sheet.save(output_path)
-        print(f"  Tile map saved to: {output_path}")
+        # Save versions for each scale
+        for scale in scales:
+            if scale == 1:
+                final_sheet = sheet
+                suffix = ""
+            else:
+                final_sheet = upscale_image(sheet, scale)
+                suffix = f"_x{scale}"
+            
+            output_path = os.path.join(dest_dir, f'tiles_{palette_name}{suffix}.png')
+            final_sheet.save(output_path)
+            print(f"  Tile map saved to: {output_path}")
 
 if __name__ == "__main__":
     import sys
@@ -347,9 +371,16 @@ if __name__ == "__main__":
 
     # Create tile maps
     print("\n" + "=" * 60)
-    print("Generating Tile Maps...")
+    print("Generating Standard Tile Maps (1x)...")
     print("=" * 60)
-    generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row=16)
+    # Standard: 1x, no inset
+    generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row=16, scales=[1], inset=0)
+
+    print("\n" + "=" * 60)
+    print("Generating Enhanced Tile Maps (8x with inset)...")
+    print("=" * 60)
+    # Enhanced: 8x, 1px inset (becomes 8px gap)
+    generate_tile_maps_from_data(graphics_data, output_dir, tiles_per_row=16, scales=[8], inset=1)
 
     # Generate debug log
     print("\n" + "=" * 60)
@@ -363,7 +394,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"\nTile Maps generated in {output_dir}:")
     print(f"  tiles_day.png")
+    print(f"  tiles_day_x8.png")
     print(f"  tiles_night.png")
-    print(f"\nAccess Formula:")
-    print(f"  X = (TileID % 16) * 16")
-    print(f"  Y = (TileID // 16) * 8")
+    print(f"  tiles_night_x8.png")

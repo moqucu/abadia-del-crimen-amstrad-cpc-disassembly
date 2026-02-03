@@ -15,7 +15,16 @@ import os
 from engine import Tiles, BufferedCanvas, AbadiaInterpreter
 from data import BLOCK_DEFINITIONS, ROOM_DEFINITIONS
 
-OUTPUT_DIR = "python_scripts/resources/generated_blocks"
+OUTPUT_DIR = "python/resources/generated_blocks"
+
+from PIL import Image
+
+def upscale_image(image, scale):
+    """
+    Upscale an image by a factor using nearest neighbor interpolation.
+    """
+    new_size = (image.width * scale, image.height * scale)
+    return image.resize(new_size, Image.NEAREST)
 
 def scan_for_unique_blocks():
     """
@@ -37,10 +46,13 @@ def scan_for_unique_blocks():
                 
     return unique_blocks
 
-def generate_block_outputs(script_id, room_id, blk_idx, block_entry):
+def generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=None):
     """
     Render the block and generate logs.
     """
+    if scales is None:
+        scales = [1]
+
     if script_id not in BLOCK_DEFINITIONS:
         print(f"Warning: Script ID {script_id} defined in Room {room_id} but not in Library")
         return
@@ -58,7 +70,6 @@ def generate_block_outputs(script_id, room_id, blk_idx, block_entry):
     # For now, I'll pass (0,0,0) and assume standard behavior, or modify BufferedCanvas if needed.
     # Actually, let's subclass or modify BufferedCanvas instance after init.
     # Re-create as transparent RGBA image
-    from PIL import Image
     canvas.image = Image.new('RGBA', (320, 200), (0, 0, 0, 0))
     canvas.buffer.clear() # clear internal buffer
     
@@ -87,10 +98,19 @@ def generate_block_outputs(script_id, room_id, blk_idx, block_entry):
     # Render (Z-Sort)
     canvas.render()
     
-    # Save Image
+    # Save Image(s)
     filename_base = f"block_{script_id}"
-    png_path = os.path.join(OUTPUT_DIR, f"{filename_base}.png")
-    canvas.save(png_path)
+    
+    for scale in scales:
+        if scale == 1:
+            img_to_save = canvas.image
+            suffix = ""
+        else:
+            img_to_save = upscale_image(canvas.image, scale)
+            suffix = f"_x{scale}"
+            
+        png_path = os.path.join(OUTPUT_DIR, f"{filename_base}{suffix}.png")
+        img_to_save.save(png_path)
     
     # Save Log
     log_path = os.path.join(OUTPUT_DIR, f"{filename_base}.log")
@@ -129,7 +149,7 @@ def main():
     
     for script_id in sorted(unique_blocks.keys()):
         room_id, blk_idx, block_entry = unique_blocks[script_id]
-        generate_block_outputs(script_id, room_id, blk_idx, block_entry)
+        generate_block_outputs(script_id, room_id, blk_idx, block_entry, scales=[1, 8])
         
     print("Done.")
 
